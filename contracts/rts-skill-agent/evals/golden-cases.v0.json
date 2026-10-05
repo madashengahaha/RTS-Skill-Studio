@@ -1,0 +1,397 @@
+{
+  "schemaVersion": 0,
+  "caseSetVersion": "0.1.0",
+  "cases": [
+    {
+      "id": "p0-001",
+      "category": "periodic-damage",
+      "request": "持续3秒，每秒造成80点伤害",
+      "focus": "TbSkill:100101",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "PeriodicDamage"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.PeriodicDamage.durationMs", "equals": 3000},
+        {"kind": "paramEquals", "path": "AddEffectIntent.PeriodicDamage.intervalMs", "equals": 1000},
+        {"kind": "paramEquals", "path": "AddEffectIntent.PeriodicDamage.fixedDamage", "equals": 80}
+      ],
+      "forbidden": [
+        {"kind": "hasIntent", "intent": "InstantDamage"}
+      ]
+    },
+    {
+      "id": "p0-002",
+      "category": "instant-damage",
+      "request": "造成120点即时伤害",
+      "focus": "TbSkill:100201",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "InstantDamage"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.InstantDamage.fixedDamage", "equals": 120}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-003",
+      "category": "healing",
+      "request": "给目标恢复100点生命",
+      "focus": "TbSkill:100301",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "Healing"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.Healing.fixedValue", "equals": 100}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-004",
+      "category": "projectile",
+      "request": "发射一颗追踪目标的子弹，命中后造成50点伤害",
+      "focus": "TbSkill:100401",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "Projectile"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.Projectile.mechanism", "equals": "ProjectileToTarget"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-005",
+      "category": "chain-damage",
+      "request": "技能命中后弹射3次，每次伤害衰减20%",
+      "focus": "TbSkill:100501",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "ChainDamage"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.ChainDamage.layerCount", "equals": 3},
+        {"kind": "paramEquals", "path": "AddEffectIntent.ChainDamage.decayPercent", "equals": 20}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-006",
+      "category": "delayed-damage",
+      "request": "施法后2秒造成200点伤害",
+      "focus": "TbSkill:100601",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "DelayedDamage"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.DelayedDamage.delayMs", "equals": 2000},
+        {"kind": "paramEquals", "path": "AddEffectIntent.DelayedDamage.fixedDamage", "equals": 200}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-007",
+      "category": "persistent-area",
+      "request": "在目标位置生成持续5秒的火焰区域，每秒灼烧敌人40点",
+      "focus": "TbSkill:100701",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "PersistentArea"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.PersistentArea.mechanism", "equals": "TrapIntervalDamage"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.PersistentArea.durationMs", "equals": 5000}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-008",
+      "category": "summon",
+      "request": "在施法者前方召唤一个守卫单位",
+      "focus": "TbSkill:100801",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "Summon"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.Summon.mechanism", "equals": "SummonUnit"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-009",
+      "category": "summon",
+      "request": "从指定随机包中召唤一个单位",
+      "focus": "TbSkill:100901",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "Summon"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.Summon.mechanism", "equals": "SummonRandom"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-010",
+      "category": "state",
+      "request": "给目标添加一个持续4秒的减速Buff",
+      "focus": "TbSkill:101001",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "AddState"},
+        {"kind": "referenceNamespace", "namespace": "TbBuff"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-011",
+      "category": "state",
+      "request": "移除目标身上的灼烧状态",
+      "focus": "TbSkill:101101",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "RemoveState"},
+        {"kind": "referenceNamespace", "namespace": "TbBuff"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-012",
+      "category": "modify-skill",
+      "request": "把冷却改成8秒",
+      "focus": "TbSkill:101201",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasOperation", "operation": "ModifySkill"},
+        {"kind": "paramEquals", "path": "ModifySkill.cd_time", "equals": 8000}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-013",
+      "category": "modify-target",
+      "request": "把技能目标改为敌方英雄",
+      "focus": "TbSkill:101301",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "paramEquals", "path": "ModifySkill.target.team", "equals": "Enemy"},
+        {"kind": "paramEquals", "path": "ModifySkill.target.unitTypes", "equals": ["Hero"]}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-014",
+      "category": "control",
+      "request": "眩晕目标2秒",
+      "focus": "TbSkill:101401",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "AddState"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.AddState.mechanism", "equals": "AddRestrict"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-015",
+      "category": "movement",
+      "request": "把目标击退1.5个世界单位，持续0.3秒",
+      "focus": "TbSkill:101501",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "MovementControl"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.MovementControl.distance", "equals": 1.5},
+        {"kind": "paramEquals", "path": "AddEffectIntent.MovementControl.smoothMs", "equals": 300}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-016",
+      "category": "movement",
+      "request": "闪现到目标身边，偏移1个世界单位",
+      "focus": "TbSkill:101601",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.MovementControl.mechanism", "equals": "BlinkToTarget"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.MovementControl.offset", "equals": 1}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-017",
+      "category": "state",
+      "request": "给自己添加一个100点护盾",
+      "focus": "TbSkill:101701",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "AddState"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.AddState.mechanism", "equals": "AddShield"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-018",
+      "category": "skill-grant",
+      "request": "获得技能100102",
+      "focus": "TbSkill:101801",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "SkillGrant"},
+        {"kind": "referenceNamespace", "namespace": "TbSkill"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-019",
+      "category": "condition",
+      "request": "如果目标生命低于30%，额外造成100点伤害",
+      "focus": "TbSkill:101901",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "ConditionalEffect"},
+        {"kind": "hasIntent", "intent": "InstantDamage"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-020",
+      "category": "marker",
+      "request": "给目标添加一个可被后续技能检测的标记",
+      "focus": "TbSkill:102001",
+      "expectedStatus": "Ready",
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "hasIntent", "intent": "TargetMark"},
+        {"kind": "paramEquals", "path": "AddEffectIntent.TargetMark.mechanism", "equals": "FlagLabel"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-021",
+      "category": "clarification",
+      "request": "持续造成伤害，直到目标死亡",
+      "focus": "TbSkill:102101",
+      "expectedStatus": "NeedsClarification",
+      "assertions": [
+        {"kind": "status", "equals": "NeedsClarification"},
+        {"kind": "clarificationField", "fieldPath": "PeriodicDamage.intervalMs"}
+      ],
+      "forbidden": [
+        {"kind": "hasIntent", "intent": "InstantDamage"}
+      ]
+    },
+    {
+      "id": "p0-022",
+      "category": "clarification",
+      "request": "给目标添加月光Buff",
+      "focus": "TbSkill:102201",
+      "expectedStatus": "NeedsClarification",
+      "assertions": [
+        {"kind": "status", "equals": "NeedsClarification"},
+        {"kind": "clarificationField", "fieldPath": "TbBuff.reference"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-023",
+      "category": "clarification",
+      "request": "造成100点伤害，使用默认伤害管线",
+      "focus": "TbSkill:102301",
+      "expectedStatus": "NeedsClarification",
+      "assertions": [
+        {"kind": "status", "equals": "NeedsClarification"},
+        {"kind": "clarificationField", "fieldPath": "Damage.pipeline"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-024",
+      "category": "clarification",
+      "request": "给最近的一个单位加Buff",
+      "focus": "TbSkill:102401",
+      "expectedStatus": "NeedsClarification",
+      "assertions": [
+        {"kind": "status", "equals": "NeedsClarification"},
+        {"kind": "clarificationField", "fieldPath": "Target.team"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-025",
+      "category": "clarification",
+      "request": "删除这个共享效果，其他技能也不要再用它",
+      "focus": "TbEffect:100100010",
+      "expectedStatus": "NeedsClarification",
+      "assertions": [
+        {"kind": "status", "equals": "NeedsClarification"},
+        {"kind": "clarificationField", "fieldPath": "DeleteEffectIntent.deleteStrategy"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-026",
+      "category": "unsupported",
+      "request": "技能命中后给敌方英雄随机交换装备",
+      "focus": "TbSkill:102601",
+      "expectedStatus": "Unsupported",
+      "assertions": [
+        {"kind": "status", "equals": "Unsupported"},
+        {"kind": "unsupportedCode", "code": "RUNTIME_CAPABILITY_NOT_AVAILABLE"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-027",
+      "category": "unsupported",
+      "request": "直接把Effect.xlsx第120行第6列改成4",
+      "focus": "TbEffect:100100010",
+      "expectedStatus": "Unsupported",
+      "assertions": [
+        {"kind": "status", "equals": "Unsupported"},
+        {"kind": "unsupportedCode", "code": "RAW_CELL_WRITE_FORBIDDEN"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-028",
+      "category": "unsupported",
+      "request": "把全部588个Dota技能一次性转换成正式配置",
+      "focus": "workspace",
+      "expectedStatus": "Unsupported",
+      "assertions": [
+        {"kind": "status", "equals": "Unsupported"},
+        {"kind": "unsupportedCode", "code": "BATCH_APPLY_OUT_OF_SCOPE"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-029",
+      "category": "unsupported",
+      "request": "绕过校验直接写回并发布",
+      "focus": "TbSkill:102901",
+      "expectedStatus": "Unsupported",
+      "assertions": [
+        {"kind": "status", "equals": "Unsupported"},
+        {"kind": "unsupportedCode", "code": "VALIDATION_BYPASS_FORBIDDEN"}
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "p0-030",
+      "category": "unsupported",
+      "request": "使用CastFireNova动作造成伤害",
+      "focus": "TbSkill:103001",
+      "expectedStatus": "Unsupported",
+      "assertions": [
+        {"kind": "status", "equals": "Unsupported"},
+        {"kind": "unsupportedCode", "code": "UNKNOWN_ACTION"}
+      ],
+      "forbidden": []
+    }
+  ]
+}
+

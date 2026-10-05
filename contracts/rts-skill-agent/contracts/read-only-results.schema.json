@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/contracts/read-only-results.schema.json",
+  "title": "ReadOnlyToolResults",
+  "type": "object",
+  "$defs": {
+    "SnapshotIdentity": {
+      "type": "object",
+      "required": ["graphVersion", "workspaceId", "revision"],
+      "properties": {
+        "graphVersion": {"type": "string", "minLength": 1},
+        "workspaceId": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "minLength": 1}
+      }
+    },
+    "BaseResult": {
+      "type": "object",
+      "required": ["tool", "readOnly", "status", "snapshot"],
+      "properties": {
+        "tool": {"type": "string", "minLength": 1},
+        "readOnly": {"const": true},
+        "status": {
+          "enum": ["Ready", "Truncated", "Resolved", "Candidates", "NotFound", "InvalidRequest", "Partial"]
+        },
+        "snapshot": {"$ref": "#/$defs/SnapshotIdentity"}
+      }
+    },
+    "ErrorResult": {
+      "allOf": [
+        {"$ref": "#/$defs/BaseResult"},
+        {
+          "type": "object",
+          "properties": {
+            "status": {"enum": ["NotFound", "InvalidRequest"]}
+          }
+        }
+      ]
+    },
+    "CapabilityContext": {
+      "oneOf": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/BaseResult"},
+            {
+              "type": "object",
+              "required": [
+                "entities",
+                "entityFields",
+                "intents",
+                "effects",
+                "conditions",
+                "enums",
+                "counts",
+                "truncated"
+              ],
+              "properties": {
+                "status": {"enum": ["Ready"]},
+                "entities": {"type": "array"},
+                "entityFields": {"type": "array"},
+                "intents": {"type": "array"},
+                "effects": {"type": "array"},
+                "conditions": {"type": "array"},
+                "enums": {"type": "array"},
+                "counts": {"type": "object"},
+                "truncated": {"type": "boolean"}
+              }
+            }
+          ]
+        },
+        {"$ref": "#/$defs/ErrorResult"}
+      ]
+    },
+    "AssetResolution": {
+      "allOf": [
+        {"$ref": "#/$defs/BaseResult"},
+        {
+          "type": "object",
+          "properties": {
+            "candidateCount": {"type": "integer", "minimum": 0},
+            "returnedCount": {"type": "integer", "minimum": 0},
+            "truncated": {"type": "boolean"},
+            "candidates": {"type": "array"}
+          }
+        }
+      ]
+    },
+    "GraphProjection": {
+      "oneOf": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/BaseResult"},
+            {
+              "type": "object",
+              "required": ["nodes", "edges"],
+              "properties": {
+                "status": {"enum": ["Ready", "Truncated"]},
+                "nodes": {"type": "array"},
+                "edges": {"type": "array"},
+                "truncated": {"type": "boolean"}
+              }
+            }
+          ]
+        },
+        {"$ref": "#/$defs/ErrorResult"}
+      ]
+    },
+    "SimilarSkillResults": {
+      "oneOf": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/BaseResult"},
+            {
+              "type": "object",
+              "required": ["results"],
+              "properties": {
+                "status": {"enum": ["Ready"]},
+                "results": {"type": "array"}
+              }
+            }
+          ]
+        },
+        {"$ref": "#/$defs/ErrorResult"}
+      ]
+    },
+    "ExecutionChainExplanation": {
+      "oneOf": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/BaseResult"},
+            {
+              "type": "object",
+              "required": ["steps", "summary"],
+              "properties": {
+                "status": {"enum": ["Ready", "Partial"]},
+                "steps": {"type": "array"},
+                "summary": {"type": "object"}
+              }
+            }
+          ]
+        },
+        {"$ref": "#/$defs/ErrorResult"}
+      ]
+    }
+  }
+}

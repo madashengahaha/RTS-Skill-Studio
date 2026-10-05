@@ -1,0 +1,412 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/contracts/capability-registry.schema.json",
+  "title": "SkillCapabilityRegistry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "registryVersion",
+    "source",
+    "entities",
+    "planOperations",
+    "readOnlyTools",
+    "readOnlyToolContracts",
+    "valueSources",
+    "similarityScoring",
+    "skillGraphSchema",
+    "entityFields",
+    "intents",
+    "effects",
+    "conditions",
+    "damageStages",
+    "enums",
+    "enumReferences"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 0
+    },
+    "registryVersion": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["heroAuthoringSchemaVersion", "sha256"],
+      "properties": {
+        "heroAuthoringSchemaVersion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sourcePath": {
+          "type": "string"
+        },
+        "sourceRevision": {
+          "type": "string"
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Entity"
+      }
+    },
+    "planOperations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "readOnlyTools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "readOnlyToolContracts": {
+      "type": "object"
+    },
+    "valueSources": {
+      "type": "array",
+      "items": {
+        "enum": ["ModelProposed", "UserEdited", "Default"]
+      },
+      "uniqueItems": true
+    },
+    "similarityScoring": {
+      "$ref": "#/$defs/SimilarityScoring"
+    },
+    "skillGraphSchema": {
+      "type": "object"
+    },
+    "entityFields": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EntityField"
+      }
+    },
+    "intents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Intent"
+      }
+    },
+    "effects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Action"
+      }
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Action"
+      }
+    },
+    "damageStages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CodeType"
+      }
+    },
+    "enums": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EnumDefinition"
+      }
+    },
+    "enumReferences": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "Entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "namespace", "kind", "identity", "shared", "role"],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": ["Table", "Virtual", "Code"]
+        },
+        "identity": {
+          "type": "string"
+        },
+        "shared": {
+          "type": "boolean"
+        },
+        "role": {
+          "type": "string"
+        }
+      }
+    },
+    "EntityField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "enumName"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "enumName": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "Intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "harmful"],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "harmful": {
+          "type": ["boolean", "null"]
+        }
+      }
+    },
+    "Action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "legacyValue",
+        "label",
+        "minParameterCount",
+        "maxParameterCount",
+        "parameters",
+        "semantic"
+      ],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "legacyValue": {
+          "type": "integer"
+        },
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": ["string", "null"]
+        },
+        "warning": {
+          "type": ["string", "null"]
+        },
+        "minParameterCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxParameterCount": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Parameter"
+          }
+        },
+        "semantic": {
+          "$ref": "#/$defs/Semantic"
+        }
+      }
+    },
+    "Parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index",
+        "key",
+        "label",
+        "kind",
+        "required",
+        "repeating",
+        "repeatStep"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "description": {
+          "type": ["string", "null"]
+        },
+        "kind": {
+          "enum": ["Reference", "Enum", "ScaledInteger", "Integer", "Boolean", "String"]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "referenceTarget": {
+          "type": ["string", "null"]
+        },
+        "enumName": {
+          "type": ["string", "null"]
+        },
+        "scale": {
+          "type": ["integer", "null"]
+        },
+        "repeating": {
+          "type": "boolean"
+        },
+        "repeatStep": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "allowsMultipleEnumValues": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "Semantic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intents", "mechanism", "tags"],
+      "properties": {
+        "intents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "mechanism": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "SimilarityScoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "skillWeights"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "skillWeights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["intents", "mechanisms", "tags", "references"],
+          "properties": {
+            "intents": {
+              "type": "number",
+              "minimum": 0
+            },
+            "mechanisms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "tags": {
+              "type": "number",
+              "minimum": 0
+            },
+            "references": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "EnumDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "flags", "comment", "values"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "flags": {
+          "type": "boolean"
+        },
+        "comment": {
+          "type": ["string", "null"]
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/EnumValue"
+          }
+        }
+      }
+    },
+    "EnumValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value", "alias", "comment"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "integer"
+        },
+        "alias": {
+          "type": "string"
+        },
+        "comment": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "CodeType": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "legacyValue", "label"],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "legacyValue": {
+          "type": "integer"
+        },
+        "label": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

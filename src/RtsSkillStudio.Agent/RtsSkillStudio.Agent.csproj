@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\vendor\TianshuDM\TianshuDM.Contract\TianshuDM.Contract.csproj" />
+    <ProjectReference Include="..\..\vendor\TianshuDM\TianshuDM.Domain\TianshuDM.Domain.csproj" />
+    <ProjectReference Include="..\..\vendor\TianshuDM\TianshuDM.Application\TianshuDM.Application.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

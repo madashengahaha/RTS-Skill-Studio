@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/contracts/skill-graph.schema.json",
+  "title": "ReadOnlySkillGraph",
+  "description": "A deterministic, read-only snapshot of skill assets and their references.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "graphVersion", "workspaceId", "revision", "nodes", "edges"],
+  "properties": {
+    "schemaVersion": {
+      "const": 0
+    },
+    "graphVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workspaceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Edge"
+      }
+    }
+  },
+  "$defs": {
+    "Node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "namespace", "kind", "label", "attributes", "semantic", "editLock"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[^:]+:.+$"
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object"
+        },
+        "semantic": {
+          "$ref": "#/$defs/Semantic"
+        },
+        "editLock": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/EditLock"
+            }
+          ]
+        }
+      }
+    },
+    "Semantic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intents", "mechanisms", "tags"],
+      "properties": {
+        "intents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "mechanisms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "EditLock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "acquiredAt"],
+      "properties": {
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acquiredAt": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "Edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "field", "source"],
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parameterIndex": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "source": {
+          "$ref": "#/$defs/EvidenceRef"
+        }
+      }
+    },
+    "EvidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": {
+          "enum": ["Excel", "RuntimeBinding", "Schema", "Snapshot"]
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

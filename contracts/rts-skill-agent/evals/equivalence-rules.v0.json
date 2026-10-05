@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 0,
+  "ruleSetVersion": "0.1.0",
+  "normalization": {
+    "arrayOrdering": "Sort semantic operation IR by category, intent, owner, and operationId.",
+    "valueEncoding": "Keep only value, source, and evidence references; discard display labels and prose.",
+    "time": "Normalize all durations, delays, and intervals to milliseconds.",
+    "percent": "Normalize all ratios to basis points.",
+    "references": "Normalize references to namespace plus stable ID, proposed local key, or unresolved candidate keys."
+  },
+  "equivalent": [
+    "The same semantic intent and selected mechanism produce the same target, time points, numeric values, and reference identity.",
+    "Operation order differences disappear when no ordered-group dependency exists.",
+    "Different labels, descriptions, operation IDs, and display formatting do not affect equivalence."
+  ],
+  "notEquivalent": [
+    "Single Damage versus PeriodicDamage.",
+    "Enemy versus Friendly target team.",
+    "Different interval, duration, damage, layer, count, or decay values.",
+    "Buff interval damage versus Trap interval damage when lifecycle behavior is part of the assertion.",
+    "Existing reference versus proposed new reference with the same display name.",
+    "Status Ready versus NeedsClarification or Unsupported."
+  ],
+  "assertionPolicy": {
+    "required": "Every golden case must assert status and at least one semantic outcome or rejection reason.",
+    "forbidden": "A forbidden assertion fails when its matching IR fragment is present.",
+    "exactJson": false
+  }
+}
+

@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/contracts/authoring-patch.schema.json",
+  "title": "AuthoringPatch",
+  "description": "Deterministic compiler output. Models and users may inspect this object but must not edit it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "patchId",
+    "sourcePlanHash",
+    "base",
+    "commands",
+    "fieldChanges",
+    "validation"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 0
+    },
+    "patchId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourcePlanHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "capabilityRegistryVersion"],
+      "properties": {
+        "revision": {
+          "type": "string"
+        },
+        "capabilityRegistryVersion": {
+          "type": "string"
+        }
+      }
+    },
+    "allocations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Allocation"
+      },
+      "default": []
+    },
+    "commands": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Command"
+      }
+    },
+    "fieldChanges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FieldChange"
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checks"],
+      "properties": {
+        "status": {
+          "enum": ["Pending", "Valid", "Invalid"]
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Check"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "Allocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["namespace", "localKey", "id", "kind"],
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "localKey": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "groupKey": {
+          "type": "integer"
+        },
+        "kind": {
+          "enum": ["Id", "GroupId", "MemberId"]
+        }
+      }
+    },
+    "Command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "operationId",
+        "kind",
+        "target",
+        "arguments"
+      ],
+      "properties": {
+        "sequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "operationId": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "CreateNode",
+            "CreateGroup",
+            "CreateGroupMember",
+            "UpdateNode",
+            "LinkExisting",
+            "Unlink",
+            "DeleteOwnedMember",
+            "DeleteExclusiveBranch",
+            "ReorderGroupMembers"
+          ]
+        },
+        "target": {
+          "$ref": "#/$defs/AssetIdentity"
+        },
+        "arguments": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "AssetIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["namespace"],
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "groupKey": {
+          "type": "integer"
+        },
+        "localKey": {
+          "type": "string"
+        },
+        "parentField": {
+          "type": "string"
+        },
+        "parameterIndex": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "FieldChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operationId",
+        "namespace",
+        "id",
+        "field",
+        "before",
+        "after",
+        "source"
+      ],
+      "properties": {
+        "operationId": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "field": {
+          "type": "string"
+        },
+        "before": true,
+        "after": true,
+        "source": {
+          "enum": ["ModelProposed", "UserEdited", "Default", "Compiler"]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "Check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "status", "message"],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "status": {
+          "enum": ["Passed", "Failed", "NotRun"]
+        },
+        "message": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+

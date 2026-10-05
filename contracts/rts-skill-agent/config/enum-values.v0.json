@@ -1,0 +1,3337 @@
+{
+  "schemaVersion": 0,
+  "snapshotVersion": "0.1.0",
+  "source": {
+    "fileName": "builtin.xml",
+    "sha256": "b7f344ad3fc9d677ea5857c621de0ccd7ed07b56f3cbc74bbcb01c98dfe66c5a",
+    "overlayFileName": "enum-overlays.v0.json",
+    "overlaySha256": "67a528394c8bc7a3ba88e63c658903df01a3d46683e23eeabf343acfa01417d8"
+  },
+  "enums": [
+    {
+      "name": "DamageStageType",
+      "flags": false,
+      "comment": "伤害管线阶段类型，策划按此枚举配置管线执行顺序",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Immune",
+          "value": 1,
+          "alias": "免疫判定",
+          "comment": null
+        },
+        {
+          "name": "Evasion",
+          "value": 2,
+          "alias": "闪避判定",
+          "comment": null
+        },
+        {
+          "name": "Critical",
+          "value": 3,
+          "alias": "暴击判定",
+          "comment": null
+        },
+        {
+          "name": "Defense",
+          "value": 5,
+          "alias": "攻防计算",
+          "comment": null
+        },
+        {
+          "name": "Block",
+          "value": 6,
+          "alias": "格挡判定",
+          "comment": null
+        },
+        {
+          "name": "Anomaly",
+          "value": 7,
+          "alias": "异常判定",
+          "comment": null
+        },
+        {
+          "name": "TriggerDamageSkill",
+          "value": 8,
+          "alias": "造成伤害时触发技能",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EBuffApplyTarget",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Target",
+          "value": 0,
+          "alias": "当前效果目标",
+          "comment": null
+        },
+        {
+          "name": "Caster",
+          "value": 1,
+          "alias": "施法者",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ECardUseType",
+      "flags": false,
+      "comment": "卡牌使用类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "AutoApply",
+          "value": 1,
+          "alias": "选择后自动生效",
+          "comment": null
+        },
+        {
+          "name": "AddToBag",
+          "value": 2,
+          "alias": "选择后放入背包",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ECompareType",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Equal",
+          "value": 0,
+          "alias": "等于",
+          "comment": null
+        },
+        {
+          "name": "Greater",
+          "value": 1,
+          "alias": "大于",
+          "comment": null
+        },
+        {
+          "name": "Less",
+          "value": 2,
+          "alias": "小于",
+          "comment": null
+        },
+        {
+          "name": "GreaterOrEqual",
+          "value": 3,
+          "alias": "大于等于",
+          "comment": null
+        },
+        {
+          "name": "LessOrEqual",
+          "value": 4,
+          "alias": "小于等于",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EConditionType",
+      "flags": false,
+      "comment": "条件类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": "无效条件"
+        },
+        {
+          "name": "PropertyCompare",
+          "value": 1,
+          "alias": "属性比较",
+          "comment": "属性比较 Param: [numericType, compareOp, value(EN4), sourceUnit]"
+        },
+        {
+          "name": "HasBuff",
+          "value": 2,
+          "alias": "拥有Buff",
+          "comment": "拥有Buff Param: [buffId, sourceUnit]"
+        },
+        {
+          "name": "HasRestrict",
+          "value": 3,
+          "alias": "拥有限制",
+          "comment": "拥有限制 Param: [restrictFlag, sourceUnit]"
+        },
+        {
+          "name": "IsUnitType",
+          "value": 4,
+          "alias": "单位类型",
+          "comment": "单位类型 Param: [unitTypeMask, sourceUnit]"
+        },
+        {
+          "name": "IsTeamRelation",
+          "value": 5,
+          "alias": "阵营关系",
+          "comment": "阵营关系 Param: [relationType, sourceUnit]"
+        },
+        {
+          "name": "Probability",
+          "value": 6,
+          "alias": "概率判定",
+          "comment": "概率判定 Param: [probability(万分比)]"
+        },
+        {
+          "name": "DistanceCompare",
+          "value": 7,
+          "alias": "距离比较",
+          "comment": "距离比较 Param: [compareOp, distance(EN4)]"
+        },
+        {
+          "name": "HasFlagLabel",
+          "value": 8,
+          "alias": "拥有标签",
+          "comment": "拥有标签 Param: [flagLabel, sourceUnit]"
+        },
+        {
+          "name": "IsAlive",
+          "value": 9,
+          "alias": "存活检查",
+          "comment": "存活检查 Param: [sourceUnit]"
+        },
+        {
+          "name": "HasSearchTarget",
+          "value": 10,
+          "alias": "搜索目标存在",
+          "comment": "搜索目标存在 Param: [searchTargetId]"
+        },
+        {
+          "name": "TryMarkHit",
+          "value": 11,
+          "alias": "尝试标记命中",
+          "comment": "尝试标记命中（首次返回true，已标记返回false）。Param: [sourceUnit, resetPhaseId]"
+        }
+      ]
+    },
+    {
+      "name": "EffectActionType",
+      "flags": false,
+      "comment": "效果操作类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "ChangePropertyReal",
+          "value": 2,
+          "alias": "实时属性改变",
+          "comment": "比如：当前血量、当前蓝量，改变时会判定上限，最小0"
+        },
+        {
+          "name": "Healing",
+          "value": 3,
+          "alias": "治疗",
+          "comment": "攻击力百分比+固定值"
+        },
+        {
+          "name": "Damage",
+          "value": 4,
+          "alias": "伤害",
+          "comment": "攻击力百分比+固定值"
+        },
+        {
+          "name": "AddBuff",
+          "value": 5,
+          "alias": "添加Buff",
+          "comment": "参数：[0]Buff ID,[1]作用对象（0=当前效果目标，1=施法者）"
+        },
+        {
+          "name": "RemoveBuff",
+          "value": 6,
+          "alias": "移除Buff",
+          "comment": "参数：[0]Buff ID,[1]作用对象（0=当前效果目标，1=施法者）"
+        },
+        {
+          "name": "AddRestrict",
+          "value": 7,
+          "alias": "添加限制",
+          "comment": null
+        },
+        {
+          "name": "RemoveRestrict",
+          "value": 8,
+          "alias": "移除限制",
+          "comment": null
+        },
+        {
+          "name": "AddProperty",
+          "value": 9,
+          "alias": "增加属性",
+          "comment": "增加子属性的值"
+        },
+        {
+          "name": "SubProperty",
+          "value": 10,
+          "alias": "降低属性",
+          "comment": "降低子属性的值"
+        },
+        {
+          "name": "SummonUnit",
+          "value": 11,
+          "alias": "召唤单位",
+          "comment": null
+        },
+        {
+          "name": "SummonRandom",
+          "value": 12,
+          "alias": "随机召唤",
+          "comment": null
+        },
+        {
+          "name": "KillUnit",
+          "value": 13,
+          "alias": "杀死单位",
+          "comment": "param[0]: 1=杀死自己, 2=杀死目标"
+        },
+        {
+          "name": "Research",
+          "value": 14,
+          "alias": "重新索敌",
+          "comment": "以0索敌，执行1效果组"
+        },
+        {
+          "name": "ConditionBranch",
+          "value": 15,
+          "alias": "条件分支",
+          "comment": "判定条件id0，通过执行1效果组，否则执行2效果组"
+        },
+        {
+          "name": "ConditionGroupBranch",
+          "value": 16,
+          "alias": "条件组分支",
+          "comment": "判定条件组id0，判定类型（全部满足还是任意满足）1，通过执行2效果组，否则执行3效果组"
+        },
+        {
+          "name": "AddBulletTarget",
+          "value": 17,
+          "alias": "跟随目标子弹",
+          "comment": "跟随目标直到命中"
+        },
+        {
+          "name": "AddBulletPosition",
+          "value": 18,
+          "alias": "目标位置子弹",
+          "comment": "朝指定位置发射子弹"
+        },
+        {
+          "name": "AddBulletDirection",
+          "value": 19,
+          "alias": "固定朝向子弹",
+          "comment": "朝指定的方向发射子弹。一次直线索敌再根据距离判定命中 适用于飞行速度快的子弹"
+        },
+        {
+          "name": "AddBulletDirection2",
+          "value": 20,
+          "alias": "固定朝向子弹2",
+          "comment": "朝指定的方向发射子弹。实时碰撞检测，适用于飞行速度慢的子弹"
+        },
+        {
+          "name": "AddHeightBuff",
+          "value": 21,
+          "alias": "添加高度Buff",
+          "comment": "以高度为层数添加BUFF。参数：[0]Buff ID,[1]作用对象（0=当前效果目标，1=施法者）"
+        },
+        {
+          "name": "AddBulletAround",
+          "value": 22,
+          "alias": "全方位发射子弹",
+          "comment": "发射一轮固定扇区子弹。参数：[0]子弹ID,[1-3]xyz偏移,[4]发射数量,[5]起始角度(度),[6]散布弧度(度,0=全环),[7]前后错位步长(EN4,可选)。碰撞半径读取Bullet表，盒体偏移固定为0"
+        },
+        {
+          "name": "SummonAutoTrap",
+          "value": 23,
+          "alias": "召唤自动陷阱",
+          "comment": "召唤陷阱自动行为。参数：[0]trap_id,[1-3]offset_xyz"
+        },
+        {
+          "name": "ChainDamage",
+          "value": 24,
+          "alias": "链式传递",
+          "comment": "链式传递：param=[0]弹射层数,[1]搜索ID,[2]衰减万分比,[3]效果组ID,[4]弹射间隔ms(可选,0=同帧),[5]每目标传播数量(可选,默认1)"
+        },
+        {
+          "name": "AnomalySettlement",
+          "value": 25,
+          "alias": "异常结算",
+          "comment": "异常效果。参数：[0]异常值枚举id,[1]消耗量(EN4,-1=全部消耗)了,[2]效果组ID"
+        },
+        {
+          "name": "AddBulletDirectionToTarget",
+          "value": 26,
+          "alias": "目标方向子弹",
+          "comment": "从施法者向目标方向发射子弹。实时碰撞检测穿透沿途敌人，固定飞行距离。参数：[0]子弹ID,[1-3]xyz偏移,[4]Y轴角度偏移,[5]飞行距离(EN4,可选)"
+        },
+        {
+          "name": "AddFlagLabel",
+          "value": 27,
+          "alias": "添加标签",
+          "comment": "添加普通标签。参数：[0]标签ID,[1]数量"
+        },
+        {
+          "name": "RemoveFlagLabel",
+          "value": 28,
+          "alias": "移除标签",
+          "comment": "移除普通标签。参数：[0]标签ID,[1]数量"
+        },
+        {
+          "name": "BlinkToTarget",
+          "value": 29,
+          "alias": "闪现到目标",
+          "comment": "施法者闪现到目标单位身边。若为敌人，配合条件分支加攻速Buff后自动攻击"
+        },
+        {
+          "name": "Knockback",
+          "value": 30,
+          "alias": "击退",
+          "comment": "击退目标。参数：[0]方向类型(EKnockbackDirection,默认0=远离施法者,1=拉近,2=施法者朝向,3=固定世界方向),[1]距离(EN4,默认1.5单位),[2]Y轴角度(度,仅方向3时使用)"
+        },
+        {
+          "name": "AddSkillData",
+          "value": 31,
+          "alias": "增加当前技能数据值",
+          "comment": "增加当前技能数据值。参数：[0]key,[1]value(EN4)"
+        },
+        {
+          "name": "SubSkillData",
+          "value": 32,
+          "alias": "减少当前技能数据值",
+          "comment": "减少当前技能数据值。参数：[0]key,[1]value(EN4)"
+        },
+        {
+          "name": "AddSkillDataBySkill",
+          "value": 33,
+          "alias": "增加指定技能数据值",
+          "comment": "增加指定技能数据值。参数：[0]skillConfigId,[1]key,[2]value(EN4)"
+        },
+        {
+          "name": "SubSkillDataBySkill",
+          "value": 34,
+          "alias": "减少指定技能数据值",
+          "comment": "减少指定技能数据值。参数：[0]skillConfigId,[1]key,[2]value(EN4)"
+        },
+        {
+          "name": "DistanceScaledDamage",
+          "value": 35,
+          "alias": "距离缩放伤害",
+          "comment": "按距离施法者远近线性缩放伤害。参数：[0]伤害管线ID,[1]攻击类型(NumericType),[2]最近距离(EN4,伤害最低),[3]最远距离(EN4,伤害最高),[4]最低伤害(EN4),[5]最高伤害(EN4)"
+        },
+        {
+          "name": "ReboundDamage",
+          "value": 36,
+          "alias": "反弹伤害",
+          "comment": "反弹伤害：以最近一次受到的伤害为基数按百分比造成伤害。参数：[0]伤害管线ID,[1]伤害类型(NumericType),[2]反弹百分比(万分比,1000=10%)"
+        },
+        {
+          "name": "AddSkill",
+          "value": 37,
+          "alias": "增加技能",
+          "comment": "增加技能。参数：[0]技能id"
+        },
+        {
+          "name": "ClearHitMarks",
+          "value": 38,
+          "alias": "清除命中标记",
+          "comment": "清除 HitOnceComponent 所有命中记录，进入下一Phase。Param: [sourceUnit]"
+        },
+        {
+          "name": "ShareHostility",
+          "value": 40,
+          "alias": "共享仇恨",
+          "comment": "把施法者的运行时临时敌对（谁激怒了我）共享给目标/范围内同阵营。参数：[0]共享半径(米,0=只给target不给范围),[1]目标筛选(0=只给target,1=范围+target)"
+        },
+        {
+          "name": "AddMaxPropertyWithCurrent",
+          "value": 41,
+          "alias": "增加上限并同步当前值",
+          "comment": "参数为上限属性或其子属性、数值(EN4)的成对列表；仅支持存在当前属性(编号=上限-1000)的类型，当前值随实际上限变化量等量变化并限制在新上限内"
+        },
+        {
+          "name": "SubMaxPropertyWithCurrent",
+          "value": 42,
+          "alias": "降低上限并同步当前值",
+          "comment": "参数同 AddMaxPropertyWithCurrent；上限降低时按原当前值/原上限的比例计算新当前值；Buff 移除时用于反向执行"
+        }
+      ]
+    },
+    {
+      "name": "EffectKillTarget",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Owner",
+          "value": 1,
+          "alias": "施法者",
+          "comment": null
+        },
+        {
+          "name": "Target",
+          "value": 2,
+          "alias": "目标",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EffectSourceUnit",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Owner",
+          "value": 0,
+          "alias": "施法者",
+          "comment": null
+        },
+        {
+          "name": "Target",
+          "value": 1,
+          "alias": "目标",
+          "comment": null
+        },
+        {
+          "name": "Carrier",
+          "value": 2,
+          "alias": "载体",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EGroupCompletedType",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "无",
+          "comment": null
+        },
+        {
+          "name": "All",
+          "value": 1,
+          "alias": "满足所有条件",
+          "comment": null
+        },
+        {
+          "name": "Any",
+          "value": 2,
+          "alias": "满足任一条件",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EInitialCardState",
+      "flags": false,
+      "comment": "卡牌初始状态",
+      "values": [
+        {
+          "name": "InPool",
+          "value": 0,
+          "alias": "卡池中",
+          "comment": null
+        },
+        {
+          "name": "NotInPool",
+          "value": 1,
+          "alias": "不在卡池",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EInventoryItemType",
+      "flags": false,
+      "comment": "背包物品大类",
+      "values": [
+        {
+          "name": "Consumable",
+          "value": 0,
+          "alias": "消耗品",
+          "comment": null
+        },
+        {
+          "name": "Material",
+          "value": 1,
+          "alias": "材料",
+          "comment": null
+        },
+        {
+          "name": "Quest",
+          "value": 2,
+          "alias": "任务道具",
+          "comment": null
+        },
+        {
+          "name": "Equipment",
+          "value": 3,
+          "alias": "装备",
+          "comment": null
+        },
+        {
+          "name": "Rune",
+          "value": 4,
+          "alias": "符文",
+          "comment": null
+        },
+        {
+          "name": "Other",
+          "value": 5,
+          "alias": "其他",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EKnockbackDirection",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "AwayFromCaster",
+          "value": 0,
+          "alias": "远离施法者",
+          "comment": null
+        },
+        {
+          "name": "TowardCaster",
+          "value": 1,
+          "alias": "朝向施法者",
+          "comment": null
+        },
+        {
+          "name": "CasterForward",
+          "value": 2,
+          "alias": "施法者前方",
+          "comment": null
+        },
+        {
+          "name": "FixedWorldDirection",
+          "value": 3,
+          "alias": "固定世界方向",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EPlayerAssetType",
+      "flags": false,
+      "comment": "玩家资产类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Currency",
+          "value": 1,
+          "alias": "货币",
+          "comment": null
+        },
+        {
+          "name": "Hero",
+          "value": 2,
+          "alias": "英雄解锁",
+          "comment": null
+        },
+        {
+          "name": "HeroFragment",
+          "value": 3,
+          "alias": "英雄碎片",
+          "comment": null
+        },
+        {
+          "name": "Equip",
+          "value": 4,
+          "alias": "装备",
+          "comment": null
+        },
+        {
+          "name": "BraveExp",
+          "value": 5,
+          "alias": "勇者经验",
+          "comment": null
+        },
+        {
+          "name": "BraveSkin",
+          "value": 6,
+          "alias": "勇者皮肤",
+          "comment": null
+        },
+        {
+          "name": "HeroSkin",
+          "value": 7,
+          "alias": "英雄皮肤",
+          "comment": null
+        },
+        {
+          "name": "RecruitExp",
+          "value": 8,
+          "alias": "招募经验",
+          "comment": null
+        },
+        {
+          "name": "Item",
+          "value": 9,
+          "alias": "通用道具",
+          "comment": null
+        },
+        {
+          "name": "SoldierFragment",
+          "value": 10,
+          "alias": "士兵碎片",
+          "comment": null
+        },
+        {
+          "name": "EquipmentSlotFragment",
+          "value": 11,
+          "alias": "装备槽位碎片",
+          "comment": null
+        },
+        {
+          "name": "Vehicle",
+          "value": 12,
+          "alias": "坐骑解锁",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EProfession",
+      "flags": false,
+      "comment": "职业类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Warrior",
+          "value": 1,
+          "alias": "战士",
+          "comment": null
+        },
+        {
+          "name": "Mage",
+          "value": 2,
+          "alias": "法师",
+          "comment": null
+        },
+        {
+          "name": "Archer",
+          "value": 3,
+          "alias": "弓箭手",
+          "comment": null
+        },
+        {
+          "name": "Priest",
+          "value": 4,
+          "alias": "牧师",
+          "comment": null
+        },
+        {
+          "name": "Knight",
+          "value": 5,
+          "alias": "骑士",
+          "comment": null
+        },
+        {
+          "name": "Assassin",
+          "value": 6,
+          "alias": "刺客",
+          "comment": null
+        },
+        {
+          "name": "Warlock",
+          "value": 7,
+          "alias": "术士",
+          "comment": null
+        },
+        {
+          "name": "Auxiliary",
+          "value": 8,
+          "alias": "辅助",
+          "comment": null
+        },
+        {
+          "name": "Tank",
+          "value": 9,
+          "alias": "坦克",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ESearchTargetPriority",
+      "flags": false,
+      "comment": "索敌优先级",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "无",
+          "comment": null
+        },
+        {
+          "name": "MinDistance",
+          "value": 1,
+          "alias": "最近距离",
+          "comment": null
+        },
+        {
+          "name": "MaxDistance",
+          "value": 2,
+          "alias": "最远距离",
+          "comment": null
+        },
+        {
+          "name": "Random",
+          "value": 3,
+          "alias": "随机",
+          "comment": null
+        },
+        {
+          "name": "MaxCoverage",
+          "value": 4,
+          "alias": "单位锚定覆盖评分",
+          "comment": null
+        },
+        {
+          "name": "LowestHpPct",
+          "value": 5,
+          "alias": "HP百分比最低",
+          "comment": null
+        },
+        {
+          "name": "HighestThreatScore",
+          "value": 6,
+          "alias": "现有属性评分威胁",
+          "comment": null
+        },
+        {
+          "name": "Warrior",
+          "value": 7,
+          "alias": "战士",
+          "comment": null
+        },
+        {
+          "name": "Mage",
+          "value": 8,
+          "alias": "法师",
+          "comment": null
+        },
+        {
+          "name": "Archer",
+          "value": 9,
+          "alias": "弓箭手",
+          "comment": null
+        },
+        {
+          "name": "Priest",
+          "value": 10,
+          "alias": "牧师",
+          "comment": null
+        },
+        {
+          "name": "Knight",
+          "value": 11,
+          "alias": "骑士",
+          "comment": null
+        },
+        {
+          "name": "Assassin",
+          "value": 12,
+          "alias": "刺客",
+          "comment": null
+        },
+        {
+          "name": "Warlock",
+          "value": 13,
+          "alias": "术士",
+          "comment": null
+        },
+        {
+          "name": "Auxiliary",
+          "value": 14,
+          "alias": "辅助",
+          "comment": null
+        },
+        {
+          "name": "Tank",
+          "value": 15,
+          "alias": "坦克",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ESearchTargetShape",
+      "flags": false,
+      "comment": "索敌形状",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Circle",
+          "value": 1,
+          "alias": "圆形",
+          "comment": null
+        },
+        {
+          "name": "Sector",
+          "value": 2,
+          "alias": "扇形",
+          "comment": null
+        },
+        {
+          "name": "Rectangle",
+          "value": 3,
+          "alias": "矩形",
+          "comment": null
+        },
+        {
+          "name": "Cross",
+          "value": 4,
+          "alias": "十字",
+          "comment": null
+        },
+        {
+          "name": "Line",
+          "value": 5,
+          "alias": "直线",
+          "comment": null
+        },
+        {
+          "name": "All",
+          "value": 6,
+          "alias": "全体",
+          "comment": null
+        },
+        {
+          "name": "Ring",
+          "value": 7,
+          "alias": "环形",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ESearchTargetTeam",
+      "flags": false,
+      "comment": "索敌类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Self",
+          "value": 1,
+          "alias": "自己",
+          "comment": null
+        },
+        {
+          "name": "Friend",
+          "value": 2,
+          "alias": "友方含自己",
+          "comment": null
+        },
+        {
+          "name": "FriendExcludeSelf",
+          "value": 3,
+          "alias": "友方不含自己",
+          "comment": null
+        },
+        {
+          "name": "Enemy",
+          "value": 4,
+          "alias": "敌方队伍",
+          "comment": null
+        },
+        {
+          "name": "Counter",
+          "value": 6,
+          "alias": "反击",
+          "comment": null
+        },
+        {
+          "name": "All",
+          "value": 7,
+          "alias": "全体",
+          "comment": null
+        },
+        {
+          "name": "Global",
+          "value": 8,
+          "alias": "全局",
+          "comment": null
+        },
+        {
+          "name": "FriendTeam",
+          "value": 9,
+          "alias": "友方全局",
+          "comment": null
+        },
+        {
+          "name": "EnemyTeam",
+          "value": 10,
+          "alias": "敌方全局",
+          "comment": null
+        },
+        {
+          "name": "OwnerPlayer",
+          "value": 11,
+          "alias": "所属玩家",
+          "comment": null
+        },
+        {
+          "name": "AITarget",
+          "value": 12,
+          "alias": "AI目标",
+          "comment": null
+        },
+        {
+          "name": "FlowTarget",
+          "value": 13,
+          "alias": "传递的目标",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ESkillType",
+      "flags": false,
+      "comment": "技能类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "无类型",
+          "comment": null
+        },
+        {
+          "name": "Normal",
+          "value": 1,
+          "alias": "普通攻击",
+          "comment": null
+        },
+        {
+          "name": "Manual",
+          "value": 2,
+          "alias": "手动技能",
+          "comment": null
+        },
+        {
+          "name": "Dead",
+          "value": 3,
+          "alias": "死亡技能",
+          "comment": null
+        },
+        {
+          "name": "Counter",
+          "value": 4,
+          "alias": "反击技能",
+          "comment": null
+        },
+        {
+          "name": "Auto",
+          "value": 5,
+          "alias": "自动释放技能",
+          "comment": null
+        },
+        {
+          "name": "Placement",
+          "value": 6,
+          "alias": "放置技能",
+          "comment": null
+        },
+        {
+          "name": "Passive",
+          "value": 7,
+          "alias": "被动技能",
+          "comment": null
+        },
+        {
+          "name": "Damage",
+          "value": 8,
+          "alias": "造成伤害时触发技能",
+          "comment": null
+        },
+        {
+          "name": "OnKill",
+          "value": 9,
+          "alias": "击杀时触发技能",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EUnitKind",
+      "flags": false,
+      "comment": "单位种类",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Ground",
+          "value": 1,
+          "alias": "地面单位",
+          "comment": null
+        },
+        {
+          "name": "Air",
+          "value": 2,
+          "alias": "空中单位",
+          "comment": null
+        },
+        {
+          "name": "Siege",
+          "value": 3,
+          "alias": "攻城单位",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EUnitType",
+      "flags": true,
+      "comment": "实体类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Hero",
+          "value": 1,
+          "alias": "英雄",
+          "comment": null
+        },
+        {
+          "name": "Block",
+          "value": 2,
+          "alias": "地块",
+          "comment": null
+        },
+        {
+          "name": "Building",
+          "value": 4,
+          "alias": "建筑",
+          "comment": null
+        },
+        {
+          "name": "Soldier",
+          "value": 8,
+          "alias": "士兵",
+          "comment": null
+        },
+        {
+          "name": "Item",
+          "value": 16,
+          "alias": "物品",
+          "comment": null
+        },
+        {
+          "name": "Bullet",
+          "value": 32,
+          "alias": "子弹",
+          "comment": null
+        },
+        {
+          "name": "Global",
+          "value": 64,
+          "alias": "全局",
+          "comment": null
+        },
+        {
+          "name": "Team",
+          "value": 128,
+          "alias": "队伍",
+          "comment": null
+        },
+        {
+          "name": "Player",
+          "value": 256,
+          "alias": "玩家",
+          "comment": null
+        },
+        {
+          "name": "Trap",
+          "value": 512,
+          "alias": "陷阱",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EUnlockCardAction",
+      "flags": false,
+      "comment": "解锁后行为",
+      "values": [
+        {
+          "name": "AddToPool",
+          "value": 0,
+          "alias": "加入卡池",
+          "comment": null
+        },
+        {
+          "name": "AutoUse",
+          "value": 1,
+          "alias": "直接生效",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EUnlockCardCondition",
+      "flags": false,
+      "comment": "解锁条件",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Level",
+          "value": 1,
+          "alias": "到达等级",
+          "comment": null
+        },
+        {
+          "name": "Card",
+          "value": 2,
+          "alias": "已拥有前置卡牌",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EWeaponSlot",
+      "flags": false,
+      "comment": "武器装备位置",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Ring",
+          "value": 1,
+          "alias": "指环",
+          "comment": null
+        },
+        {
+          "name": "Bracer",
+          "value": 2,
+          "alias": "护腕",
+          "comment": null
+        },
+        {
+          "name": "Shoulder",
+          "value": 3,
+          "alias": "肩",
+          "comment": null
+        },
+        {
+          "name": "Necklace",
+          "value": 4,
+          "alias": "项链",
+          "comment": null
+        },
+        {
+          "name": "Mask",
+          "value": 5,
+          "alias": "面具",
+          "comment": null
+        },
+        {
+          "name": "BackAccessory",
+          "value": 6,
+          "alias": "背饰",
+          "comment": null
+        },
+        {
+          "name": "Weapon",
+          "value": 7,
+          "alias": "武器",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "FightMode",
+      "flags": false,
+      "comment": "战斗模式",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "PVE",
+          "value": 1,
+          "alias": "玩家和电脑",
+          "comment": null
+        },
+        {
+          "name": "PVP",
+          "value": 2,
+          "alias": "玩家和玩家",
+          "comment": null
+        },
+        {
+          "name": "HeroAITest",
+          "value": 3,
+          "alias": "英雄AI测试",
+          "comment": null
+        },
+        {
+          "name": "Lobby",
+          "value": 4,
+          "alias": "大厅",
+          "comment": null
+        },
+        {
+          "name": "TowerDefense",
+          "value": 5,
+          "alias": "塔防",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "FlagLabel",
+      "flags": false,
+      "comment": "普通标签",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Count1",
+          "value": 1,
+          "alias": "数量1",
+          "comment": null
+        },
+        {
+          "name": "Count2",
+          "value": 2,
+          "alias": "数量2",
+          "comment": null
+        },
+        {
+          "name": "Count3",
+          "value": 3,
+          "alias": "数量3",
+          "comment": null
+        },
+        {
+          "name": "Count4",
+          "value": 4,
+          "alias": "数量4",
+          "comment": null
+        },
+        {
+          "name": "Count5",
+          "value": 5,
+          "alias": "数量5",
+          "comment": null
+        },
+        {
+          "name": "CritKill",
+          "value": 6,
+          "alias": "暴击击杀标记",
+          "comment": null
+        },
+        {
+          "name": "Stealth",
+          "value": 7,
+          "alias": "隐身",
+          "comment": null
+        },
+        {
+          "name": "Corpse",
+          "value": 8,
+          "alias": "尸体",
+          "comment": null
+        },
+        {
+          "name": "Alive",
+          "value": 10,
+          "alias": "活着",
+          "comment": null
+        },
+        {
+          "name": "Reviving",
+          "value": 9,
+          "alias": "正在复活",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "FlagRestrict",
+      "flags": true,
+      "comment": "禁止标签",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "NotMove",
+          "value": 1,
+          "alias": "禁止移动",
+          "comment": null
+        },
+        {
+          "name": "NotAttack",
+          "value": 2,
+          "alias": "禁止普通技能",
+          "comment": null
+        },
+        {
+          "name": "NotManual",
+          "value": 4,
+          "alias": "禁止手动技能",
+          "comment": null
+        },
+        {
+          "name": "NotAIAlert",
+          "value": 8,
+          "alias": "禁止AI警戒",
+          "comment": null
+        },
+        {
+          "name": "NotRotate",
+          "value": 16,
+          "alias": "禁止旋转",
+          "comment": null
+        },
+        {
+          "name": "NotProduct",
+          "value": 32,
+          "alias": "禁止生产",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "LockStepMode",
+      "flags": false,
+      "comment": "帧同步模式",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "ObserverFile",
+          "value": 1,
+          "alias": "本地文件",
+          "comment": null
+        },
+        {
+          "name": "ObserverReport",
+          "value": 2,
+          "alias": "在线战报",
+          "comment": null
+        },
+        {
+          "name": "Local",
+          "value": 3,
+          "alias": "本地单机",
+          "comment": null
+        },
+        {
+          "name": "Server",
+          "value": 4,
+          "alias": "多人联网",
+          "comment": null
+        },
+        {
+          "name": "Observer",
+          "value": 5,
+          "alias": "在线观战",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "NumericType",
+      "flags": false,
+      "comment": "属性类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Hp",
+          "value": 1,
+          "alias": "血量",
+          "comment": null
+        },
+        {
+          "name": "Mp",
+          "value": 2,
+          "alias": "蓝量",
+          "comment": null
+        },
+        {
+          "name": "Armor",
+          "value": 34,
+          "alias": "护甲",
+          "comment": null
+        },
+        {
+          "name": "Gold",
+          "value": 100,
+          "alias": "金币",
+          "comment": null
+        },
+        {
+          "name": "Silver",
+          "value": 104,
+          "alias": "银币",
+          "comment": null
+        },
+        {
+          "name": "Wood",
+          "value": 101,
+          "alias": "木材",
+          "comment": null
+        },
+        {
+          "name": "Population",
+          "value": 102,
+          "alias": "人口",
+          "comment": null
+        },
+        {
+          "name": "MagicValue",
+          "value": 103,
+          "alias": "魔力",
+          "comment": null
+        },
+        {
+          "name": "AddNormalTargetCount",
+          "value": 501,
+          "alias": "增加普攻目标",
+          "comment": null
+        },
+        {
+          "name": "GuaranteedCrit",
+          "value": 1000001,
+          "alias": "必定暴击",
+          "comment": null
+        },
+        {
+          "name": "DamageBonus",
+          "value": 1000002,
+          "alias": "额外伤害加成",
+          "comment": null
+        },
+        {
+          "name": "BuffDurationIncrease",
+          "value": 1000003,
+          "alias": "额外buff时间",
+          "comment": null
+        },
+        {
+          "name": "Probability",
+          "value": 1000004,
+          "alias": "额外技能概率",
+          "comment": null
+        },
+        {
+          "name": "SkillRangeScale",
+          "value": 1000005,
+          "alias": "额外技能范围缩放",
+          "comment": null
+        },
+        {
+          "name": "AddTargetCount",
+          "value": 1000006,
+          "alias": "增加目标",
+          "comment": null
+        },
+        {
+          "name": "SpecialMax",
+          "value": 500,
+          "alias": "分隔特殊约定属性",
+          "comment": "分隔特殊约定属性 1~499区间内的属性加1000对应他的最大值属性"
+        },
+        {
+          "name": "Max",
+          "value": 10000,
+          "alias": "分隔父子属性",
+          "comment": "分隔父子属性 10000~99999区间内的属性变化时都要更新其父属性"
+        },
+        {
+          "name": "MaxHp",
+          "value": 1001,
+          "alias": "生命值",
+          "comment": null
+        },
+        {
+          "name": "MaxHpBase",
+          "value": 10011,
+          "alias": "生命值B",
+          "comment": null
+        },
+        {
+          "name": "MaxHpBaseAdd",
+          "value": 10012,
+          "alias": "生命值BD",
+          "comment": null
+        },
+        {
+          "name": "MaxHpBasePct",
+          "value": 10013,
+          "alias": "生命值BP",
+          "comment": null
+        },
+        {
+          "name": "MaxHpFinalAdd",
+          "value": 10014,
+          "alias": "生命值FD",
+          "comment": null
+        },
+        {
+          "name": "MaxHpFinalPct",
+          "value": 10015,
+          "alias": "生命值FP",
+          "comment": null
+        },
+        {
+          "name": "MaxMp",
+          "value": 1002,
+          "alias": "魔法值",
+          "comment": null
+        },
+        {
+          "name": "MaxMpBase",
+          "value": 10021,
+          "alias": "魔法值B",
+          "comment": null
+        },
+        {
+          "name": "MaxMpBaseAdd",
+          "value": 10022,
+          "alias": "魔法值BD",
+          "comment": null
+        },
+        {
+          "name": "MaxMpBasePct",
+          "value": 10023,
+          "alias": "魔法值BP",
+          "comment": null
+        },
+        {
+          "name": "MaxMpFinalAdd",
+          "value": 10024,
+          "alias": "魔法值FD",
+          "comment": null
+        },
+        {
+          "name": "MaxMpFinalPct",
+          "value": 10025,
+          "alias": "魔法值FP",
+          "comment": null
+        },
+        {
+          "name": "Atk",
+          "value": 1003,
+          "alias": "攻击力",
+          "comment": null
+        },
+        {
+          "name": "AtkBase",
+          "value": 10031,
+          "alias": "攻击力B",
+          "comment": null
+        },
+        {
+          "name": "AtkBaseAdd",
+          "value": 10032,
+          "alias": "攻击力BD",
+          "comment": null
+        },
+        {
+          "name": "AtkBasePct",
+          "value": 10033,
+          "alias": "攻击力BP",
+          "comment": null
+        },
+        {
+          "name": "AtkFinalAdd",
+          "value": 10034,
+          "alias": "攻击力FD",
+          "comment": null
+        },
+        {
+          "name": "AtkFinalPct",
+          "value": 10035,
+          "alias": "攻击力FP",
+          "comment": null
+        },
+        {
+          "name": "Def",
+          "value": 1004,
+          "alias": "防御力",
+          "comment": null
+        },
+        {
+          "name": "DefBase",
+          "value": 10041,
+          "alias": "防御力B",
+          "comment": null
+        },
+        {
+          "name": "DefBaseAdd",
+          "value": 10042,
+          "alias": "防御力BD",
+          "comment": null
+        },
+        {
+          "name": "DefBasePct",
+          "value": 10043,
+          "alias": "防御力BP",
+          "comment": null
+        },
+        {
+          "name": "DefFinalAdd",
+          "value": 10044,
+          "alias": "防御力FD",
+          "comment": null
+        },
+        {
+          "name": "DefFinalPct",
+          "value": 10045,
+          "alias": "防御力FP",
+          "comment": null
+        },
+        {
+          "name": "Speed",
+          "value": 1005,
+          "alias": "速度",
+          "comment": null
+        },
+        {
+          "name": "SpeedBase",
+          "value": 10051,
+          "alias": "速度B",
+          "comment": null
+        },
+        {
+          "name": "SpeedBaseAdd",
+          "value": 10052,
+          "alias": "速度BD",
+          "comment": null
+        },
+        {
+          "name": "SpeedBasePct",
+          "value": 10053,
+          "alias": "速度BP",
+          "comment": null
+        },
+        {
+          "name": "SpeedFinalAdd",
+          "value": 10054,
+          "alias": "速度FD",
+          "comment": null
+        },
+        {
+          "name": "SpeedFinalPct",
+          "value": 10055,
+          "alias": "速度FP",
+          "comment": null
+        },
+        {
+          "name": "AOI",
+          "value": 1006,
+          "alias": "AOI值",
+          "comment": null
+        },
+        {
+          "name": "AOIBase",
+          "value": 10061,
+          "alias": "AOI值B",
+          "comment": null
+        },
+        {
+          "name": "AOIBaseAdd",
+          "value": 10062,
+          "alias": "AOI值BD",
+          "comment": null
+        },
+        {
+          "name": "AOIBasePct",
+          "value": 10063,
+          "alias": "AOI值BP",
+          "comment": null
+        },
+        {
+          "name": "AOIFinalAdd",
+          "value": 10064,
+          "alias": "AOI值FD",
+          "comment": null
+        },
+        {
+          "name": "AOIFinalPct",
+          "value": 10065,
+          "alias": "AOI值FP",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeed",
+          "value": 1007,
+          "alias": "攻速",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeedBase",
+          "value": 10071,
+          "alias": "攻速B",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeedBaseAdd",
+          "value": 10072,
+          "alias": "攻速BD",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeedBasePct",
+          "value": 10073,
+          "alias": "攻速BP",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeedFinalAdd",
+          "value": 10074,
+          "alias": "攻速FD",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeedFinalPct",
+          "value": 10075,
+          "alias": "攻速FP",
+          "comment": null
+        },
+        {
+          "name": "AtkRange",
+          "value": 1008,
+          "alias": "攻击距离",
+          "comment": null
+        },
+        {
+          "name": "AtkRangeBase",
+          "value": 10081,
+          "alias": "攻击距离B",
+          "comment": null
+        },
+        {
+          "name": "AtkRangeBaseAdd",
+          "value": 10082,
+          "alias": "攻击距离BD",
+          "comment": null
+        },
+        {
+          "name": "AtkRangeBasePct",
+          "value": 10083,
+          "alias": "攻击距离BP",
+          "comment": null
+        },
+        {
+          "name": "AtkRangeFinalAdd",
+          "value": 10084,
+          "alias": "攻击距离FD",
+          "comment": null
+        },
+        {
+          "name": "AtkRangeFinalPct",
+          "value": 10085,
+          "alias": "攻击距离FP",
+          "comment": null
+        },
+        {
+          "name": "CriticalRate",
+          "value": 1009,
+          "alias": "暴击率",
+          "comment": null
+        },
+        {
+          "name": "CriticalRateBase",
+          "value": 10091,
+          "alias": "暴击率B",
+          "comment": null
+        },
+        {
+          "name": "CriticalRateBaseAdd",
+          "value": 10092,
+          "alias": "暴击率BD",
+          "comment": null
+        },
+        {
+          "name": "CriticalRateBasePct",
+          "value": 10093,
+          "alias": "暴击率BP",
+          "comment": null
+        },
+        {
+          "name": "CriticalRateFinalAdd",
+          "value": 10094,
+          "alias": "暴击率FD",
+          "comment": null
+        },
+        {
+          "name": "CriticalRateFinalPct",
+          "value": 10095,
+          "alias": "暴击率FP",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercent",
+          "value": 1010,
+          "alias": "暴击伤害比例",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercentBase",
+          "value": 10101,
+          "alias": "暴击伤害比例B",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercentBaseAdd",
+          "value": 10102,
+          "alias": "暴击伤害比例BD",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercentBasePct",
+          "value": 10103,
+          "alias": "暴击伤害比例BP",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercentFinalAdd",
+          "value": 10104,
+          "alias": "暴击伤害比例FD",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercentFinalPct",
+          "value": 10105,
+          "alias": "暴击伤害比例FP",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercent",
+          "value": 1011,
+          "alias": "反弹伤害比例",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercentBaseRate",
+          "value": 10111,
+          "alias": "反弹伤害比例B",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercentBaseAddRate",
+          "value": 10112,
+          "alias": "反弹伤害比例BD",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercentBasePctRate",
+          "value": 10113,
+          "alias": "反弹伤害比例BP",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercentFinalAddRate",
+          "value": 10114,
+          "alias": "反弹伤害比例FD",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercentFinalPctRate",
+          "value": 10115,
+          "alias": "反弹伤害比例FP",
+          "comment": null
+        },
+        {
+          "name": "BlockRate",
+          "value": 1012,
+          "alias": "格挡率",
+          "comment": null
+        },
+        {
+          "name": "BlockRateBase",
+          "value": 10121,
+          "alias": "格挡率B",
+          "comment": null
+        },
+        {
+          "name": "BlockRateBaseAdd",
+          "value": 10122,
+          "alias": "格挡率BD",
+          "comment": null
+        },
+        {
+          "name": "BlockRateBasePct",
+          "value": 10123,
+          "alias": "格挡率BP",
+          "comment": null
+        },
+        {
+          "name": "BlockRateFinalAdd",
+          "value": 10124,
+          "alias": "格挡率FD",
+          "comment": null
+        },
+        {
+          "name": "BlockRateFinalPct",
+          "value": 10125,
+          "alias": "格挡率FP",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercent",
+          "value": 1013,
+          "alias": "格挡伤害比例",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercentBase",
+          "value": 10131,
+          "alias": "格挡伤害比例B",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercentBaseAdd",
+          "value": 10132,
+          "alias": "格挡伤害比例BD",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercentBasePct",
+          "value": 10133,
+          "alias": "格挡伤害比例BP",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercentFinalAdd",
+          "value": 10134,
+          "alias": "格挡伤害比例FD",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercentFinalPct",
+          "value": 10135,
+          "alias": "格挡伤害比例FP",
+          "comment": null
+        },
+        {
+          "name": "EvasionRate",
+          "value": 1014,
+          "alias": "闪避率",
+          "comment": null
+        },
+        {
+          "name": "EvasionRateBase",
+          "value": 10141,
+          "alias": "闪避率B",
+          "comment": null
+        },
+        {
+          "name": "EvasionRateBaseAdd",
+          "value": 10142,
+          "alias": "闪避率BD",
+          "comment": null
+        },
+        {
+          "name": "EvasionRateBasePct",
+          "value": 10143,
+          "alias": "闪避率BP",
+          "comment": null
+        },
+        {
+          "name": "EvasionRateFinalAdd",
+          "value": 10144,
+          "alias": "闪避率FD",
+          "comment": null
+        },
+        {
+          "name": "EvasionRateFinalPct",
+          "value": 10145,
+          "alias": "闪避率FP",
+          "comment": null
+        },
+        {
+          "name": "CounterRate",
+          "value": 1015,
+          "alias": "反击率",
+          "comment": null
+        },
+        {
+          "name": "CounterRateBase",
+          "value": 10151,
+          "alias": "反击率B",
+          "comment": null
+        },
+        {
+          "name": "CounterRateBaseAdd",
+          "value": 10152,
+          "alias": "反击率BD",
+          "comment": null
+        },
+        {
+          "name": "CounterRateBasePct",
+          "value": 10153,
+          "alias": "反击率BP",
+          "comment": null
+        },
+        {
+          "name": "CounterRateFinalAdd",
+          "value": 10154,
+          "alias": "反击率FD",
+          "comment": null
+        },
+        {
+          "name": "CounterRateFinalPct",
+          "value": 10155,
+          "alias": "反击率FP",
+          "comment": null
+        },
+        {
+          "name": "HitRate",
+          "value": 1016,
+          "alias": "命中率",
+          "comment": null
+        },
+        {
+          "name": "HitRateBase",
+          "value": 10161,
+          "alias": "命中率B",
+          "comment": null
+        },
+        {
+          "name": "HitRateBaseAdd",
+          "value": 10162,
+          "alias": "命中率BD",
+          "comment": null
+        },
+        {
+          "name": "HitRateBasePct",
+          "value": 10163,
+          "alias": "命中率BP",
+          "comment": null
+        },
+        {
+          "name": "HitRateFinalAdd",
+          "value": 10164,
+          "alias": "命中率FD",
+          "comment": null
+        },
+        {
+          "name": "HitRateFinalPct",
+          "value": 10165,
+          "alias": "命中率FP",
+          "comment": null
+        },
+        {
+          "name": "FrostDamage",
+          "value": 1017,
+          "alias": "冰冻伤害",
+          "comment": null
+        },
+        {
+          "name": "FrostDamageBase",
+          "value": 10171,
+          "alias": "冰冻伤害B",
+          "comment": null
+        },
+        {
+          "name": "FrostDamageBaseAdd",
+          "value": 10172,
+          "alias": "冰冻伤害BD",
+          "comment": null
+        },
+        {
+          "name": "FrostDamageBasePct",
+          "value": 10173,
+          "alias": "冰冻伤害BP",
+          "comment": null
+        },
+        {
+          "name": "FrostDamageFinalAdd",
+          "value": 10174,
+          "alias": "冰冻伤害FD",
+          "comment": null
+        },
+        {
+          "name": "FrostDamageFinalPct",
+          "value": 10175,
+          "alias": "冰冻伤害FP",
+          "comment": null
+        },
+        {
+          "name": "FrostResist",
+          "value": 1025,
+          "alias": "冰冻抗性",
+          "comment": null
+        },
+        {
+          "name": "FrostResistBase",
+          "value": 10251,
+          "alias": "冰冻抗性B",
+          "comment": null
+        },
+        {
+          "name": "FrostResistBaseAdd",
+          "value": 10252,
+          "alias": "冰冻抗性BD",
+          "comment": null
+        },
+        {
+          "name": "FrostResistBasePct",
+          "value": 10253,
+          "alias": "冰冻抗性BP",
+          "comment": null
+        },
+        {
+          "name": "FrostResistFinalAdd",
+          "value": 10254,
+          "alias": "冰冻抗性FD",
+          "comment": null
+        },
+        {
+          "name": "FrostResistFinalPct",
+          "value": 10255,
+          "alias": "冰冻抗性FP",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamage",
+          "value": 1018,
+          "alias": "毒素伤害",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamageBase",
+          "value": 10181,
+          "alias": "毒素伤害B",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamageBaseAdd",
+          "value": 10182,
+          "alias": "毒素伤害BD",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamageBasePct",
+          "value": 10183,
+          "alias": "毒素伤害BP",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamageFinalAdd",
+          "value": 10184,
+          "alias": "毒素伤害FD",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamageFinalPct",
+          "value": 10185,
+          "alias": "毒素伤害FP",
+          "comment": null
+        },
+        {
+          "name": "PoisonResist",
+          "value": 1026,
+          "alias": "毒素抗性",
+          "comment": null
+        },
+        {
+          "name": "PoisonResistBase",
+          "value": 10261,
+          "alias": "毒素抗性B",
+          "comment": null
+        },
+        {
+          "name": "PoisonResistBaseAdd",
+          "value": 10262,
+          "alias": "毒素抗性BD",
+          "comment": null
+        },
+        {
+          "name": "PoisonResistBasePct",
+          "value": 10263,
+          "alias": "毒素抗性BP",
+          "comment": null
+        },
+        {
+          "name": "PoisonResistFinalAdd",
+          "value": 10264,
+          "alias": "毒素抗性FD",
+          "comment": null
+        },
+        {
+          "name": "PoisonResistFinalPct",
+          "value": 10265,
+          "alias": "毒素抗性FP",
+          "comment": null
+        },
+        {
+          "name": "FireDamage",
+          "value": 1019,
+          "alias": "火焰伤害",
+          "comment": null
+        },
+        {
+          "name": "FireDamageBase",
+          "value": 10191,
+          "alias": "火焰伤害B",
+          "comment": null
+        },
+        {
+          "name": "FireDamageBaseAdd",
+          "value": 10192,
+          "alias": "火焰伤害BD",
+          "comment": null
+        },
+        {
+          "name": "FireDamageBasePct",
+          "value": 10193,
+          "alias": "火焰伤害BP",
+          "comment": null
+        },
+        {
+          "name": "FireDamageFinalAdd",
+          "value": 10194,
+          "alias": "火焰伤害FD",
+          "comment": null
+        },
+        {
+          "name": "FireDamageFinalPct",
+          "value": 10195,
+          "alias": "火焰伤害FP",
+          "comment": null
+        },
+        {
+          "name": "FireResist",
+          "value": 1027,
+          "alias": "火焰抗性",
+          "comment": null
+        },
+        {
+          "name": "FireResistBase",
+          "value": 10271,
+          "alias": "火焰抗性B",
+          "comment": null
+        },
+        {
+          "name": "FireResistBaseAdd",
+          "value": 10272,
+          "alias": "火焰抗性BD",
+          "comment": null
+        },
+        {
+          "name": "FireResistBasePct",
+          "value": 10273,
+          "alias": "火焰抗性BP",
+          "comment": null
+        },
+        {
+          "name": "FireResistFinalAdd",
+          "value": 10274,
+          "alias": "火焰抗性FD",
+          "comment": null
+        },
+        {
+          "name": "FireResistFinalPct",
+          "value": 10275,
+          "alias": "火焰抗性FP",
+          "comment": null
+        },
+        {
+          "name": "LightningDamage",
+          "value": 1020,
+          "alias": "雷电伤害",
+          "comment": null
+        },
+        {
+          "name": "LightningDamageBase",
+          "value": 10201,
+          "alias": "雷电伤害B",
+          "comment": null
+        },
+        {
+          "name": "LightningDamageBaseAdd",
+          "value": 10202,
+          "alias": "雷电伤害BD",
+          "comment": null
+        },
+        {
+          "name": "LightningDamageBasePct",
+          "value": 10203,
+          "alias": "雷电伤害BP",
+          "comment": null
+        },
+        {
+          "name": "LightningDamageFinalAdd",
+          "value": 10204,
+          "alias": "雷电伤害FD",
+          "comment": null
+        },
+        {
+          "name": "LightningDamageFinalPct",
+          "value": 10205,
+          "alias": "雷电伤害FP",
+          "comment": null
+        },
+        {
+          "name": "LightningResist",
+          "value": 1028,
+          "alias": "雷电抗性",
+          "comment": null
+        },
+        {
+          "name": "LightningResistBase",
+          "value": 10281,
+          "alias": "雷电抗性B",
+          "comment": null
+        },
+        {
+          "name": "LightningResistBaseAdd",
+          "value": 10282,
+          "alias": "雷电抗性BD",
+          "comment": null
+        },
+        {
+          "name": "LightningResistBasePct",
+          "value": 10283,
+          "alias": "雷电抗性BP",
+          "comment": null
+        },
+        {
+          "name": "LightningResistFinalAdd",
+          "value": 10284,
+          "alias": "雷电抗性FD",
+          "comment": null
+        },
+        {
+          "name": "LightningResistFinalPct",
+          "value": 10285,
+          "alias": "雷电抗性FP",
+          "comment": null
+        },
+        {
+          "name": "DarkDamage",
+          "value": 1021,
+          "alias": "暗黑伤害",
+          "comment": null
+        },
+        {
+          "name": "DarkDamageBase",
+          "value": 10211,
+          "alias": "暗黑伤害B",
+          "comment": null
+        },
+        {
+          "name": "DarkDamageBaseAdd",
+          "value": 10212,
+          "alias": "暗黑伤害BD",
+          "comment": null
+        },
+        {
+          "name": "DarkDamageBasePct",
+          "value": 10213,
+          "alias": "暗黑伤害BP",
+          "comment": null
+        },
+        {
+          "name": "DarkDamageFinalAdd",
+          "value": 10214,
+          "alias": "暗黑伤害FD",
+          "comment": null
+        },
+        {
+          "name": "DarkDamageFinalPct",
+          "value": 10215,
+          "alias": "暗黑伤害FP",
+          "comment": null
+        },
+        {
+          "name": "DarkResist",
+          "value": 1029,
+          "alias": "暗黑抗性",
+          "comment": null
+        },
+        {
+          "name": "DarkResistBase",
+          "value": 10291,
+          "alias": "暗黑抗性B",
+          "comment": null
+        },
+        {
+          "name": "DarkResistBaseAdd",
+          "value": 10292,
+          "alias": "暗黑抗性BD",
+          "comment": null
+        },
+        {
+          "name": "DarkResistBasePct",
+          "value": 10293,
+          "alias": "暗黑抗性BP",
+          "comment": null
+        },
+        {
+          "name": "DarkResistFinalAdd",
+          "value": 10294,
+          "alias": "暗黑抗性FD",
+          "comment": null
+        },
+        {
+          "name": "DarkResistFinalPct",
+          "value": 10295,
+          "alias": "暗黑抗性FP",
+          "comment": null
+        },
+        {
+          "name": "HolyDamage",
+          "value": 1022,
+          "alias": "光明伤害",
+          "comment": null
+        },
+        {
+          "name": "HolyDamageBase",
+          "value": 10221,
+          "alias": "光明伤害B",
+          "comment": null
+        },
+        {
+          "name": "HolyDamageBaseAdd",
+          "value": 10222,
+          "alias": "光明伤害BD",
+          "comment": null
+        },
+        {
+          "name": "HolyDamageBasePct",
+          "value": 10223,
+          "alias": "光明伤害BP",
+          "comment": null
+        },
+        {
+          "name": "HolyDamageFinalAdd",
+          "value": 10224,
+          "alias": "光明伤害FD",
+          "comment": null
+        },
+        {
+          "name": "HolyDamageFinalPct",
+          "value": 10225,
+          "alias": "光明伤害FP",
+          "comment": null
+        },
+        {
+          "name": "HolyResist",
+          "value": 1030,
+          "alias": "光明抗性",
+          "comment": null
+        },
+        {
+          "name": "HolyResistBase",
+          "value": 10301,
+          "alias": "光明抗性B",
+          "comment": null
+        },
+        {
+          "name": "HolyResistBaseAdd",
+          "value": 10302,
+          "alias": "光明抗性BD",
+          "comment": null
+        },
+        {
+          "name": "HolyResistBasePct",
+          "value": 10303,
+          "alias": "光明抗性BP",
+          "comment": null
+        },
+        {
+          "name": "HolyResistFinalAdd",
+          "value": 10304,
+          "alias": "光明抗性FD",
+          "comment": null
+        },
+        {
+          "name": "HolyResistFinalPct",
+          "value": 10305,
+          "alias": "光明抗性FP",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamage",
+          "value": 1023,
+          "alias": "混沌伤害",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamageBase",
+          "value": 10231,
+          "alias": "混沌伤害B",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamageBaseAdd",
+          "value": 10232,
+          "alias": "混沌伤害BD",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamageBasePct",
+          "value": 10233,
+          "alias": "混沌伤害BP",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamageFinalAdd",
+          "value": 10234,
+          "alias": "混沌伤害FD",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamageFinalPct",
+          "value": 10235,
+          "alias": "混沌伤害FP",
+          "comment": null
+        },
+        {
+          "name": "ChaosResist",
+          "value": 1031,
+          "alias": "混沌抗性",
+          "comment": null
+        },
+        {
+          "name": "ChaosResistBase",
+          "value": 10311,
+          "alias": "混沌抗性B",
+          "comment": null
+        },
+        {
+          "name": "ChaosResistBaseAdd",
+          "value": 10312,
+          "alias": "混沌抗性BD",
+          "comment": null
+        },
+        {
+          "name": "ChaosResistBasePct",
+          "value": 10313,
+          "alias": "混沌抗性BP",
+          "comment": null
+        },
+        {
+          "name": "ChaosResistFinalAdd",
+          "value": 10314,
+          "alias": "混沌抗性FD",
+          "comment": null
+        },
+        {
+          "name": "ChaosResistFinalPct",
+          "value": 10315,
+          "alias": "混沌抗性FP",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamage",
+          "value": 1024,
+          "alias": "攻城伤害",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamageBase",
+          "value": 10241,
+          "alias": "攻城伤害B",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamageBaseAdd",
+          "value": 10242,
+          "alias": "攻城伤害BD",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamageBasePct",
+          "value": 10243,
+          "alias": "攻城伤害BP",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamageFinalAdd",
+          "value": 10244,
+          "alias": "攻城伤害FD",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamageFinalPct",
+          "value": 10245,
+          "alias": "攻城伤害FP",
+          "comment": null
+        },
+        {
+          "name": "SiegeResist",
+          "value": 1032,
+          "alias": "攻城抗性",
+          "comment": null
+        },
+        {
+          "name": "SiegeResistBase",
+          "value": 10321,
+          "alias": "攻城抗性B",
+          "comment": null
+        },
+        {
+          "name": "SiegeResistBaseAdd",
+          "value": 10322,
+          "alias": "攻城抗性BD",
+          "comment": null
+        },
+        {
+          "name": "SiegeResistBasePct",
+          "value": 10323,
+          "alias": "攻城抗性BP",
+          "comment": null
+        },
+        {
+          "name": "SiegeResistFinalAdd",
+          "value": 10324,
+          "alias": "攻城抗性FD",
+          "comment": null
+        },
+        {
+          "name": "SiegeResistFinalPct",
+          "value": 10325,
+          "alias": "攻城抗性FP",
+          "comment": null
+        },
+        {
+          "name": "SenseRange",
+          "value": 1033,
+          "alias": "感知范围",
+          "comment": null
+        },
+        {
+          "name": "SenseRangeBase",
+          "value": 10331,
+          "alias": "感知范围B",
+          "comment": null
+        },
+        {
+          "name": "SenseRangeBaseAdd",
+          "value": 10332,
+          "alias": "感知范围BD",
+          "comment": null
+        },
+        {
+          "name": "SenseRangeBasePct",
+          "value": 10333,
+          "alias": "感知范围BP",
+          "comment": null
+        },
+        {
+          "name": "SenseRangeFinalAdd",
+          "value": 10334,
+          "alias": "感知范围FD",
+          "comment": null
+        },
+        {
+          "name": "SenseRangeFinalPct",
+          "value": 10335,
+          "alias": "感知范围FP",
+          "comment": null
+        },
+        {
+          "name": "SenseAngle",
+          "value": 1035,
+          "alias": "感知角度",
+          "comment": null
+        },
+        {
+          "name": "SenseAngleBase",
+          "value": 10351,
+          "alias": "感知角度B",
+          "comment": null
+        },
+        {
+          "name": "SenseAngleBaseAdd",
+          "value": 10352,
+          "alias": "感知角度BD",
+          "comment": null
+        },
+        {
+          "name": "SenseAngleBasePct",
+          "value": 10353,
+          "alias": "感知角度BP",
+          "comment": null
+        },
+        {
+          "name": "SenseAngleFinalAdd",
+          "value": 10354,
+          "alias": "感知角度FD",
+          "comment": null
+        },
+        {
+          "name": "SenseAngleFinalPct",
+          "value": 10355,
+          "alias": "感知角度FP",
+          "comment": null
+        },
+        {
+          "name": "MaxArmor",
+          "value": 1034,
+          "alias": "护盾值",
+          "comment": null
+        },
+        {
+          "name": "MaxArmorBase",
+          "value": 10341,
+          "alias": "护盾值B",
+          "comment": null
+        },
+        {
+          "name": "MaxArmorBaseAdd",
+          "value": 10342,
+          "alias": "护盾值BD",
+          "comment": null
+        },
+        {
+          "name": "MaxArmorBasePct",
+          "value": 10343,
+          "alias": "护盾值BP",
+          "comment": null
+        },
+        {
+          "name": "MaxArmorFinalAdd",
+          "value": 10344,
+          "alias": "护盾值FD",
+          "comment": null
+        },
+        {
+          "name": "MaxArmorFinalPct",
+          "value": 10345,
+          "alias": "护盾值FP",
+          "comment": null
+        },
+        {
+          "name": "FrostImmuneProb",
+          "value": 601,
+          "alias": "冰冻免疫概率",
+          "comment": null
+        },
+        {
+          "name": "PoisonImmuneProb",
+          "value": 602,
+          "alias": "毒素免疫概率",
+          "comment": null
+        },
+        {
+          "name": "FireImmuneProb",
+          "value": 603,
+          "alias": "火焰免疫概率",
+          "comment": null
+        },
+        {
+          "name": "LightningImmuneProb",
+          "value": 604,
+          "alias": "雷电免疫概率",
+          "comment": null
+        },
+        {
+          "name": "DarkImmuneProb",
+          "value": 605,
+          "alias": "暗黑免疫概率",
+          "comment": null
+        },
+        {
+          "name": "HolyImmuneProb",
+          "value": 606,
+          "alias": "光明免疫概率",
+          "comment": null
+        },
+        {
+          "name": "ChaosImmuneProb",
+          "value": 607,
+          "alias": "混沌免疫概率",
+          "comment": null
+        },
+        {
+          "name": "SiegeImmuneProb",
+          "value": 608,
+          "alias": "攻城免疫概率",
+          "comment": null
+        },
+        {
+          "name": "FrostAnomalyValue",
+          "value": 801,
+          "alias": "冰冻异常值",
+          "comment": null
+        },
+        {
+          "name": "PoisonAnomalyValue",
+          "value": 802,
+          "alias": "毒素异常值",
+          "comment": null
+        },
+        {
+          "name": "FireAnomalyValue",
+          "value": 803,
+          "alias": "火焰异常值",
+          "comment": null
+        },
+        {
+          "name": "LightningAnomalyValue",
+          "value": 804,
+          "alias": "雷电异常值",
+          "comment": null
+        },
+        {
+          "name": "DarkAnomalyValue",
+          "value": 805,
+          "alias": "暗黑异常值",
+          "comment": null
+        },
+        {
+          "name": "HolyAnomalyValue",
+          "value": 806,
+          "alias": "光明异常值",
+          "comment": null
+        },
+        {
+          "name": "ChaosAnomalyValue",
+          "value": 807,
+          "alias": "混沌异常值",
+          "comment": null
+        },
+        {
+          "name": "SiegeAnomalyValue",
+          "value": 808,
+          "alias": "攻城异常值",
+          "comment": null
+        },
+        {
+          "name": "MaxGold",
+          "value": 1100,
+          "alias": "金币上限",
+          "comment": null
+        },
+        {
+          "name": "MaxGoldBase",
+          "value": 11001,
+          "alias": "金币上限B",
+          "comment": null
+        },
+        {
+          "name": "MaxGoldBaseAdd",
+          "value": 11002,
+          "alias": "金币上限BD",
+          "comment": null
+        },
+        {
+          "name": "MaxGoldBasePct",
+          "value": 11003,
+          "alias": "金币上限BP",
+          "comment": null
+        },
+        {
+          "name": "MaxGoldFinalAdd",
+          "value": 11004,
+          "alias": "金币上限FD",
+          "comment": null
+        },
+        {
+          "name": "MaxGoldFinalPct",
+          "value": 11005,
+          "alias": "金币上限FP",
+          "comment": null
+        },
+        {
+          "name": "MaxSilver",
+          "value": 1104,
+          "alias": "银币上限",
+          "comment": null
+        },
+        {
+          "name": "MaxSilverBase",
+          "value": 11041,
+          "alias": "银币上限B",
+          "comment": null
+        },
+        {
+          "name": "MaxSilverBaseAdd",
+          "value": 11042,
+          "alias": "银币上限BD",
+          "comment": null
+        },
+        {
+          "name": "MaxSilverBasePct",
+          "value": 11043,
+          "alias": "银币上限BP",
+          "comment": null
+        },
+        {
+          "name": "MaxSilverFinalAdd",
+          "value": 11044,
+          "alias": "银币上限FD",
+          "comment": null
+        },
+        {
+          "name": "MaxSilverFinalPct",
+          "value": 11045,
+          "alias": "银币上限FP",
+          "comment": null
+        },
+        {
+          "name": "MaxWood",
+          "value": 1101,
+          "alias": "木材上限",
+          "comment": null
+        },
+        {
+          "name": "MaxWoodBase",
+          "value": 11011,
+          "alias": "木材上限B",
+          "comment": null
+        },
+        {
+          "name": "MaxWoodBaseAdd",
+          "value": 11012,
+          "alias": "木材上限BD",
+          "comment": null
+        },
+        {
+          "name": "MaxWoodBasePct",
+          "value": 11013,
+          "alias": "木材上限BP",
+          "comment": null
+        },
+        {
+          "name": "MaxWoodFinalAdd",
+          "value": 11014,
+          "alias": "木材上限FD",
+          "comment": null
+        },
+        {
+          "name": "MaxWoodFinalPct",
+          "value": 11015,
+          "alias": "木材上限FP",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulation",
+          "value": 1102,
+          "alias": "人口上限",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulationBase",
+          "value": 11021,
+          "alias": "人口上限B",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulationBaseAdd",
+          "value": 11022,
+          "alias": "人口上限BD",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulationBasePct",
+          "value": 11023,
+          "alias": "人口上限BP",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulationFinalAdd",
+          "value": 11024,
+          "alias": "人口上限FD",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulationFinalPct",
+          "value": 11025,
+          "alias": "人口上限FP",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValue",
+          "value": 1103,
+          "alias": "魔法值上限",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValueBase",
+          "value": 11031,
+          "alias": "魔法值上限B",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValueBaseAdd",
+          "value": 11032,
+          "alias": "魔法值上限BD",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValueBasePct",
+          "value": 11033,
+          "alias": "魔法值上限BP",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValueFinalAdd",
+          "value": 11034,
+          "alias": "魔法值上限FD",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValueFinalPct",
+          "value": 11035,
+          "alias": "魔法值上限FP",
+          "comment": null
+        },
+        {
+          "name": "SpellPower",
+          "value": 1105,
+          "alias": "法术强度",
+          "comment": null
+        },
+        {
+          "name": "SpellPowerBase",
+          "value": 11051,
+          "alias": "法术强度B",
+          "comment": null
+        },
+        {
+          "name": "SpellPowerAdd",
+          "value": 11052,
+          "alias": "法术强度BD",
+          "comment": null
+        },
+        {
+          "name": "SpellPowerBasePct",
+          "value": 11053,
+          "alias": "法术强度BP",
+          "comment": null
+        },
+        {
+          "name": "MSpellPowerFinalAdd",
+          "value": 11054,
+          "alias": "法术强度上限FD",
+          "comment": null
+        },
+        {
+          "name": "SpellPowerFinalPct",
+          "value": 11055,
+          "alias": "法术强度限FP",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ShareHostilityMode",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Target",
+          "value": 0,
+          "alias": "仅当前目标",
+          "comment": null
+        },
+        {
+          "name": "TargetAndAlliesInRadius",
+          "value": 1,
+          "alias": "目标及范围内同阵营",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "TeamRelation",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Self",
+          "value": 0,
+          "alias": "自己",
+          "comment": null
+        },
+        {
+          "name": "Ally",
+          "value": 1,
+          "alias": "友方",
+          "comment": null
+        },
+        {
+          "name": "Enemy",
+          "value": 2,
+          "alias": "敌方",
+          "comment": null
+        },
+        {
+          "name": "Neutral",
+          "value": 3,
+          "alias": "中立",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "TeamType",
+      "flags": true,
+      "comment": "队伍类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "TeamA",
+          "value": 1,
+          "alias": "队伍A",
+          "comment": null
+        },
+        {
+          "name": "TeamB",
+          "value": 2,
+          "alias": "队伍B",
+          "comment": null
+        },
+        {
+          "name": "TeamNeutral",
+          "value": 4,
+          "alias": "中立",
+          "comment": "⚠名字有误导：这里的&quot;中立&quot;指【不结盟】而非【和平】。它是 PVE 敌对怪阵营——波次怪/塔防怪/大厅野怪都用它，对 TeamA/TeamB 双向敌对，击杀奖励也认它（DeathDropComponentSystem）。真正和平中立的是 TeamWild。改这个值会连带打瘫波次与掉落，别动"
+        },
+        {
+          "name": "TeamWild",
+          "value": 8,
+          "alias": "中立野兽(和平)",
+          "comment": "和平中立：不主动索敌，被打才还手。关系配在 Faction.xlsx"
+        },
+        {
+          "name": "TeamAnim",
+          "value": 2048,
+          "alias": "小动物",
+          "comment": "打不还手，不主动攻击"
+        },
+        {
+          "name": "TeamAiRenA",
+          "value": 16,
+          "alias": "矮人-铁石山脉",
+          "comment": null
+        },
+        {
+          "name": "TeamJingLingA",
+          "value": 32,
+          "alias": "精灵-永夜森林",
+          "comment": null
+        },
+        {
+          "name": "TeamRenLeiA",
+          "value": 64,
+          "alias": "人类-奥丹帝国",
+          "comment": null
+        },
+        {
+          "name": "TeamBanShouRenA",
+          "value": 128,
+          "alias": "半兽人-剃刀荒野",
+          "comment": null
+        },
+        {
+          "name": "TeamShouRenA",
+          "value": 256,
+          "alias": "兽人-追风草原",
+          "comment": null
+        },
+        {
+          "name": "TeamShouRenB",
+          "value": 512,
+          "alias": "兽人-莫尔丛林",
+          "comment": null
+        },
+        {
+          "name": "TeamBuSiZuA",
+          "value": 1024,
+          "alias": "不死族-丧钟山脉",
+          "comment": null
+        }
+      ]
+    }
+  ]
+}

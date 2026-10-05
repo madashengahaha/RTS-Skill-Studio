@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/contracts/capability-registry.schema.json",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Studio/contracts/capability-registry.schema.json",
   "title": "SkillCapabilityRegistry",
   "type": "object",
   "additionalProperties": false,

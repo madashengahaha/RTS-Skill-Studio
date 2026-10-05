@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/evals/golden-cases.schema.json",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Studio/evals/golden-cases.schema.json",
   "title": "SkillAgentGoldenCases",
   "type": "object",
   "additionalProperties": false,

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/contracts/authoring-patch.schema.json",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Studio/contracts/authoring-patch.schema.json",
   "title": "AuthoringPatch",
   "description": "Deterministic compiler output. Models and users may inspect this object but must not edit it.",
   "type": "object",

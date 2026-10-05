@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "config/capability-registry.v0.json",
-      "sha256": "5325bf058fe8d7c1e6bea7d5a3deccceae13626536a6a8cccb9f5292f9b93939"
+      "sha256": "46e35c9e6012c4144d590734bb6097981b3e9777749eb088c33aa4ec2f0b849d"
     },
     {
       "path": "config/default-mechanism-contract.v0.json",
@@ -35,23 +35,23 @@
     },
     {
       "path": "contracts/authoring-patch.schema.json",
-      "sha256": "8c699123dcc2b213aa07eb80e63628f2806d1df95b87592d33c34c1b537799f8"
+      "sha256": "e8c554b94ed2fae06c1065e715d45de1de82fa7d9ac159793803b33cf52d54ef"
     },
     {
       "path": "contracts/capability-registry.schema.json",
-      "sha256": "48c68acd49c6ebfcc099a8137d78c1d5d9ae312d8f9151711c38665a32899b0d"
+      "sha256": "2ed41f377ac3c123c5cf4f0321692030f45974117774f28e2943156e08dc7c27"
     },
     {
       "path": "contracts/read-only-results.schema.json",
-      "sha256": "0fa5253bd85c35ccf90b24a456c2c1aceda6649e34698ebf86e0d5706d787a56"
+      "sha256": "3535cbc0aba71f3aae6b826042c7d21e0764b4c02eddddff35dad3da0e730635"
     },
     {
       "path": "contracts/skill-config-plan.schema.json",
-      "sha256": "a1f3487bb42164d49463cb62a65b19e684734bdaaf9c202bf70ec840845491e0"
+      "sha256": "1e4f863b0ed99aa92935bdc3aa29e62800f6110206ff4837835378e2c26b6ef7"
     },
     {
       "path": "contracts/skill-graph.schema.json",
-      "sha256": "237a95f7943b85b0f8f5614f329eac5da794bc930e1533f89059b1ea95f1ab23"
+      "sha256": "f4b371b41c7d59a76a27e6d518e553c933d6de13ae0433b68ee344a7d1cc3f7a"
     },
     {
       "path": "evals/equivalence-rules.v0.json",
@@ -59,7 +59,7 @@
     },
     {
       "path": "evals/golden-cases.schema.json",
-      "sha256": "54cec309bd6da5e0b5096e70dd56b4e371d1852ebecb97e81c397e1225fcdf18"
+      "sha256": "eaa65783d05130aa885d819fb8f8b021d7037b9989e32b834dab39c741016acb"
     },
     {
       "path": "evals/golden-cases.v0.json",
@@ -78,5 +78,5 @@
       "sha256": "404d3989cf8344c6178599c28d62c991ac7229c9df5470f47e3101c702cd3f6a"
     }
   ],
-  "combinedSha256": "e387810e94c6d1944293bb0010e888e37f4f79b940e6b98434f2f7e9d9273e61"
+  "combinedSha256": "fcc27e6d102e73b92c813506cfc778ae8715040be91b895343594752ed83b5f8"
 }

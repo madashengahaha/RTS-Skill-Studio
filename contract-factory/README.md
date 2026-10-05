@@ -1,4 +1,4 @@
-# RTS Skill Agent
+# RTS Skill Studio Contract Factory
 
 Language-neutral contracts and evaluation fixtures for a controlled natural-language
 configuration agent. The agent proposes typed plans; deterministic server-side code

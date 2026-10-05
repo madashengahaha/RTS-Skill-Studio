@@ -7,7 +7,7 @@
 - Independent .NET 8 Studio solution.
 - Vendored TianshuDM Contract, Domain, Application, Excel, and SQLite projects.
 - Agent and local API host projects.
-- Contract synchronization from `../RTS-Skill-Agent`.
+- Node contract factory migrated into `contract-factory/`.
 - Source provenance for vendored code.
 
 ### Verified

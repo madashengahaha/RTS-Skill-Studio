@@ -474,7 +474,7 @@
   },
   "skillGraphSchema": {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/contracts/skill-graph.schema.json",
+    "$id": "https://github.com/madashengahaha/RTS-Skill-Studio/contracts/skill-graph.schema.json",
     "title": "ReadOnlySkillGraph",
     "description": "A deterministic, read-only snapshot of skill assets and their references.",
     "type": "object",

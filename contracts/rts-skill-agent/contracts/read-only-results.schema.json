@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/contracts/read-only-results.schema.json",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Studio/contracts/read-only-results.schema.json",
   "title": "ReadOnlyToolResults",
   "type": "object",
   "$defs": {

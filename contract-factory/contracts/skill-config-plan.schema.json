@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/contracts/skill-config-plan.schema.json",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Studio/contracts/skill-config-plan.schema.json",
   "title": "SkillConfigPlan",
   "description": "The only mutation proposal emitted by the agent. It contains intent, provenance, assumptions, and unresolved questions, but no field-address writes.",
   "type": "object",

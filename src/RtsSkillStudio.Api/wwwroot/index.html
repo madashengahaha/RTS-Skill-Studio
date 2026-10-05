@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RTS Skill Studio</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/vendor/lucide.min.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">RS</div>
+          <div>
+            <strong>RTS Skill Studio</strong>
+            <span>技能配置工作台</span>
+          </div>
+        </div>
+
+        <nav class="main-nav" aria-label="主导航">
+          <button class="nav-item is-active" type="button">
+            <i data-lucide="message-square"></i>
+            <span>技能会话</span>
+          </button>
+          <button class="nav-item" type="button" disabled>
+            <i data-lucide="git-branch"></i>
+            <span>技能图谱</span>
+          </button>
+          <button class="nav-item" type="button" disabled>
+            <i data-lucide="table-2"></i>
+            <span>Excel 差异</span>
+          </button>
+          <button class="nav-item" type="button" disabled>
+            <i data-lucide="history"></i>
+            <span>变更记录</span>
+          </button>
+        </nav>
+
+        <section class="side-section">
+          <div class="section-heading">
+            <span>模型</span>
+            <button id="refreshProviders" class="icon-button" type="button" title="刷新模型状态">
+              <i data-lucide="refresh-cw"></i>
+            </button>
+          </div>
+          <label class="field-label" for="providerSelect">Provider</label>
+          <select id="providerSelect" class="select-control" disabled>
+            <option>正在读取...</option>
+          </select>
+          <div id="providerStatus" class="status-row">
+            <span class="status-dot is-pending"></span>
+            <span>检查连接中</span>
+          </div>
+        </section>
+
+        <section class="skill-browser">
+          <div class="section-heading">
+            <span>技能</span>
+            <span id="skillCount" class="state-label">读取中</span>
+          </div>
+          <label class="skill-search">
+            <i data-lucide="search"></i>
+            <input id="skillSearch" type="search" placeholder="筛选技能" autocomplete="off" />
+          </label>
+          <div id="skillList" class="skill-list">
+            <div class="skill-empty">正在加载技能...</div>
+          </div>
+        </section>
+
+        <section class="side-section workspace-section">
+          <div class="section-heading">
+            <span>工作区</span>
+            <span id="workspaceState" class="state-label">未连接</span>
+          </div>
+          <div class="workspace-path" title="E:\VP\Unity\RTS_DR\Trunk\Unity\Assets\Config\Excel\Datas">
+            <span id="workspacePath">Unity/Assets/Config/Excel/Datas</span>
+            <span id="workspaceRevision"></span>
+          </div>
+        </section>
+      </aside>
+
+      <main class="conversation-pane">
+        <header class="pane-header">
+          <div>
+            <h1>技能配置</h1>
+            <p id="conversationSubtitle">自然语言输入，生成可校验的技能配置方案</p>
+          </div>
+          <div class="header-actions">
+            <button class="quiet-button" type="button" disabled>
+              <i data-lucide="panel-right"></i>
+              <span>检查器</span>
+            </button>
+          </div>
+        </header>
+
+        <section id="conversation" class="conversation" aria-live="polite">
+          <div id="emptyState" class="empty-state">
+            <div class="empty-icon"><i data-lucide="sparkles"></i></div>
+            <h2>尚无对话</h2>
+            <p>输入一个技能需求后，Agent 会在这里生成配置方案。</p>
+          </div>
+          <div id="messages" class="messages"></div>
+        </section>
+
+        <form id="composer" class="composer">
+          <textarea
+            id="messageInput"
+            rows="3"
+            placeholder="描述要创建或修改的技能..."
+            autocomplete="off"
+          ></textarea>
+          <div class="composer-footer">
+            <div id="sendHint" class="send-hint">Enter 发送，Shift + Enter 换行</div>
+            <button id="sendButton" class="send-button" type="submit">
+              <i data-lucide="send"></i>
+              <span>发送</span>
+            </button>
+          </div>
+        </form>
+      </main>
+
+      <aside class="inspector-pane">
+        <header class="inspector-header">
+          <h2>检查器</h2>
+          <span id="inspectorMeta">等待提案</span>
+        </header>
+        <div class="tabs" role="tablist">
+          <button class="tab is-active" type="button" data-tab="chain">执行链</button>
+          <button class="tab" type="button" data-tab="plan">Plan</button>
+          <button class="tab" type="button" data-tab="evidence">证据</button>
+        </div>
+        <section id="inspectorContent" class="inspector-content">
+          <div class="inspector-empty">
+            <i data-lucide="scan-search"></i>
+            <h3>没有可检查内容</h3>
+            <p>生成技能方案后，这里将显示链路、计划和校验证据。</p>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <div id="toast" class="toast" role="status"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -5,6 +5,7 @@ obj/
 node_modules/
 dist/
 coverage/
+.studio-work/
 *.user
 *.suo
 *.log

@@ -1,0 +1,20 @@
+{
+  "name": "rts-skill-agent",
+  "version": "0.2.2",
+  "private": true,
+  "type": "module",
+  "description": "Controlled natural-language configuration contracts and evaluation fixtures for RTS skills",
+  "scripts": {
+    "build:registry": "node tools/build-capability-registry.mjs",
+    "build:enums": "node tools/import-builtin-enums.mjs",
+    "verify:enums": "node tools/import-builtin-enums.mjs --check",
+    "verify:source": "node tools/build-capability-registry.mjs --check",
+    "validate": "node tools/validate-p0.mjs && node tools/validate-p1.mjs",
+    "eval:readonly": "node tools/evaluate-read-only.mjs",
+    "readonly": "node tools/read-only-cli.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

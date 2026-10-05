@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 0,
+  "contractVersion": "0.1.0",
+  "resultSchema": "contracts/read-only-results.schema.json",
+  "policy": {
+    "mutatesData": false,
+    "allowsWrites": false,
+    "allowsRawCellAccess": false,
+    "requiresEvidence": true,
+    "unresolvedNamesReturnCandidates": true
+  },
+  "tools": [
+    {
+      "name": "get_capability_context",
+      "purpose": "Return the relevant capability-registry slice without reading the full registry into model context.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "query": {"type": "string"},
+          "intent": {"type": "string"},
+          "actionKey": {"type": "string"},
+          "enum": {"type": "string"},
+          "enumValueLimit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "description": "Maximum values returned per enum."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "description": "Maximum results per category."
+          }
+        }
+      },
+      "outputSchema": {
+        "$ref": "read-only-results.schema.json#/$defs/CapabilityContext"
+      }
+    },
+    {
+      "name": "resolve_asset",
+      "purpose": "Resolve a stable namespace plus ID, or return all candidates for a display name.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["namespace"],
+        "properties": {
+          "namespace": {"type": "string", "minLength": 1},
+          "id": {"type": "integer"},
+          "name": {"type": "string", "minLength": 1},
+          "limit": {"type": "integer", "minimum": 1, "maximum": 500}
+        }
+      },
+      "outputSchema": {
+        "$ref": "read-only-results.schema.json#/$defs/AssetResolution"
+      }
+    },
+    {
+      "name": "get_graph",
+      "purpose": "Return a bounded graph projection around a root asset.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["root"],
+        "properties": {
+          "root": {"type": "string", "minLength": 1},
+          "depth": {"type": "integer", "minimum": 0, "maximum": 5},
+          "direction": {"enum": ["out", "in", "both"]},
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500,
+            "description": "Fallback for nodeLimit and edgeLimit."
+          },
+          "nodeLimit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "edgeLimit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          }
+        }
+      },
+      "outputSchema": {
+        "$ref": "read-only-results.schema.json#/$defs/GraphProjection"
+      }
+    },
+    {
+      "name": "search_similar_skills",
+      "purpose": "Rank existing skills by deterministic structural and semantic overlap.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["focus"],
+        "properties": {
+          "focus": {"type": "string", "minLength": 1},
+          "limit": {"type": "integer", "minimum": 1, "maximum": 500}
+        }
+      },
+      "outputSchema": {
+        "$ref": "read-only-results.schema.json#/$defs/SimilarSkillResults"
+      }
+    },
+    {
+      "name": "explain_execution_chain",
+      "purpose": "Return the observed execution chain with edge-level evidence and no invented steps.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["skill"],
+        "properties": {
+          "skill": {"type": "string", "minLength": 1},
+          "limit": {"type": "integer", "minimum": 1, "maximum": 500}
+        }
+      },
+      "outputSchema": {
+        "$ref": "read-only-results.schema.json#/$defs/ExecutionChainExplanation"
+      }
+    }
+  ]
+}

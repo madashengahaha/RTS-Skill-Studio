@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 0,
+  "graphVersion": "0.1.0",
+  "workspaceId": "sample-workspace",
+  "revision": "sample-r1",
+  "nodes": [
+    {
+      "key": "TbSkill:100101",
+      "namespace": "TbSkill",
+      "kind": "Skill",
+      "label": "Moonlight",
+      "attributes": {
+        "skill_type": "Auto",
+        "cd_time": 8000,
+        "duration": 3000
+      },
+      "semantic": {
+        "intents": ["PeriodicDamage"],
+        "mechanisms": ["BuffIntervalDamage"],
+        "tags": ["damage", "periodic"]
+      },
+      "editLock": null
+    },
+    {
+      "key": "TbSkill:100102",
+      "namespace": "TbSkill",
+      "kind": "Skill",
+      "label": "Moon Blade",
+      "attributes": {
+        "skill_type": "Manual",
+        "cd_time": 6000
+      },
+      "semantic": {
+        "intents": ["InstantDamage"],
+        "mechanisms": ["ImmediateDamage"],
+        "tags": ["damage", "single-target"]
+      },
+      "editLock": null
+    },
+    {
+      "key": "TbSkill:12340015",
+      "namespace": "TbSkill",
+      "kind": "Skill",
+      "label": "Common Attack",
+      "attributes": {
+        "skill_type": "Auto",
+        "cd_time": 1000
+      },
+      "semantic": {
+        "intents": ["InstantDamage"],
+        "mechanisms": ["ImmediateDamage"],
+        "tags": ["damage"]
+      },
+      "editLock": null
+    },
+    {
+      "key": "EffectGroup:10060011",
+      "namespace": "EffectGroup",
+      "kind": "EffectGroup",
+      "label": "Moonlight main effects",
+      "attributes": {
+        "group_id": 10060011
+      },
+      "semantic": {
+        "intents": [],
+        "mechanisms": [],
+        "tags": []
+      },
+      "editLock": null
+    },
+    {
+      "key": "EffectGroup:10060012",
+      "namespace": "EffectGroup",
+      "kind": "EffectGroup",
+      "label": "Moonlight interval effects",
+      "attributes": {
+        "group_id": 10060012
+      },
+      "semantic": {
+        "intents": ["PeriodicDamage"],
+        "mechanisms": ["BuffIntervalDamage"],
+        "tags": ["damage", "interval"]
+      },
+      "editLock": null
+    },
+    {
+      "key": "TbEffect:100600110",
+      "namespace": "TbEffect",
+      "kind": "Effect",
+      "label": "Apply Moonlight state",
+      "attributes": {
+        "action_type": "AddBuff",
+        "group_id": 10060011
+      },
+      "semantic": {
+        "intents": ["AddState"],
+        "mechanisms": ["AddBuff"],
+        "tags": ["buff"]
+      },
+      "editLock": null
+    },
+    {
+      "key": "TbEffect:100600120",
+      "namespace": "TbEffect",
+      "kind": "Effect",
+      "label": "Moonlight interval damage",
+      "attributes": {
+        "action_type": "Damage",
+        "group_id": 10060012
+      },
+      "semantic": {
+        "intents": ["PeriodicDamage"],
+        "mechanisms": ["ImmediateDamage"],
+        "tags": ["damage"]
+      },
+      "editLock": null
+    },
+    {
+      "key": "TbBuff:10010005",
+      "namespace": "TbBuff",
+      "kind": "Buff",
+      "label": "Moonlight Mark",
+      "attributes": {
+        "duration": 3000,
+        "interval": 1000,
+        "overlap_type": "Replace"
+      },
+      "semantic": {
+        "intents": ["AddState", "PeriodicDamage"],
+        "mechanisms": ["BuffIntervalDamage"],
+        "tags": ["shared-asset", "periodic"]
+      },
+      "editLock": {
+        "owner": "planner-a",
+        "acquiredAt": "2026-10-05T05:00:00Z"
+      }
+    },
+    {
+      "key": "TbDamagePipeline:1001",
+      "namespace": "TbDamagePipeline",
+      "kind": "DamagePipeline",
+      "label": "Default magic damage",
+      "attributes": {
+        "PipelineStage_param": ["Base", "Magic"]
+      },
+      "semantic": {
+        "intents": ["InstantDamage", "PeriodicDamage"],
+        "mechanisms": ["DamagePipeline"],
+        "tags": ["damage-pipeline"]
+      },
+      "editLock": null
+    },
+    {
+      "key": "TbSearch:10010000",
+      "namespace": "TbSearch",
+      "kind": "Search",
+      "label": "Enemy heroes",
+      "attributes": {
+        "team": "Enemy",
+        "type": "Hero",
+        "count": 1
+      },
+      "semantic": {
+        "intents": [],
+        "mechanisms": ["TargetSearch"],
+        "tags": ["enemy", "hero"]
+      },
+      "editLock": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "TbSkill:100101",
+      "to": "EffectGroup:10060011",
+      "field": "effect_group_id",
+      "source": {"kind": "Excel", "ref": "Skill.xlsx#100101.effect_group_id"}
+    },
+    {
+      "from": "TbSkill:100101",
+      "to": "TbSearch:10010000",
+      "field": "search_target",
+      "source": {"kind": "Excel", "ref": "Skill.xlsx#100101.search_target"}
+    },
+    {
+      "from": "EffectGroup:10060011",
+      "to": "TbEffect:100600110",
+      "field": "group_id",
+      "source": {"kind": "Excel", "ref": "Effect.xlsx#100600110.group_id"}
+    },
+    {
+      "from": "TbEffect:100600110",
+      "to": "TbBuff:10010005",
+      "field": "action_param",
+      "parameterIndex": 0,
+      "source": {"kind": "RuntimeBinding", "ref": "AddBuff.action_param[0]"}
+    },
+    {
+      "from": "TbBuff:10010005",
+      "to": "EffectGroup:10060012",
+      "field": "interval_effect",
+      "source": {"kind": "Excel", "ref": "Buff.xlsx#10010005.interval_effect"}
+    },
+    {
+      "from": "EffectGroup:10060012",
+      "to": "TbEffect:100600120",
+      "field": "group_id",
+      "source": {"kind": "Excel", "ref": "Effect.xlsx#100600120.group_id"}
+    },
+    {
+      "from": "TbEffect:100600120",
+      "to": "TbDamagePipeline:1001",
+      "field": "action_param",
+      "parameterIndex": 0,
+      "source": {"kind": "RuntimeBinding", "ref": "Damage.action_param[0]"}
+    },
+    {
+      "from": "TbSkill:100102",
+      "to": "TbSearch:10010000",
+      "field": "search_target",
+      "source": {"kind": "Excel", "ref": "Skill.xlsx#100102.search_target"}
+    }
+  ]
+}

@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 0,
+  "caseSetVersion": "0.1.0",
+  "graph": "examples/sample-skill-graph.json",
+  "cases": [
+    {
+      "id": "p1-001",
+      "category": "resolve-stable-id",
+      "tool": "resolve_asset",
+      "input": {
+        "namespace": "TbSkill",
+        "id": 100101
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Resolved"},
+        {"kind": "pathEquals", "path": "candidates[0].key", "equals": "TbSkill:100101"}
+      ]
+    },
+    {
+      "id": "p1-002",
+      "category": "resolve-ambiguous-name",
+      "tool": "resolve_asset",
+      "input": {
+        "namespace": "TbSkill",
+        "name": "Moon"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Candidates"},
+        {"kind": "pathArrayMinLength", "path": "candidates", "min": 2},
+        {"kind": "readOnlyFlag"}
+      ]
+    },
+    {
+      "id": "p1-003",
+      "category": "bounded-graph",
+      "tool": "get_graph",
+      "input": {
+        "root": "TbSkill:100101",
+        "depth": 1,
+        "direction": "out"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "pathArrayFieldContains", "path": "nodes", "field": "key", "value": "EffectGroup:10060011"},
+        {"kind": "pathArrayFieldContains", "path": "nodes", "field": "key", "value": "TbSearch:10010000"},
+        {"kind": "readOnlyFlag"}
+      ]
+    },
+    {
+      "id": "p1-004",
+      "category": "capability-context",
+      "tool": "get_capability_context",
+      "input": {
+        "query": "periodic damage"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "pathArrayFieldContains", "path": "intents", "field": "key", "value": "PeriodicDamage"},
+        {"kind": "readOnlyFlag"}
+      ]
+    },
+    {
+      "id": "p1-005",
+      "category": "similar-skill",
+      "tool": "search_similar_skills",
+      "input": {
+        "focus": "TbSkill:100101"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "pathArrayFieldContains", "path": "results", "field": "key", "value": "TbSkill:100102"},
+        {"kind": "readOnlyFlag"}
+      ]
+    },
+    {
+      "id": "p1-006",
+      "category": "execution-chain",
+      "tool": "explain_execution_chain",
+      "input": {
+        "skill": "TbSkill:100101"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "pathArrayFieldContains", "path": "steps", "field": "to", "value": "TbBuff:10010005"},
+        {"kind": "pathArrayFieldContains", "path": "steps", "field": "to", "value": "TbDamagePipeline:1001"},
+        {"kind": "evidenceOnPath", "path": "steps"},
+        {"kind": "readOnlyFlag"}
+      ],
+      "explanationPoints": [
+        {"path": "steps", "field": "to", "value": "TbBuff:10010005"},
+        {"path": "steps", "field": "to", "value": "TbDamagePipeline:1001"}
+      ]
+    },
+    {
+      "id": "p1-007",
+      "category": "unknown-skill",
+      "tool": "explain_execution_chain",
+      "input": {
+        "skill": "TbSkill:999999"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "NotFound"}
+      ]
+    },
+    {
+      "id": "p1-008",
+      "category": "reverse-reference",
+      "tool": "get_graph",
+      "input": {
+        "root": "TbBuff:10010005",
+        "depth": 1,
+        "direction": "in"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "pathArrayFieldContains", "path": "nodes", "field": "key", "value": "TbEffect:100600110"},
+        {"kind": "readOnlyFlag"}
+      ]
+    },
+    {
+      "id": "p1-009",
+      "category": "unknown-name",
+      "tool": "resolve_asset",
+      "input": {
+        "namespace": "TbBuff",
+        "name": "missing buff"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "NotFound"}
+      ]
+    },
+    {
+      "id": "p1-010",
+      "category": "unknown-action",
+      "tool": "get_capability_context",
+      "input": {
+        "actionKey": "CastFireNova"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "NotFound"},
+        {"kind": "pathEquals", "path": "code", "equals": "UNKNOWN_ACTION"}
+      ]
+    },
+    {
+      "id": "p1-011",
+      "category": "zero-depth",
+      "tool": "get_graph",
+      "input": {
+        "root": "TbSkill:100101",
+        "depth": 0
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "pathLengthEquals", "path": "nodes", "equals": 1},
+        {"kind": "pathLengthEquals", "path": "edges", "equals": 0}
+      ]
+    },
+    {
+      "id": "p1-012",
+      "category": "edit-lock-visible",
+      "tool": "resolve_asset",
+      "input": {
+        "namespace": "TbBuff",
+        "id": 10010005
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Resolved"},
+        {"kind": "pathEquals", "path": "candidates[0].editLock.owner", "equals": "planner-a"}
+      ]
+    },
+    {
+      "id": "p1-013",
+      "category": "candidate-truncation",
+      "tool": "resolve_asset",
+      "input": {
+        "namespace": "TbSkill",
+        "name": "Moon",
+        "limit": 1
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Candidates"},
+        {"kind": "pathEquals", "path": "candidateCount", "equals": 2},
+        {"kind": "pathEquals", "path": "returnedCount", "equals": 1},
+        {"kind": "pathEquals", "path": "truncated", "equals": true}
+      ]
+    },
+    {
+      "id": "p1-014",
+      "category": "invalid-namespace",
+      "tool": "resolve_asset",
+      "input": {
+        "namespace": "TbUnknown",
+        "name": "anything"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "InvalidRequest"},
+        {"kind": "pathEquals", "path": "code", "equals": "UNKNOWN_NAMESPACE"},
+        {"kind": "pathArrayMinLength", "path": "availableNamespaces", "min": 20}
+      ]
+    },
+    {
+      "id": "p1-015",
+      "category": "invalid-resolution-mode",
+      "tool": "resolve_asset",
+      "input": {
+        "namespace": "TbSkill",
+        "id": 100101,
+        "name": "Moonlight"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "InvalidRequest"},
+        {"kind": "pathEquals", "path": "code", "equals": "ID_AND_NAME_CONFLICT"}
+      ]
+    },
+    {
+      "id": "p1-016",
+      "category": "bounded-truncation",
+      "tool": "get_graph",
+      "input": {
+        "root": "TbSkill:100101",
+        "depth": 3,
+        "direction": "both",
+        "limit": 3
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Truncated"},
+        {"kind": "pathLengthAtMost", "path": "nodes", "max": 3},
+        {"kind": "pathLengthAtMost", "path": "edges", "max": 3},
+        {"kind": "graphClosed"}
+      ]
+    },
+    {
+      "id": "p1-017",
+      "category": "invalid-tool-input",
+      "tool": "get_graph",
+      "expectedInputContractError": true,
+      "input": {
+        "root": "TbSkill:100101",
+        "depth": 99
+      },
+      "assertions": [
+        {"kind": "status", "equals": "InvalidRequest"},
+        {"kind": "pathEquals", "path": "code", "equals": "INPUT_SCHEMA_VIOLATION"}
+      ]
+    },
+    {
+      "id": "p1-018",
+      "category": "legal-namespaces-and-enums",
+      "tool": "get_capability_context",
+      "input": {
+        "query": "damage"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "pathArrayFieldContains", "path": "entities", "field": "namespace", "value": "TbSkill"},
+        {"kind": "pathArrayFieldContains", "path": "enums", "field": "name", "value": "NumericType"}
+      ]
+    },
+    {
+      "id": "p1-019",
+      "category": "snapshot-identity",
+      "tool": "get_graph",
+      "input": {
+        "root": "TbSkill:100101",
+        "depth": 1
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "pathEquals", "path": "snapshot.revision", "equals": "sample-r1"},
+        {"kind": "pathEquals", "path": "snapshot.workspaceId", "equals": "sample-workspace"}
+      ]
+    },
+    {
+      "id": "p1-020",
+      "category": "capability-no-match",
+      "metricTags": ["capability-no-match"],
+      "tool": "get_capability_context",
+      "input": {
+        "query": "zzzz-no-such-thing"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "NotFound"},
+        {"kind": "pathEquals", "path": "counts.intents.total", "equals": 0},
+        {"kind": "pathEquals", "path": "counts.effects.total", "equals": 0},
+        {"kind": "pathEquals", "path": "truncated", "equals": false}
+      ]
+    },
+    {
+      "id": "p1-021",
+      "category": "capability-truncation",
+      "tool": "get_capability_context",
+      "input": {
+        "query": "damage",
+        "limit": 2
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "pathEquals", "path": "truncated", "equals": true},
+        {"kind": "pathEquals", "path": "counts.intents.truncated", "equals": true},
+        {"kind": "pathEquals", "path": "counts.effects.truncated", "equals": true},
+        {"kind": "pathLengthAtMost", "path": "intents", "max": 2},
+        {"kind": "pathLengthAtMost", "path": "effects", "max": 2}
+      ]
+    },
+    {
+      "id": "p1-022",
+      "category": "entity-field-enum",
+      "tool": "get_capability_context",
+      "input": {
+        "query": "skill_type"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "pathArrayFieldContains", "path": "entityFields", "field": "path", "value": "Skill.skill_type"},
+        {"kind": "pathArrayFieldContains", "path": "enums", "field": "name", "value": "ESkillType"}
+      ]
+    },
+    {
+      "id": "p1-023",
+      "category": "library-input-contract",
+      "tool": "get_graph",
+      "expectedInputContractError": true,
+      "input": {
+        "root": "TbSkill:100101",
+        "bogusField": 1
+      },
+      "assertions": [
+        {"kind": "status", "equals": "InvalidRequest"},
+        {"kind": "pathEquals", "path": "code", "equals": "INPUT_SCHEMA_VIOLATION"}
+      ]
+    },
+    {
+      "id": "p1-024",
+      "category": "not-a-skill",
+      "tool": "search_similar_skills",
+      "input": {
+        "focus": "TbBuff:10010005"
+      },
+      "assertions": [
+        {"kind": "status", "equals": "InvalidRequest"},
+        {"kind": "pathEquals", "path": "code", "equals": "NOT_A_SKILL"}
+      ]
+    },
+    {
+      "id": "p1-025",
+      "category": "enum-value-truncation",
+      "tool": "get_capability_context",
+      "input": {
+        "enum": "NumericType",
+        "enumValueLimit": 5
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Ready"},
+        {"kind": "pathEquals", "path": "enums[0].returnedCount", "equals": 5},
+        {"kind": "pathEquals", "path": "enums[0].truncated", "equals": true}
+      ]
+    },
+    {
+      "id": "p1-026",
+      "category": "separate-graph-limits",
+      "tool": "get_graph",
+      "input": {
+        "root": "TbSkill:100101",
+        "depth": 2,
+        "nodeLimit": 2,
+        "edgeLimit": 1
+      },
+      "assertions": [
+        {"kind": "status", "equals": "Truncated"},
+        {"kind": "pathEquals", "path": "limits.maxNodes", "equals": 2},
+        {"kind": "pathEquals", "path": "limits.maxEdges", "equals": 1},
+        {"kind": "pathLengthAtMost", "path": "nodes", "max": 2},
+        {"kind": "pathLengthAtMost", "path": "edges", "max": 1},
+        {"kind": "graphClosed"}
+      ]
+    }
+  ]
+}

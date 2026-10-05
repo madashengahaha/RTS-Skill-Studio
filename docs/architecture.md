@@ -5,6 +5,10 @@
 RTS Skill Studio is independent from TianshuDM and Unity editor integration. TianshuDM
 is a source of reusable implementation code and an optional interoperability target.
 
+The Node contract factory is part of this repository under `contract-factory/`.
+Generated contracts consumed by the .NET product are synchronized to
+`contracts/rts-skill-agent/`.
+
 ```text
 Natural-language request
   -> Agent orchestration

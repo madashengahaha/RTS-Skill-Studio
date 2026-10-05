@@ -15,8 +15,9 @@ const repoRoot = path.resolve(
   ".."
 );
 const sourceRoot = path.resolve(
-  process.env.RTS_SKILL_AGENT_ROOT ??
-    path.join(repoRoot, "..", "RTS-Skill-Agent")
+  process.env.RTS_SKILL_CONTRACT_FACTORY_ROOT ??
+    process.env.RTS_SKILL_AGENT_ROOT ??
+    path.join(repoRoot, "contract-factory")
 );
 const destinationRoot = path.join(
   repoRoot,

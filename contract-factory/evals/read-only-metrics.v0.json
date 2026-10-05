@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 0,
+  "metricsVersion": "0.1.0",
+  "modelEvaluation": {
+    "status": "NotRun",
+    "reason": "No model provider is connected in P1."
+  },
+  "deterministicMetrics": [
+    {
+      "key": "deterministicCasePassRate",
+      "target": 1
+    },
+    {
+      "key": "deterministicExplanationPointRecall",
+      "target": 1
+    },
+    {
+      "key": "stepEvidencePresenceRate",
+      "target": 1
+    },
+    {
+      "key": "capabilityNoMatchHonestyRate",
+      "target": 1
+    },
+    {
+      "key": "falseConclusionWithoutEvidence",
+      "target": 0
+    }
+  ]
+}

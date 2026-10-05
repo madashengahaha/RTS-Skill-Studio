@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 0,
+  "planId": "plan-periodic-b",
+  "base": {
+    "workspaceId": "example",
+    "revision": "svn-2610",
+    "capabilityRegistryVersion": "0.1.0",
+    "defaultValueContractVersion": "0.1.0",
+    "defaultMechanismContractVersion": "0.1.0"
+  },
+  "request": {
+    "text": "把技能做成持续3秒、每秒80伤害，并启用实时索敌",
+    "focus": {
+      "binding": "Existing",
+      "namespace": "TbSkill",
+      "id": 100101
+    }
+  },
+  "status": "Ready",
+  "operations": [
+    {
+      "operationId": "op-damage-reordered",
+      "kind": "AddEffectIntent",
+      "owner": {
+        "binding": "Existing",
+        "namespace": "TbSkill",
+        "id": 100101
+      },
+      "intent": "PeriodicDamage",
+      "params": {
+        "fixedDamage": {
+          "value": 80,
+          "source": "UserEdited"
+        },
+        "mechanism": {
+          "value": "BuffIntervalDamage",
+          "source": "Default"
+        },
+        "intervalMs": {
+          "value": 1000,
+          "source": "UserEdited"
+        },
+        "durationMs": {
+          "value": 3000,
+          "source": "UserEdited"
+        }
+      }
+    }
+  ]
+}

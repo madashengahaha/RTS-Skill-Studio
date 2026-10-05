@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 0,
+  "planId": "plan-periodic-a",
+  "base": {
+    "workspaceId": "example",
+    "revision": "svn-2610",
+    "capabilityRegistryVersion": "0.1.0",
+    "defaultValueContractVersion": "0.1.0",
+    "defaultMechanismContractVersion": "0.1.0"
+  },
+  "request": {
+    "text": "持续3秒，每秒造成80点伤害",
+    "focus": {
+      "binding": "Existing",
+      "namespace": "TbSkill",
+      "id": 100101
+    }
+  },
+  "status": "Ready",
+  "summary": "Add periodic damage.",
+  "assumptions": [],
+  "clarifications": [],
+  "unsupported": [],
+  "operations": [
+    {
+      "operationId": "op-damage",
+      "kind": "AddEffectIntent",
+      "owner": {
+        "binding": "Existing",
+        "namespace": "TbSkill",
+        "id": 100101
+      },
+      "intent": "PeriodicDamage",
+      "params": {
+        "durationMs": {
+          "value": 3000,
+          "source": "UserEdited"
+        },
+        "intervalMs": {
+          "value": 1000,
+          "source": "UserEdited"
+        },
+        "fixedDamage": {
+          "value": 80,
+          "source": "UserEdited"
+        },
+        "mechanism": {
+          "value": "BuffIntervalDamage",
+          "source": "Default"
+        }
+      }
+    }
+  ]
+}
+

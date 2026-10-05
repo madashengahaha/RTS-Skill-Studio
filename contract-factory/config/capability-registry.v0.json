@@ -1,0 +1,6359 @@
+{
+  "schemaVersion": 0,
+  "registryVersion": "0.1.0",
+  "source": {
+    "heroAuthoringSchemaVersion": 12,
+    "sha256": "e62fabf9609d86d71359a9f4279760316d26e57e3206f4a1055e0d53f9470aa5",
+    "sourcePath": "hero-authoring-schema.json",
+    "sourceRevision": "fa37737"
+  },
+  "entities": [
+    {
+      "key": "Skill",
+      "namespace": "TbSkill",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Skill root"
+    },
+    {
+      "key": "EffectGroup",
+      "namespace": "EffectGroup",
+      "kind": "Virtual",
+      "identity": "group_id",
+      "shared": true,
+      "role": "Ordered effect container"
+    },
+    {
+      "key": "Effect",
+      "namespace": "TbEffect",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Effect action row"
+    },
+    {
+      "key": "ConditionGroup",
+      "namespace": "ConditionGroup",
+      "kind": "Virtual",
+      "identity": "group_id",
+      "shared": true,
+      "role": "Ordered condition container"
+    },
+    {
+      "key": "Condition",
+      "namespace": "TbCondition",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Condition row"
+    },
+    {
+      "key": "Buff",
+      "namespace": "TbBuff",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Timed state and lifecycle effects"
+    },
+    {
+      "key": "Bullet",
+      "namespace": "TbBullet",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Projectile definition"
+    },
+    {
+      "key": "Search",
+      "namespace": "TbSearch",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Target search definition"
+    },
+    {
+      "key": "DamagePipeline",
+      "namespace": "TbDamagePipeline",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Damage stage sequence"
+    },
+    {
+      "key": "SkillResource",
+      "namespace": "TbSkillResource",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Skill presentation resource"
+    },
+    {
+      "key": "Trap",
+      "namespace": "TbTrap",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Summoned area behavior root"
+    },
+    {
+      "key": "Hero",
+      "namespace": "TbHero",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Skill owner"
+    },
+    {
+      "key": "Item",
+      "namespace": "TbItem",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Effect-group root and skill unlock carrier"
+    },
+    {
+      "key": "Soldier",
+      "namespace": "TbSoldier",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Skill owner"
+    },
+    {
+      "key": "Building",
+      "namespace": "TbBuilding",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Skill owner"
+    },
+    {
+      "key": "Equipment",
+      "namespace": "TbEquipment",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Skill owner"
+    },
+    {
+      "key": "HeroUpgrade",
+      "namespace": "TbHeroUpgrade",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Hero upgrade and unlock carrier"
+    },
+    {
+      "key": "SoldierUpgrade",
+      "namespace": "TbSoldierUpgrade",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Soldier upgrade and unlock carrier"
+    },
+    {
+      "key": "EquipmentUpgrade",
+      "namespace": "TbEquipmentUpgrade",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Equipment upgrade and unlock carrier"
+    },
+    {
+      "key": "BattleHeroShop",
+      "namespace": "TbBattleHeroShop",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Battle skill unlock table"
+    },
+    {
+      "key": "BattleSoldierLevelUp",
+      "namespace": "TbBattleSoldierLevelUp",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Battle soldier skill unlock table"
+    },
+    {
+      "key": "Transmigrator",
+      "namespace": "TbTransmigrator",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Default skill carrier"
+    },
+    {
+      "key": "Stage",
+      "namespace": "TbStage",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Stage generation and component carrier"
+    },
+    {
+      "key": "RandomBag",
+      "namespace": "TbRandomBag",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Random bag definition"
+    },
+    {
+      "key": "RandomSet",
+      "namespace": "TbRandomSet",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Random output set"
+    },
+    {
+      "key": "SpawnSet",
+      "namespace": "TbSpawnSet",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Spawn set definition"
+    },
+    {
+      "key": "RandomCard",
+      "namespace": "TbRandomCard",
+      "kind": "Table",
+      "identity": "id",
+      "shared": true,
+      "role": "Random card pool member"
+    },
+    {
+      "key": "Card",
+      "namespace": "TbCard",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Card template"
+    },
+    {
+      "key": "Resource",
+      "namespace": "TbResource",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Resource path"
+    },
+    {
+      "key": "FunctionComponent",
+      "namespace": "TbFunctionComponent",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Runtime function component"
+    },
+    {
+      "key": "ViewFunctionComponent",
+      "namespace": "TbViewFunctionComponent",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "View function component"
+    }
+  ],
+  "planOperations": [
+    "CreateSkill",
+    "ModifySkill",
+    "AddEffectIntent",
+    "ModifyEffectIntent",
+    "DeleteEffectIntent",
+    "AddConditionIntent",
+    "ModifyConditionIntent",
+    "DeleteConditionIntent",
+    "LinkExisting",
+    "RemoveLink",
+    "ReorderMembers"
+  ],
+  "readOnlyTools": [
+    "get_capability_context",
+    "resolve_asset",
+    "get_graph",
+    "search_similar_skills",
+    "explain_execution_chain"
+  ],
+  "readOnlyToolContracts": {
+    "schemaVersion": 0,
+    "contractVersion": "0.1.0",
+    "resultSchema": "contracts/read-only-results.schema.json",
+    "policy": {
+      "mutatesData": false,
+      "allowsWrites": false,
+      "allowsRawCellAccess": false,
+      "requiresEvidence": true,
+      "unresolvedNamesReturnCandidates": true
+    },
+    "tools": [
+      {
+        "name": "get_capability_context",
+        "purpose": "Return the relevant capability-registry slice without reading the full registry into model context.",
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "query": {
+              "type": "string"
+            },
+            "intent": {
+              "type": "string"
+            },
+            "actionKey": {
+              "type": "string"
+            },
+            "enum": {
+              "type": "string"
+            },
+            "enumValueLimit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "description": "Maximum values returned per enum."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "description": "Maximum results per category."
+            }
+          }
+        },
+        "outputSchema": {
+          "$ref": "read-only-results.schema.json#/$defs/CapabilityContext"
+        }
+      },
+      {
+        "name": "resolve_asset",
+        "purpose": "Resolve a stable namespace plus ID, or return all candidates for a display name.",
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "namespace"
+          ],
+          "properties": {
+            "namespace": {
+              "type": "string",
+              "minLength": 1
+            },
+            "id": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            }
+          }
+        },
+        "outputSchema": {
+          "$ref": "read-only-results.schema.json#/$defs/AssetResolution"
+        }
+      },
+      {
+        "name": "get_graph",
+        "purpose": "Return a bounded graph projection around a root asset.",
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "root"
+          ],
+          "properties": {
+            "root": {
+              "type": "string",
+              "minLength": 1
+            },
+            "depth": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "direction": {
+              "enum": [
+                "out",
+                "in",
+                "both"
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "description": "Fallback for nodeLimit and edgeLimit."
+            },
+            "nodeLimit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            },
+            "edgeLimit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            }
+          }
+        },
+        "outputSchema": {
+          "$ref": "read-only-results.schema.json#/$defs/GraphProjection"
+        }
+      },
+      {
+        "name": "search_similar_skills",
+        "purpose": "Rank existing skills by deterministic structural and semantic overlap.",
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "focus"
+          ],
+          "properties": {
+            "focus": {
+              "type": "string",
+              "minLength": 1
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            }
+          }
+        },
+        "outputSchema": {
+          "$ref": "read-only-results.schema.json#/$defs/SimilarSkillResults"
+        }
+      },
+      {
+        "name": "explain_execution_chain",
+        "purpose": "Return the observed execution chain with edge-level evidence and no invented steps.",
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "skill"
+          ],
+          "properties": {
+            "skill": {
+              "type": "string",
+              "minLength": 1
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            }
+          }
+        },
+        "outputSchema": {
+          "$ref": "read-only-results.schema.json#/$defs/ExecutionChainExplanation"
+        }
+      }
+    ]
+  },
+  "valueSources": [
+    "ModelProposed",
+    "UserEdited",
+    "Default"
+  ],
+  "similarityScoring": {
+    "version": "0.1.0",
+    "skillWeights": {
+      "intents": 0.45,
+      "mechanisms": 0.35,
+      "tags": 0.1,
+      "references": 0.1
+    }
+  },
+  "skillGraphSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/contracts/skill-graph.schema.json",
+    "title": "ReadOnlySkillGraph",
+    "description": "A deterministic, read-only snapshot of skill assets and their references.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "schemaVersion",
+      "graphVersion",
+      "workspaceId",
+      "revision",
+      "nodes",
+      "edges"
+    ],
+    "properties": {
+      "schemaVersion": {
+        "const": 0
+      },
+      "graphVersion": {
+        "type": "string",
+        "minLength": 1
+      },
+      "workspaceId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "revision": {
+        "type": "string",
+        "minLength": 1
+      },
+      "nodes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/Node"
+        }
+      },
+      "edges": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/Edge"
+        }
+      }
+    },
+    "$defs": {
+      "Node": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "namespace",
+          "kind",
+          "label",
+          "attributes",
+          "semantic",
+          "editLock"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[^:]+:.+$"
+          },
+          "namespace": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object"
+          },
+          "semantic": {
+            "$ref": "#/$defs/Semantic"
+          },
+          "editLock": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/EditLock"
+              }
+            ]
+          }
+        }
+      },
+      "Semantic": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "intents",
+          "mechanisms",
+          "tags"
+        ],
+        "properties": {
+          "intents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "mechanisms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "EditLock": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "owner",
+          "acquiredAt"
+        ],
+        "properties": {
+          "owner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "acquiredAt": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "Edge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "from",
+          "to",
+          "field",
+          "source"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string",
+            "minLength": 1
+          },
+          "parameterIndex": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "source": {
+            "$ref": "#/$defs/EvidenceRef"
+          }
+        }
+      },
+      "EvidenceRef": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "Excel",
+              "RuntimeBinding",
+              "Schema",
+              "Snapshot"
+            ]
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "entityFields": [
+    {
+      "path": "Skill.skill_type",
+      "enumName": "ESkillType"
+    },
+    {
+      "path": "Search.shape",
+      "enumName": "ESearchTargetShape"
+    },
+    {
+      "path": "Search.team",
+      "enumName": "ESearchTargetTeam"
+    },
+    {
+      "path": "Search.type",
+      "enumName": "EUnitType"
+    },
+    {
+      "path": "Search.included_flag",
+      "enumName": "FlagLabel"
+    },
+    {
+      "path": "Search.excluded_flag",
+      "enumName": "FlagLabel"
+    },
+    {
+      "path": "Search.prioritys",
+      "enumName": "ESearchTargetPriority"
+    },
+    {
+      "path": "DamagePipeline.PipelineStage_param",
+      "enumName": "DamageStageType"
+    }
+  ],
+  "intents": [
+    {
+      "key": "InstantDamage",
+      "label": "即时伤害",
+      "harmful": true
+    },
+    {
+      "key": "PeriodicDamage",
+      "label": "周期伤害",
+      "harmful": true
+    },
+    {
+      "key": "DelayedDamage",
+      "label": "延迟伤害",
+      "harmful": true
+    },
+    {
+      "key": "AreaDamage",
+      "label": "范围伤害",
+      "harmful": true
+    },
+    {
+      "key": "PersistentArea",
+      "label": "持续区域",
+      "harmful": true
+    },
+    {
+      "key": "Projectile",
+      "label": "弹道效果",
+      "harmful": null
+    },
+    {
+      "key": "ChainDamage",
+      "label": "链式伤害",
+      "harmful": true
+    },
+    {
+      "key": "Healing",
+      "label": "治疗",
+      "harmful": false
+    },
+    {
+      "key": "AddState",
+      "label": "添加状态",
+      "harmful": null
+    },
+    {
+      "key": "RemoveState",
+      "label": "移除状态",
+      "harmful": null
+    },
+    {
+      "key": "StatModify",
+      "label": "属性修改",
+      "harmful": null
+    },
+    {
+      "key": "ConditionalEffect",
+      "label": "条件效果",
+      "harmful": null
+    },
+    {
+      "key": "Summon",
+      "label": "召唤",
+      "harmful": null
+    },
+    {
+      "key": "SkillGrant",
+      "label": "技能授予",
+      "harmful": null
+    },
+    {
+      "key": "TargetMark",
+      "label": "目标标记",
+      "harmful": null
+    },
+    {
+      "key": "MovementControl",
+      "label": "位移控制",
+      "harmful": null
+    }
+  ],
+  "effects": [
+    {
+      "key": "ChangePropertyReal",
+      "legacyValue": 2,
+      "label": "实时属性改变",
+      "description": "直接改变当前目标（target）的实时属性，支持多组“实时属性 + 改变量”，每组按顺序执行。",
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": null,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "numericType",
+          "label": "实时属性",
+          "description": "选择要改变的 NumericType；填写 0 时运行时跳过这一组。",
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": true,
+          "repeatStep": 2,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "value",
+          "label": "改变量",
+          "description": "按万分制填写，10000 = 1，支持负数；最终值最低为 0，普通实时属性还会受对应 Max 限制。",
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": true,
+          "repeatStep": 2,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "StatModify"
+        ],
+        "mechanism": "RealTimePropertyChange",
+        "tags": [
+          "property",
+          "runtime-current-value"
+        ]
+      }
+    },
+    {
+      "key": "Healing",
+      "legacyValue": 3,
+      "label": "治疗",
+      "description": "以施法者当前攻击力倍率加固定值计算治疗；不填参数时按当前攻击力治疗。",
+      "warning": null,
+      "minParameterCount": 0,
+      "maxParameterCount": 3,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "attackScale",
+          "label": "攻击力倍率",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "fixedValue",
+          "label": "固定治疗",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "fallbackScale",
+          "label": "攻击力备用倍率",
+          "description": "仅当第 1 项倍率小于等于 0 时使用；属于运行时兼容参数。",
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "Healing"
+        ],
+        "mechanism": "DirectHealing",
+        "tags": [
+          "healing",
+          "proportional",
+          "fixed"
+        ]
+      }
+    },
+    {
+      "key": "Damage",
+      "legacyValue": 4,
+      "label": "造成伤害",
+      "description": "通过指定伤害管线，对目标结算固定伤害与攻击属性倍率伤害。",
+      "warning": null,
+      "minParameterCount": 4,
+      "maxParameterCount": 4,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "pipeline",
+          "label": "伤害管线",
+          "description": "决定免疫、暴击、防御、格挡等阶段的执行顺序。",
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbDamagePipeline",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "attackType",
+          "label": "攻击属性",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "fixedDamage",
+          "label": "固定伤害",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "attackScale",
+          "label": "攻击倍率",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "InstantDamage",
+          "AreaDamage"
+        ],
+        "mechanism": "ImmediateDamage",
+        "tags": [
+          "damage",
+          "pipeline",
+          "fixed",
+          "attack-scale"
+        ]
+      }
+    },
+    {
+      "key": "AddBuff",
+      "legacyValue": 5,
+      "label": "添加 Buff",
+      "description": "向指定对象添加一个 Buff。",
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "buffId",
+          "label": "BuffID",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbBuff",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "applyTarget",
+          "label": "作用对象",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "EBuffApplyTarget",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "AddState"
+        ],
+        "mechanism": "AddBuff",
+        "tags": [
+          "state",
+          "lifecycle",
+          "shared-asset"
+        ]
+      }
+    },
+    {
+      "key": "RemoveBuff",
+      "legacyValue": 6,
+      "label": "移除 Buff",
+      "description": "从指定对象移除一个 Buff。",
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "buffId",
+          "label": "BuffID",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbBuff",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "applyTarget",
+          "label": "作用对象",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "EBuffApplyTarget",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "RemoveState"
+        ],
+        "mechanism": "RemoveBuff",
+        "tags": [
+          "state",
+          "shared-asset"
+        ]
+      }
+    },
+    {
+      "key": "AddRestrict",
+      "legacyValue": 7,
+      "label": "添加限制",
+      "description": "给目标叠加禁止移动、禁止攻击等限制标记；组合标记按位生效。",
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "restrict",
+          "label": "限制标记",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "FlagRestrict",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": true
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "AddState"
+        ],
+        "mechanism": "AddRestrict",
+        "tags": [
+          "control",
+          "restriction",
+          "bitmask"
+        ]
+      }
+    },
+    {
+      "key": "RemoveRestrict",
+      "legacyValue": 8,
+      "label": "移除限制",
+      "description": "从目标移除禁止移动、禁止攻击等限制标记；应与添加时的标记一致。",
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "restrict",
+          "label": "限制标记",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "FlagRestrict",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": true
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "RemoveState"
+        ],
+        "mechanism": "RemoveRestrict",
+        "tags": [
+          "control",
+          "restriction",
+          "bitmask"
+        ]
+      }
+    },
+    {
+      "key": "AddProperty",
+      "legacyValue": 9,
+      "label": "增加属性",
+      "description": "增加目标的子属性值；参数按“属性类型 + 改变量”成对重复。",
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": null,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "numericType",
+          "label": "属性类型",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": true,
+          "repeatStep": 2,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "value",
+          "label": "属性值",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": true,
+          "repeatStep": 2,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "StatModify"
+        ],
+        "mechanism": "AddProperty",
+        "tags": [
+          "property",
+          "repeat-pairs"
+        ]
+      }
+    },
+    {
+      "key": "SubProperty",
+      "legacyValue": 10,
+      "label": "减少属性",
+      "description": "减少目标的子属性值；参数按“属性类型 + 改变量”成对重复。",
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": null,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "numericType",
+          "label": "属性类型",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": true,
+          "repeatStep": 2,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "value",
+          "label": "属性值",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": true,
+          "repeatStep": 2,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "StatModify"
+        ],
+        "mechanism": "SubProperty",
+        "tags": [
+          "property",
+          "repeat-pairs"
+        ]
+      }
+    },
+    {
+      "key": "SummonUnit",
+      "legacyValue": 11,
+      "label": "召唤单位",
+      "description": "在目标位置叠加偏移后召唤指定类型和配置的单位，可选播放召唤特效。",
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": 6,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "unitType",
+          "label": "单位类型",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "EUnitType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "unitId",
+          "label": "单位配置",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "UnitByType",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "offsetX",
+          "label": "X 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "offsetY",
+          "label": "Y 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 4,
+          "key": "offsetZ",
+          "label": "Z 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 5,
+          "key": "fxId",
+          "label": "召唤特效",
+          "description": null,
+          "kind": "Reference",
+          "required": false,
+          "referenceTarget": "TbSkillResource",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "Summon"
+        ],
+        "mechanism": "SummonUnit",
+        "tags": [
+          "summon",
+          "unit-type-dynamic-reference"
+        ]
+      }
+    },
+    {
+      "key": "SummonRandom",
+      "legacyValue": 12,
+      "label": "随机召唤",
+      "description": "从随机包配置中抽取召唤内容，并在目标位置叠加可选偏移后生成。",
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 4,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "randomId",
+          "label": "随机包",
+          "description": "运行时由 RandomDropHelper 按随机包编号抽取内容。",
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbRandomBag",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "offsetX",
+          "label": "X 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "offsetY",
+          "label": "Y 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "offsetZ",
+          "label": "Z 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "Summon"
+        ],
+        "mechanism": "SummonRandom",
+        "tags": [
+          "summon",
+          "random-bag"
+        ]
+      }
+    },
+    {
+      "key": "KillUnit",
+      "legacyValue": 13,
+      "label": "杀死单位",
+      "description": "立即杀死指定单位；未填写参数或选择 1 时杀死施法者，选择 2 时杀死目标。",
+      "warning": null,
+      "minParameterCount": 0,
+      "maxParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "target",
+          "label": "死亡目标",
+          "description": null,
+          "kind": "Enum",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": "EffectKillTarget",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "InstantDamage"
+        ],
+        "mechanism": "KillUnit",
+        "tags": [
+          "death",
+          "execution",
+          "not-damage-pipeline"
+        ]
+      }
+    },
+    {
+      "key": "Research",
+      "legacyValue": 14,
+      "label": "重新索敌并执行",
+      "description": "使用搜索配置重新取得一组目标，然后对搜索结果执行指定效果组。",
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "searchId",
+          "label": "搜索配置",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbSearch",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "effectGroupId",
+          "label": "效果组",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "EffectGroup",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect",
+          "AreaDamage"
+        ],
+        "mechanism": "ResearchThenExecute",
+        "tags": [
+          "search",
+          "targeting",
+          "effect-group"
+        ]
+      }
+    },
+    {
+      "key": "ConditionBranch",
+      "legacyValue": 15,
+      "label": "条件分支",
+      "description": "执行一个条件判定：成立时执行成功效果组，不成立时可执行失败效果组。",
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": 3,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "conditionId",
+          "label": "条件",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbCondition",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "successEffect",
+          "label": "满足时效果组",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "EffectGroup",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "failureEffect",
+          "label": "不满足时效果组",
+          "description": null,
+          "kind": "Reference",
+          "required": false,
+          "referenceTarget": "EffectGroup",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect"
+        ],
+        "mechanism": "ConditionBranch",
+        "tags": [
+          "branch",
+          "single-condition"
+        ]
+      }
+    },
+    {
+      "key": "ConditionGroupBranch",
+      "legacyValue": 16,
+      "label": "条件组分支",
+      "description": "按“全部满足”或“任一满足”判定条件组，再分别执行成功或失败效果组。",
+      "warning": null,
+      "minParameterCount": 3,
+      "maxParameterCount": 4,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "conditionGroupId",
+          "label": "条件组",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "ConditionGroup",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "completedType",
+          "label": "判定方式",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "EGroupCompletedType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "successEffect",
+          "label": "满足时效果组",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "EffectGroup",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "failureEffect",
+          "label": "不满足时效果组",
+          "description": null,
+          "kind": "Reference",
+          "required": false,
+          "referenceTarget": "EffectGroup",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect"
+        ],
+        "mechanism": "ConditionGroupBranch",
+        "tags": [
+          "branch",
+          "condition-group"
+        ]
+      }
+    },
+    {
+      "key": "AddBulletTarget",
+      "legacyValue": 17,
+      "label": "发射追踪子弹",
+      "description": "从施法者偏移位置生成子弹，持续跟随当前目标直到命中。",
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 4,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "bulletId",
+          "label": "子弹",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbBullet",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "offsetX",
+          "label": "X 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "offsetY",
+          "label": "Y 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "offsetZ",
+          "label": "Z 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "Projectile"
+        ],
+        "mechanism": "ProjectileToTarget",
+        "tags": [
+          "projectile",
+          "homing-target"
+        ]
+      }
+    },
+    {
+      "key": "AddBulletPosition",
+      "legacyValue": 18,
+      "label": "向位置发射子弹",
+      "description": "从施法者偏移位置生成子弹，朝目标当前所在位置飞行。",
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 4,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "bulletId",
+          "label": "子弹",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbBullet",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "offsetX",
+          "label": "X 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "offsetY",
+          "label": "Y 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "offsetZ",
+          "label": "Z 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "Projectile"
+        ],
+        "mechanism": "ProjectileToPosition",
+        "tags": [
+          "projectile",
+          "target-position"
+        ]
+      }
+    },
+    {
+      "key": "AddBulletDirection",
+      "legacyValue": 19,
+      "label": "按方向发射高速子弹",
+      "description": "朝固定方向发射高速子弹，通过一次直线搜索确定命中目标；适合高速投射物。",
+      "warning": null,
+      "minParameterCount": 6,
+      "maxParameterCount": 6,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "bulletId",
+          "label": "子弹",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbBullet",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "offsetX",
+          "label": "X 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "offsetY",
+          "label": "Y 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "offsetZ",
+          "label": "Z 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 4,
+          "key": "angle",
+          "label": "角度",
+          "description": null,
+          "kind": "Integer",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 5,
+          "key": "searchId",
+          "label": "直线搜索配置",
+          "description": "运行时把该值直接传给直线搜索逻辑，不是距离数值。",
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbSearch",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "Projectile"
+        ],
+        "mechanism": "ProjectileDirectionLineSearch",
+        "tags": [
+          "projectile",
+          "direction",
+          "line-search"
+        ]
+      }
+    },
+    {
+      "key": "AddBulletDirection2",
+      "legacyValue": 20,
+      "label": "按方向发射碰撞子弹",
+      "description": "朝固定方向发射并实时进行碰撞检测；适合飞行速度较慢、需要沿途碰撞的投射物。",
+      "warning": null,
+      "minParameterCount": 5,
+      "maxParameterCount": 6,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "bulletId",
+          "label": "子弹",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbBullet",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "offsetX",
+          "label": "X 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "offsetY",
+          "label": "Y 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "offsetZ",
+          "label": "Z 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 4,
+          "key": "angle",
+          "label": "角度",
+          "description": null,
+          "kind": "Integer",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 5,
+          "key": "distance",
+          "label": "飞行距离",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "Projectile"
+        ],
+        "mechanism": "ProjectileDirectionCollision",
+        "tags": [
+          "projectile",
+          "direction",
+          "collision"
+        ]
+      }
+    },
+    {
+      "key": "AddHeightBuff",
+      "legacyValue": 21,
+      "label": "按高度添加 Buff",
+      "description": "以当前高度换算 Buff 层数，并向指定对象添加一个 Buff。",
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "buffId",
+          "label": "BuffID",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbBuff",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "applyTarget",
+          "label": "作用对象",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "EBuffApplyTarget",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "AddState"
+        ],
+        "mechanism": "AddHeightBuff",
+        "tags": [
+          "state",
+          "height-derived-layers"
+        ]
+      }
+    },
+    {
+      "key": "AddBulletAround",
+      "legacyValue": 22,
+      "label": "环形发射子弹",
+      "description": "在指定弧度范围内均匀发射多颗碰撞子弹；弧度为 0 时按完整圆周发射。",
+      "warning": null,
+      "minParameterCount": 6,
+      "maxParameterCount": 7,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "bulletId",
+          "label": "子弹",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbBullet",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "forwardOffset",
+          "label": "基础弹道前移偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "heightOffset",
+          "label": "上下偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "bulletCount",
+          "label": "子弹数量",
+          "description": null,
+          "kind": "Integer",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 4,
+          "key": "centerAngle",
+          "label": "中轴角度",
+          "description": null,
+          "kind": "Integer",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 5,
+          "key": "spreadAngle",
+          "label": "扇形总角度",
+          "description": null,
+          "kind": "Integer",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 6,
+          "key": "staggerOffset",
+          "label": "交替前移偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "Projectile",
+          "AreaDamage"
+        ],
+        "mechanism": "ProjectileRing",
+        "tags": [
+          "projectile",
+          "ring",
+          "fan"
+        ]
+      }
+    },
+    {
+      "key": "SummonAutoTrap",
+      "legacyValue": 23,
+      "label": "召唤自动机关",
+      "description": "在施法者位置叠加偏移后生成机关(Trap)，后续行为由机关自身配置驱动。",
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 4,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "trapId",
+          "label": "机关",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbTrap",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "offsetX",
+          "label": "X 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "offsetY",
+          "label": "Y 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "offsetZ",
+          "label": "Z 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "PersistentArea",
+          "Summon"
+        ],
+        "mechanism": "SummonAutoTrap",
+        "tags": [
+          "area",
+          "trap",
+          "persistent"
+        ]
+      }
+    },
+    {
+      "key": "ChainDamage",
+      "legacyValue": 24,
+      "label": "链式传递",
+      "description": "从当前目标开始按搜索配置逐层传播，并在每个命中目标上执行效果组。",
+      "warning": null,
+      "minParameterCount": 6,
+      "maxParameterCount": 7,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "searchId",
+          "label": "搜索配置",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbSearch",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "layerCount",
+          "label": "弹射层数",
+          "description": null,
+          "kind": "Integer",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "intervalMs",
+          "label": "弹射间隔毫秒",
+          "description": "运行时按毫秒转换；0 表示同帧继续传播。",
+          "kind": "Integer",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "branchCount",
+          "label": "每层分支数",
+          "description": null,
+          "kind": "Integer",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 4,
+          "key": "decayPercent",
+          "label": "衰减比例",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 5,
+          "key": "effectGroupId",
+          "label": "命中效果组",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "EffectGroup",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 6,
+          "key": "viewFunctionId",
+          "label": "表现组件",
+          "description": null,
+          "kind": "Reference",
+          "required": false,
+          "referenceTarget": "TbViewFunctionComponent",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ChainDamage"
+        ],
+        "mechanism": "ChainDamage",
+        "tags": [
+          "chain",
+          "target-search",
+          "decay"
+        ]
+      }
+    },
+    {
+      "key": "AnomalySettlement",
+      "legacyValue": 25,
+      "label": "异常结算",
+      "description": "检查并消耗目标的异常属性值，满足消耗要求后执行指定结算效果组。",
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 3,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "anomalyType",
+          "label": "异常属性",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "consume",
+          "label": "消耗量",
+          "description": "-1 表示消耗全部；非负值不足时不会执行结算效果组。",
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "effectGroupId",
+          "label": "结算效果组",
+          "description": null,
+          "kind": "Reference",
+          "required": false,
+          "referenceTarget": "EffectGroup",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect",
+          "InstantDamage"
+        ],
+        "mechanism": "AnomalySettlement",
+        "tags": [
+          "anomaly",
+          "threshold",
+          "resource-consumption"
+        ]
+      }
+    },
+    {
+      "key": "AddBulletDirectionToTarget",
+      "legacyValue": 26,
+      "label": "朝目标方向发射子弹",
+      "description": "以施法者到目标的方向为基准发射碰撞子弹，可追加角度偏移和飞行距离。",
+      "warning": null,
+      "minParameterCount": 5,
+      "maxParameterCount": 6,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "bulletId",
+          "label": "子弹",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbBullet",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "offsetX",
+          "label": "X 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "offsetY",
+          "label": "Y 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "offsetZ",
+          "label": "Z 偏移",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 4,
+          "key": "angle",
+          "label": "角度偏移",
+          "description": null,
+          "kind": "Integer",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 5,
+          "key": "distance",
+          "label": "飞行距离",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "Projectile"
+        ],
+        "mechanism": "ProjectileDirectionToTarget",
+        "tags": [
+          "projectile",
+          "target-direction",
+          "collision"
+        ]
+      }
+    },
+    {
+      "key": "AddFlagLabel",
+      "legacyValue": 27,
+      "label": "添加标签",
+      "description": "给目标添加一个普通标签，实际叠加数量来自本次 Effect 的执行次数。",
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "flagLabel",
+          "label": "标签",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "FlagLabel",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "TargetMark"
+        ],
+        "mechanism": "AddFlagLabel",
+        "tags": [
+          "flag",
+          "marker",
+          "execution-count"
+        ]
+      }
+    },
+    {
+      "key": "RemoveFlagLabel",
+      "legacyValue": 28,
+      "label": "移除标签",
+      "description": "从目标移除一个普通标签，实际移除数量来自本次 Effect 的执行次数。",
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "flagLabel",
+          "label": "标签",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "FlagLabel",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "TargetMark"
+        ],
+        "mechanism": "RemoveFlagLabel",
+        "tags": [
+          "flag",
+          "marker",
+          "execution-count"
+        ]
+      }
+    },
+    {
+      "key": "BlinkToTarget",
+      "legacyValue": 29,
+      "label": "闪现到目标",
+      "description": "把施法者瞬移到目标身边，并可分别配置离开位置和到达位置的特效。",
+      "warning": null,
+      "minParameterCount": 0,
+      "maxParameterCount": 3,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "offset",
+          "label": "偏移距离",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "leaveFx",
+          "label": "消失特效",
+          "description": null,
+          "kind": "Reference",
+          "required": false,
+          "referenceTarget": "TbSkillResource",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "arriveFx",
+          "label": "出现特效",
+          "description": null,
+          "kind": "Reference",
+          "required": false,
+          "referenceTarget": "TbSkillResource",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "MovementControl"
+        ],
+        "mechanism": "BlinkToTarget",
+        "tags": [
+          "blink",
+          "movement"
+        ]
+      }
+    },
+    {
+      "key": "Knockback",
+      "legacyValue": 30,
+      "label": "击退或拉近",
+      "description": "按指定方向移动目标，可实现击退、拉近、沿施法者朝向或固定世界角度移动。",
+      "warning": null,
+      "minParameterCount": 0,
+      "maxParameterCount": 4,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "direction",
+          "label": "方向",
+          "description": null,
+          "kind": "Enum",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": "EKnockbackDirection",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "distance",
+          "label": "距离",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "angle",
+          "label": "世界方向角度",
+          "description": "仅“固定世界方向”模式使用，单位为度。",
+          "kind": "Integer",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "smoothMs",
+          "label": "平滑时间毫秒",
+          "description": null,
+          "kind": "Integer",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "MovementControl"
+        ],
+        "mechanism": "Knockback",
+        "tags": [
+          "displacement",
+          "knockback",
+          "pull"
+        ]
+      }
+    },
+    {
+      "key": "AddSkillData",
+      "legacyValue": 31,
+      "label": "增加当前技能数据",
+      "description": "给当前技能运行时数据中的指定键增加数值，用于同一次战斗内的技能流程状态。",
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "key",
+          "label": "数据键",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "value",
+          "label": "数据值",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "StatModify"
+        ],
+        "mechanism": "AddSkillData",
+        "tags": [
+          "skill-runtime-data",
+          "current-skill"
+        ]
+      }
+    },
+    {
+      "key": "SubSkillData",
+      "legacyValue": 32,
+      "label": "减少当前技能数据",
+      "description": "从当前技能运行时数据中的指定键扣减数值，用于同一次战斗内的技能流程状态。",
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "key",
+          "label": "数据键",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "value",
+          "label": "数据值",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "StatModify"
+        ],
+        "mechanism": "SubSkillData",
+        "tags": [
+          "skill-runtime-data",
+          "current-skill"
+        ]
+      }
+    },
+    {
+      "key": "AddSkillDataBySkill",
+      "legacyValue": 33,
+      "label": "增加指定技能数据",
+      "description": "给指定技能的运行时数据键增加数值，可在技能之间共享或传递流程状态。",
+      "warning": null,
+      "minParameterCount": 3,
+      "maxParameterCount": 3,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "skillId",
+          "label": "技能",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbSkill",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "key",
+          "label": "数据键",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "value",
+          "label": "数据值",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "StatModify"
+        ],
+        "mechanism": "AddSkillDataBySkill",
+        "tags": [
+          "skill-runtime-data",
+          "cross-skill"
+        ]
+      }
+    },
+    {
+      "key": "SubSkillDataBySkill",
+      "legacyValue": 34,
+      "label": "减少指定技能数据",
+      "description": "从指定技能的运行时数据键扣减数值，可在技能之间共享或消耗流程状态。",
+      "warning": null,
+      "minParameterCount": 3,
+      "maxParameterCount": 3,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "skillId",
+          "label": "技能",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbSkill",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "key",
+          "label": "数据键",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "value",
+          "label": "数据值",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "StatModify"
+        ],
+        "mechanism": "SubSkillDataBySkill",
+        "tags": [
+          "skill-runtime-data",
+          "cross-skill"
+        ]
+      }
+    },
+    {
+      "key": "DistanceScaledDamage",
+      "legacyValue": 35,
+      "label": "按距离缩放伤害",
+      "description": "按施法者与目标距离，在最近/最远距离对应的最低/最高伤害之间做线性插值。",
+      "warning": null,
+      "minParameterCount": 6,
+      "maxParameterCount": 6,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "pipeline",
+          "label": "伤害管线",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbDamagePipeline",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "attackType",
+          "label": "攻击属性",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "minDistance",
+          "label": "最近距离",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "maxDistance",
+          "label": "最远距离",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 4,
+          "key": "minDamage",
+          "label": "最低伤害",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 5,
+          "key": "maxDamage",
+          "label": "最高伤害",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "InstantDamage"
+        ],
+        "mechanism": "DistanceScaledDamage",
+        "tags": [
+          "damage",
+          "distance-interpolation"
+        ]
+      }
+    },
+    {
+      "key": "ReboundDamage",
+      "legacyValue": 36,
+      "label": "反弹伤害",
+      "description": "以最近一次受到的伤害为基数，按配置比例通过伤害管线对目标造成反弹伤害。",
+      "warning": null,
+      "minParameterCount": 3,
+      "maxParameterCount": 3,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "pipeline",
+          "label": "伤害管线",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbDamagePipeline",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "damageType",
+          "label": "伤害属性",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "percent",
+          "label": "反弹比例",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "InstantDamage"
+        ],
+        "mechanism": "ReboundDamage",
+        "tags": [
+          "damage",
+          "rebound"
+        ]
+      }
+    },
+    {
+      "key": "AddSkill",
+      "legacyValue": 37,
+      "label": "添加技能",
+      "description": "给目标动态添加一个或多个技能配置，常用于升级、装备或临时能力。",
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": null,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "skillId",
+          "label": "技能",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbSkill",
+          "enumName": null,
+          "scale": null,
+          "repeating": true,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "SkillGrant"
+        ],
+        "mechanism": "AddSkill",
+        "tags": [
+          "skill-grant",
+          "repeatable"
+        ]
+      }
+    },
+    {
+      "key": "ClearHitMarks",
+      "legacyValue": 38,
+      "label": "清除命中标记",
+      "description": "清除指定单位 HitOnceComponent 的全部命中记录，使后续阶段可以再次命中。",
+      "warning": null,
+      "minParameterCount": 0,
+      "maxParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "description": null,
+          "kind": "Enum",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": "EffectSourceUnit",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "TargetMark"
+        ],
+        "mechanism": "ClearHitMarks",
+        "tags": [
+          "marker",
+          "clear"
+        ]
+      }
+    },
+    {
+      "key": "AddShield",
+      "legacyValue": 39,
+      "label": "添加护盾",
+      "description": "为目标添加或刷新唯一叠加的护盾 Buff，并按固定值或目标当前属性计算本次护盾量。",
+      "warning": "引用的 Buff 必须配置为唯一叠加（Unique）；不要把 AddShield 放入同一护盾 Buff 的进入效果，否则会递归创建。",
+      "minParameterCount": 3,
+      "maxParameterCount": 3,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "buffId",
+          "label": "护盾 Buff",
+          "description": "选择负责承载护盾运行时状态的 Buff。",
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbBuff",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "baseProperty",
+          "label": "计算基准属性",
+          "description": "选择 0 表示使用固定盾量；选择属性时按目标该属性的当前值乘以下方比例。",
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "value",
+          "label": "固定盾量或属性比例",
+          "description": "基准属性为 0 时填写固定盾量；否则填写比例，例如 1 表示 100%。",
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "AddState"
+        ],
+        "mechanism": "AddShield",
+        "tags": [
+          "shield",
+          "unique-buff",
+          "recursion-risk"
+        ]
+      }
+    },
+    {
+      "key": "ShareHostility",
+      "legacyValue": 40,
+      "label": "共享仇恨",
+      "description": "把施法者的运行时临时敌对共享给目标，或进一步共享给半径内的同阵营单位。",
+      "warning": null,
+      "minParameterCount": 0,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "radius",
+          "label": "共享半径",
+          "description": "单位：世界单位/米；0 表示只共享给 target。",
+          "kind": "Integer",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "mode",
+          "label": "目标筛选",
+          "description": "选择只共享给当前目标，或同时共享给半径内的同阵营单位。",
+          "kind": "Enum",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": "ShareHostilityMode",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "TargetMark"
+        ],
+        "mechanism": "ShareHostility",
+        "tags": [
+          "hostility",
+          "temporary-target-state"
+        ]
+      }
+    }
+  ],
+  "conditions": [
+    {
+      "key": "PropertyCompare",
+      "legacyValue": 1,
+      "label": "属性比较",
+      "description": null,
+      "warning": null,
+      "minParameterCount": 4,
+      "maxParameterCount": 4,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "numericType",
+          "label": "属性",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "compare",
+          "label": "比较方式",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "ECompareType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 2,
+          "key": "value",
+          "label": "比较值",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "EffectSourceUnit",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect"
+        ],
+        "mechanism": "ConditionPropertyCompare",
+        "tags": [
+          "property",
+          "comparison"
+        ]
+      }
+    },
+    {
+      "key": "HasBuff",
+      "legacyValue": 2,
+      "label": "拥有 Buff",
+      "description": null,
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "buffId",
+          "label": "Buff",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbBuff",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "description": null,
+          "kind": "Enum",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": "EffectSourceUnit",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect"
+        ],
+        "mechanism": "ConditionHasBuff",
+        "tags": [
+          "state",
+          "shared-asset"
+        ]
+      }
+    },
+    {
+      "key": "HasRestrict",
+      "legacyValue": 3,
+      "label": "拥有限制",
+      "description": null,
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "restrict",
+          "label": "限制标记",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "FlagRestrict",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": true
+        },
+        {
+          "index": 1,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "description": null,
+          "kind": "Enum",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": "EffectSourceUnit",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect"
+        ],
+        "mechanism": "ConditionHasRestrict",
+        "tags": [
+          "control",
+          "bitmask"
+        ]
+      }
+    },
+    {
+      "key": "IsUnitType",
+      "legacyValue": 4,
+      "label": "单位类型",
+      "description": null,
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "unitType",
+          "label": "单位类型",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "EUnitType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": true
+        },
+        {
+          "index": 1,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "description": null,
+          "kind": "Enum",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": "EffectSourceUnit",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect"
+        ],
+        "mechanism": "ConditionIsUnitType",
+        "tags": [
+          "unit-type",
+          "bitmask"
+        ]
+      }
+    },
+    {
+      "key": "IsTeamRelation",
+      "legacyValue": 5,
+      "label": "阵营关系",
+      "description": null,
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "relation",
+          "label": "关系",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "TeamRelation",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect"
+        ],
+        "mechanism": "ConditionIsTeamRelation",
+        "tags": [
+          "team"
+        ]
+      }
+    },
+    {
+      "key": "Probability",
+      "legacyValue": 6,
+      "label": "概率判定",
+      "description": null,
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "probability",
+          "label": "概率",
+          "description": "填写 0–1 的比例；例如 0.3 表示 30%。",
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect"
+        ],
+        "mechanism": "ConditionProbability",
+        "tags": [
+          "probability"
+        ]
+      }
+    },
+    {
+      "key": "DistanceCompare",
+      "legacyValue": 7,
+      "label": "距离比较",
+      "description": null,
+      "warning": null,
+      "minParameterCount": 2,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "compare",
+          "label": "比较方式",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "ECompareType",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "distance",
+          "label": "距离",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect"
+        ],
+        "mechanism": "ConditionDistanceCompare",
+        "tags": [
+          "distance"
+        ]
+      }
+    },
+    {
+      "key": "HasFlagLabel",
+      "legacyValue": 8,
+      "label": "拥有标签",
+      "description": null,
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "flagLabel",
+          "label": "标签",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "FlagLabel",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "description": null,
+          "kind": "Enum",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": "EffectSourceUnit",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect",
+          "TargetMark"
+        ],
+        "mechanism": "ConditionHasFlagLabel",
+        "tags": [
+          "flag"
+        ]
+      }
+    },
+    {
+      "key": "IsAlive",
+      "legacyValue": 9,
+      "label": "存活检查",
+      "description": null,
+      "warning": null,
+      "minParameterCount": 0,
+      "maxParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "description": null,
+          "kind": "Enum",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": "EffectSourceUnit",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect"
+        ],
+        "mechanism": "ConditionIsAlive",
+        "tags": [
+          "life"
+        ]
+      }
+    },
+    {
+      "key": "HasSearchTarget",
+      "legacyValue": 10,
+      "label": "存在搜索目标",
+      "description": null,
+      "warning": null,
+      "minParameterCount": 1,
+      "maxParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "searchId",
+          "label": "搜索配置",
+          "description": null,
+          "kind": "Reference",
+          "required": true,
+          "referenceTarget": "TbSearch",
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "ConditionalEffect"
+        ],
+        "mechanism": "ConditionHasSearchTarget",
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    {
+      "key": "TryMarkHit",
+      "legacyValue": 11,
+      "label": "尝试标记命中",
+      "description": null,
+      "warning": null,
+      "minParameterCount": 0,
+      "maxParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "description": null,
+          "kind": "Enum",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": "EffectSourceUnit",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "TargetMark"
+        ],
+        "mechanism": "ConditionTryMarkHit",
+        "tags": [
+          "hit-marker"
+        ]
+      }
+    }
+  ],
+  "damageStages": [
+    {
+      "key": "Immune",
+      "legacyValue": 1,
+      "label": "免疫判定"
+    },
+    {
+      "key": "Evasion",
+      "legacyValue": 2,
+      "label": "闪避判定"
+    },
+    {
+      "key": "Critical",
+      "legacyValue": 3,
+      "label": "暴击判定"
+    },
+    {
+      "key": "Defense",
+      "legacyValue": 5,
+      "label": "攻防计算"
+    },
+    {
+      "key": "Block",
+      "legacyValue": 6,
+      "label": "格挡判定"
+    },
+    {
+      "key": "Anomaly",
+      "legacyValue": 7,
+      "label": "异常判定"
+    },
+    {
+      "key": "TriggerDamageSkill",
+      "legacyValue": 8,
+      "label": "造成伤害时触发技能"
+    }
+  ],
+  "enums": [
+    {
+      "name": "DamageStageType",
+      "flags": false,
+      "comment": "伤害管线阶段类型，策划按此枚举配置管线执行顺序",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Immune",
+          "value": 1,
+          "alias": "免疫判定",
+          "comment": null
+        },
+        {
+          "name": "Evasion",
+          "value": 2,
+          "alias": "闪避判定",
+          "comment": null
+        },
+        {
+          "name": "Critical",
+          "value": 3,
+          "alias": "暴击判定",
+          "comment": null
+        },
+        {
+          "name": "Defense",
+          "value": 5,
+          "alias": "攻防计算",
+          "comment": null
+        },
+        {
+          "name": "Block",
+          "value": 6,
+          "alias": "格挡判定",
+          "comment": null
+        },
+        {
+          "name": "Anomaly",
+          "value": 7,
+          "alias": "异常判定",
+          "comment": null
+        },
+        {
+          "name": "TriggerDamageSkill",
+          "value": 8,
+          "alias": "造成伤害时触发技能",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EBuffApplyTarget",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Target",
+          "value": 0,
+          "alias": "当前效果目标",
+          "comment": null
+        },
+        {
+          "name": "Caster",
+          "value": 1,
+          "alias": "施法者",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ECompareType",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Equal",
+          "value": 0,
+          "alias": "等于",
+          "comment": null
+        },
+        {
+          "name": "Greater",
+          "value": 1,
+          "alias": "大于",
+          "comment": null
+        },
+        {
+          "name": "Less",
+          "value": 2,
+          "alias": "小于",
+          "comment": null
+        },
+        {
+          "name": "GreaterOrEqual",
+          "value": 3,
+          "alias": "大于等于",
+          "comment": null
+        },
+        {
+          "name": "LessOrEqual",
+          "value": 4,
+          "alias": "小于等于",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EffectKillTarget",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Owner",
+          "value": 1,
+          "alias": "施法者",
+          "comment": null
+        },
+        {
+          "name": "Target",
+          "value": 2,
+          "alias": "目标",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EffectSourceUnit",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Owner",
+          "value": 0,
+          "alias": "施法者",
+          "comment": null
+        },
+        {
+          "name": "Target",
+          "value": 1,
+          "alias": "目标",
+          "comment": null
+        },
+        {
+          "name": "Carrier",
+          "value": 2,
+          "alias": "载体",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EGroupCompletedType",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "无",
+          "comment": null
+        },
+        {
+          "name": "All",
+          "value": 1,
+          "alias": "满足所有条件",
+          "comment": null
+        },
+        {
+          "name": "Any",
+          "value": 2,
+          "alias": "满足任一条件",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EKnockbackDirection",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "AwayFromCaster",
+          "value": 0,
+          "alias": "远离施法者",
+          "comment": null
+        },
+        {
+          "name": "TowardCaster",
+          "value": 1,
+          "alias": "朝向施法者",
+          "comment": null
+        },
+        {
+          "name": "CasterForward",
+          "value": 2,
+          "alias": "施法者前方",
+          "comment": null
+        },
+        {
+          "name": "FixedWorldDirection",
+          "value": 3,
+          "alias": "固定世界方向",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ESearchTargetPriority",
+      "flags": false,
+      "comment": "索敌优先级",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "无",
+          "comment": null
+        },
+        {
+          "name": "MinDistance",
+          "value": 1,
+          "alias": "最近距离",
+          "comment": null
+        },
+        {
+          "name": "MaxDistance",
+          "value": 2,
+          "alias": "最远距离",
+          "comment": null
+        },
+        {
+          "name": "Random",
+          "value": 3,
+          "alias": "随机",
+          "comment": null
+        },
+        {
+          "name": "MaxCoverage",
+          "value": 4,
+          "alias": "单位锚定覆盖评分",
+          "comment": null
+        },
+        {
+          "name": "LowestHpPct",
+          "value": 5,
+          "alias": "HP百分比最低",
+          "comment": null
+        },
+        {
+          "name": "HighestThreatScore",
+          "value": 6,
+          "alias": "现有属性评分威胁",
+          "comment": null
+        },
+        {
+          "name": "Warrior",
+          "value": 7,
+          "alias": "战士",
+          "comment": null
+        },
+        {
+          "name": "Mage",
+          "value": 8,
+          "alias": "法师",
+          "comment": null
+        },
+        {
+          "name": "Archer",
+          "value": 9,
+          "alias": "弓箭手",
+          "comment": null
+        },
+        {
+          "name": "Priest",
+          "value": 10,
+          "alias": "牧师",
+          "comment": null
+        },
+        {
+          "name": "Knight",
+          "value": 11,
+          "alias": "骑士",
+          "comment": null
+        },
+        {
+          "name": "Assassin",
+          "value": 12,
+          "alias": "刺客",
+          "comment": null
+        },
+        {
+          "name": "Warlock",
+          "value": 13,
+          "alias": "术士",
+          "comment": null
+        },
+        {
+          "name": "Auxiliary",
+          "value": 14,
+          "alias": "辅助",
+          "comment": null
+        },
+        {
+          "name": "Tank",
+          "value": 15,
+          "alias": "坦克",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ESearchTargetShape",
+      "flags": false,
+      "comment": "索敌形状",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Circle",
+          "value": 1,
+          "alias": "圆形",
+          "comment": null
+        },
+        {
+          "name": "Sector",
+          "value": 2,
+          "alias": "扇形",
+          "comment": null
+        },
+        {
+          "name": "Rectangle",
+          "value": 3,
+          "alias": "矩形",
+          "comment": null
+        },
+        {
+          "name": "Cross",
+          "value": 4,
+          "alias": "十字",
+          "comment": null
+        },
+        {
+          "name": "Line",
+          "value": 5,
+          "alias": "直线",
+          "comment": null
+        },
+        {
+          "name": "All",
+          "value": 6,
+          "alias": "全体",
+          "comment": null
+        },
+        {
+          "name": "Ring",
+          "value": 7,
+          "alias": "环形",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ESearchTargetTeam",
+      "flags": false,
+      "comment": "索敌类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Self",
+          "value": 1,
+          "alias": "自己",
+          "comment": null
+        },
+        {
+          "name": "Friend",
+          "value": 2,
+          "alias": "友方含自己",
+          "comment": null
+        },
+        {
+          "name": "FriendExcludeSelf",
+          "value": 3,
+          "alias": "友方不含自己",
+          "comment": null
+        },
+        {
+          "name": "Enemy",
+          "value": 4,
+          "alias": "敌方队伍",
+          "comment": null
+        },
+        {
+          "name": "Counter",
+          "value": 6,
+          "alias": "反击",
+          "comment": null
+        },
+        {
+          "name": "All",
+          "value": 7,
+          "alias": "全体",
+          "comment": null
+        },
+        {
+          "name": "Global",
+          "value": 8,
+          "alias": "全局",
+          "comment": null
+        },
+        {
+          "name": "FriendTeam",
+          "value": 9,
+          "alias": "友方全局",
+          "comment": null
+        },
+        {
+          "name": "EnemyTeam",
+          "value": 10,
+          "alias": "敌方全局",
+          "comment": null
+        },
+        {
+          "name": "OwnerPlayer",
+          "value": 11,
+          "alias": "所属玩家",
+          "comment": null
+        },
+        {
+          "name": "AITarget",
+          "value": 12,
+          "alias": "AI目标",
+          "comment": null
+        },
+        {
+          "name": "FlowTarget",
+          "value": 13,
+          "alias": "传递的目标",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ESkillType",
+      "flags": false,
+      "comment": "技能类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "无类型",
+          "comment": null
+        },
+        {
+          "name": "Normal",
+          "value": 1,
+          "alias": "普通攻击",
+          "comment": null
+        },
+        {
+          "name": "Manual",
+          "value": 2,
+          "alias": "手动技能",
+          "comment": null
+        },
+        {
+          "name": "Dead",
+          "value": 3,
+          "alias": "死亡技能",
+          "comment": null
+        },
+        {
+          "name": "Counter",
+          "value": 4,
+          "alias": "反击技能",
+          "comment": null
+        },
+        {
+          "name": "Auto",
+          "value": 5,
+          "alias": "自动释放技能",
+          "comment": null
+        },
+        {
+          "name": "Placement",
+          "value": 6,
+          "alias": "放置技能",
+          "comment": null
+        },
+        {
+          "name": "Passive",
+          "value": 7,
+          "alias": "被动技能",
+          "comment": null
+        },
+        {
+          "name": "Damage",
+          "value": 8,
+          "alias": "造成伤害时触发技能",
+          "comment": null
+        },
+        {
+          "name": "OnKill",
+          "value": 9,
+          "alias": "击杀时触发技能",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "EUnitType",
+      "flags": true,
+      "comment": "实体类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Hero",
+          "value": 1,
+          "alias": "英雄",
+          "comment": null
+        },
+        {
+          "name": "Block",
+          "value": 2,
+          "alias": "地块",
+          "comment": null
+        },
+        {
+          "name": "Building",
+          "value": 4,
+          "alias": "建筑",
+          "comment": null
+        },
+        {
+          "name": "Soldier",
+          "value": 8,
+          "alias": "士兵",
+          "comment": null
+        },
+        {
+          "name": "Item",
+          "value": 16,
+          "alias": "物品",
+          "comment": null
+        },
+        {
+          "name": "Bullet",
+          "value": 32,
+          "alias": "子弹",
+          "comment": null
+        },
+        {
+          "name": "Global",
+          "value": 64,
+          "alias": "全局",
+          "comment": null
+        },
+        {
+          "name": "Team",
+          "value": 128,
+          "alias": "队伍",
+          "comment": null
+        },
+        {
+          "name": "Player",
+          "value": 256,
+          "alias": "玩家",
+          "comment": null
+        },
+        {
+          "name": "Trap",
+          "value": 512,
+          "alias": "陷阱",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "FlagLabel",
+      "flags": false,
+      "comment": "普通标签",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Count1",
+          "value": 1,
+          "alias": "数量1",
+          "comment": null
+        },
+        {
+          "name": "Count2",
+          "value": 2,
+          "alias": "数量2",
+          "comment": null
+        },
+        {
+          "name": "Count3",
+          "value": 3,
+          "alias": "数量3",
+          "comment": null
+        },
+        {
+          "name": "Count4",
+          "value": 4,
+          "alias": "数量4",
+          "comment": null
+        },
+        {
+          "name": "Count5",
+          "value": 5,
+          "alias": "数量5",
+          "comment": null
+        },
+        {
+          "name": "CritKill",
+          "value": 6,
+          "alias": "暴击击杀标记",
+          "comment": null
+        },
+        {
+          "name": "Stealth",
+          "value": 7,
+          "alias": "隐身",
+          "comment": null
+        },
+        {
+          "name": "Corpse",
+          "value": 8,
+          "alias": "尸体",
+          "comment": null
+        },
+        {
+          "name": "Alive",
+          "value": 10,
+          "alias": "活着",
+          "comment": null
+        },
+        {
+          "name": "Reviving",
+          "value": 9,
+          "alias": "正在复活",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "FlagRestrict",
+      "flags": true,
+      "comment": "禁止标签",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "NotMove",
+          "value": 1,
+          "alias": "禁止移动",
+          "comment": null
+        },
+        {
+          "name": "NotAttack",
+          "value": 2,
+          "alias": "禁止普通技能",
+          "comment": null
+        },
+        {
+          "name": "NotManual",
+          "value": 4,
+          "alias": "禁止手动技能",
+          "comment": null
+        },
+        {
+          "name": "NotAIAlert",
+          "value": 8,
+          "alias": "禁止AI警戒",
+          "comment": null
+        },
+        {
+          "name": "NotRotate",
+          "value": 16,
+          "alias": "禁止旋转",
+          "comment": null
+        },
+        {
+          "name": "NotProduct",
+          "value": 32,
+          "alias": "禁止生产",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "NumericType",
+      "flags": false,
+      "comment": "属性类型",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "",
+          "comment": null
+        },
+        {
+          "name": "Hp",
+          "value": 1,
+          "alias": "血量",
+          "comment": null
+        },
+        {
+          "name": "Mp",
+          "value": 2,
+          "alias": "蓝量",
+          "comment": null
+        },
+        {
+          "name": "Armor",
+          "value": 34,
+          "alias": "护甲",
+          "comment": null
+        },
+        {
+          "name": "Gold",
+          "value": 100,
+          "alias": "金币",
+          "comment": null
+        },
+        {
+          "name": "Silver",
+          "value": 104,
+          "alias": "银币",
+          "comment": null
+        },
+        {
+          "name": "Wood",
+          "value": 101,
+          "alias": "木材",
+          "comment": null
+        },
+        {
+          "name": "Population",
+          "value": 102,
+          "alias": "人口",
+          "comment": null
+        },
+        {
+          "name": "MagicValue",
+          "value": 103,
+          "alias": "魔力",
+          "comment": null
+        },
+        {
+          "name": "AddNormalTargetCount",
+          "value": 501,
+          "alias": "增加普攻目标",
+          "comment": null
+        },
+        {
+          "name": "GuaranteedCrit",
+          "value": 1000001,
+          "alias": "必定暴击",
+          "comment": null
+        },
+        {
+          "name": "DamageBonus",
+          "value": 1000002,
+          "alias": "额外伤害加成",
+          "comment": null
+        },
+        {
+          "name": "BuffDurationIncrease",
+          "value": 1000003,
+          "alias": "额外buff时间",
+          "comment": null
+        },
+        {
+          "name": "Probability",
+          "value": 1000004,
+          "alias": "额外技能概率",
+          "comment": null
+        },
+        {
+          "name": "SkillRangeScale",
+          "value": 1000005,
+          "alias": "额外技能范围缩放",
+          "comment": null
+        },
+        {
+          "name": "AddTargetCount",
+          "value": 1000006,
+          "alias": "增加目标",
+          "comment": null
+        },
+        {
+          "name": "SpecialMax",
+          "value": 500,
+          "alias": "分隔特殊约定属性",
+          "comment": "分隔特殊约定属性 1~499区间内的属性加1000对应他的最大值属性"
+        },
+        {
+          "name": "Max",
+          "value": 10000,
+          "alias": "分隔父子属性",
+          "comment": "分隔父子属性 10000~99999区间内的属性变化时都要更新其父属性"
+        },
+        {
+          "name": "MaxHp",
+          "value": 1001,
+          "alias": "生命值",
+          "comment": null
+        },
+        {
+          "name": "MaxHpBase",
+          "value": 10011,
+          "alias": "生命值B",
+          "comment": null
+        },
+        {
+          "name": "MaxHpBaseAdd",
+          "value": 10012,
+          "alias": "生命值BD",
+          "comment": null
+        },
+        {
+          "name": "MaxHpBasePct",
+          "value": 10013,
+          "alias": "生命值BP",
+          "comment": null
+        },
+        {
+          "name": "MaxHpFinalAdd",
+          "value": 10014,
+          "alias": "生命值FD",
+          "comment": null
+        },
+        {
+          "name": "MaxHpFinalPct",
+          "value": 10015,
+          "alias": "生命值FP",
+          "comment": null
+        },
+        {
+          "name": "MaxMp",
+          "value": 1002,
+          "alias": "魔法值",
+          "comment": null
+        },
+        {
+          "name": "MaxMpBase",
+          "value": 10021,
+          "alias": "魔法值B",
+          "comment": null
+        },
+        {
+          "name": "MaxMpBaseAdd",
+          "value": 10022,
+          "alias": "魔法值BD",
+          "comment": null
+        },
+        {
+          "name": "MaxMpBasePct",
+          "value": 10023,
+          "alias": "魔法值BP",
+          "comment": null
+        },
+        {
+          "name": "MaxMpFinalAdd",
+          "value": 10024,
+          "alias": "魔法值FD",
+          "comment": null
+        },
+        {
+          "name": "MaxMpFinalPct",
+          "value": 10025,
+          "alias": "魔法值FP",
+          "comment": null
+        },
+        {
+          "name": "Atk",
+          "value": 1003,
+          "alias": "攻击力",
+          "comment": null
+        },
+        {
+          "name": "AtkBase",
+          "value": 10031,
+          "alias": "攻击力B",
+          "comment": null
+        },
+        {
+          "name": "AtkBaseAdd",
+          "value": 10032,
+          "alias": "攻击力BD",
+          "comment": null
+        },
+        {
+          "name": "AtkBasePct",
+          "value": 10033,
+          "alias": "攻击力BP",
+          "comment": null
+        },
+        {
+          "name": "AtkFinalAdd",
+          "value": 10034,
+          "alias": "攻击力FD",
+          "comment": null
+        },
+        {
+          "name": "AtkFinalPct",
+          "value": 10035,
+          "alias": "攻击力FP",
+          "comment": null
+        },
+        {
+          "name": "Def",
+          "value": 1004,
+          "alias": "防御力",
+          "comment": null
+        },
+        {
+          "name": "DefBase",
+          "value": 10041,
+          "alias": "防御力B",
+          "comment": null
+        },
+        {
+          "name": "DefBaseAdd",
+          "value": 10042,
+          "alias": "防御力BD",
+          "comment": null
+        },
+        {
+          "name": "DefBasePct",
+          "value": 10043,
+          "alias": "防御力BP",
+          "comment": null
+        },
+        {
+          "name": "DefFinalAdd",
+          "value": 10044,
+          "alias": "防御力FD",
+          "comment": null
+        },
+        {
+          "name": "DefFinalPct",
+          "value": 10045,
+          "alias": "防御力FP",
+          "comment": null
+        },
+        {
+          "name": "Speed",
+          "value": 1005,
+          "alias": "速度",
+          "comment": null
+        },
+        {
+          "name": "SpeedBase",
+          "value": 10051,
+          "alias": "速度B",
+          "comment": null
+        },
+        {
+          "name": "SpeedBaseAdd",
+          "value": 10052,
+          "alias": "速度BD",
+          "comment": null
+        },
+        {
+          "name": "SpeedBasePct",
+          "value": 10053,
+          "alias": "速度BP",
+          "comment": null
+        },
+        {
+          "name": "SpeedFinalAdd",
+          "value": 10054,
+          "alias": "速度FD",
+          "comment": null
+        },
+        {
+          "name": "SpeedFinalPct",
+          "value": 10055,
+          "alias": "速度FP",
+          "comment": null
+        },
+        {
+          "name": "AOI",
+          "value": 1006,
+          "alias": "AOI值",
+          "comment": null
+        },
+        {
+          "name": "AOIBase",
+          "value": 10061,
+          "alias": "AOI值B",
+          "comment": null
+        },
+        {
+          "name": "AOIBaseAdd",
+          "value": 10062,
+          "alias": "AOI值BD",
+          "comment": null
+        },
+        {
+          "name": "AOIBasePct",
+          "value": 10063,
+          "alias": "AOI值BP",
+          "comment": null
+        },
+        {
+          "name": "AOIFinalAdd",
+          "value": 10064,
+          "alias": "AOI值FD",
+          "comment": null
+        },
+        {
+          "name": "AOIFinalPct",
+          "value": 10065,
+          "alias": "AOI值FP",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeed",
+          "value": 1007,
+          "alias": "攻速",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeedBase",
+          "value": 10071,
+          "alias": "攻速B",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeedBaseAdd",
+          "value": 10072,
+          "alias": "攻速BD",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeedBasePct",
+          "value": 10073,
+          "alias": "攻速BP",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeedFinalAdd",
+          "value": 10074,
+          "alias": "攻速FD",
+          "comment": null
+        },
+        {
+          "name": "AtkSpeedFinalPct",
+          "value": 10075,
+          "alias": "攻速FP",
+          "comment": null
+        },
+        {
+          "name": "AtkRange",
+          "value": 1008,
+          "alias": "攻击距离",
+          "comment": null
+        },
+        {
+          "name": "AtkRangeBase",
+          "value": 10081,
+          "alias": "攻击距离B",
+          "comment": null
+        },
+        {
+          "name": "AtkRangeBaseAdd",
+          "value": 10082,
+          "alias": "攻击距离BD",
+          "comment": null
+        },
+        {
+          "name": "AtkRangeBasePct",
+          "value": 10083,
+          "alias": "攻击距离BP",
+          "comment": null
+        },
+        {
+          "name": "AtkRangeFinalAdd",
+          "value": 10084,
+          "alias": "攻击距离FD",
+          "comment": null
+        },
+        {
+          "name": "AtkRangeFinalPct",
+          "value": 10085,
+          "alias": "攻击距离FP",
+          "comment": null
+        },
+        {
+          "name": "CriticalRate",
+          "value": 1009,
+          "alias": "暴击率",
+          "comment": null
+        },
+        {
+          "name": "CriticalRateBase",
+          "value": 10091,
+          "alias": "暴击率B",
+          "comment": null
+        },
+        {
+          "name": "CriticalRateBaseAdd",
+          "value": 10092,
+          "alias": "暴击率BD",
+          "comment": null
+        },
+        {
+          "name": "CriticalRateBasePct",
+          "value": 10093,
+          "alias": "暴击率BP",
+          "comment": null
+        },
+        {
+          "name": "CriticalRateFinalAdd",
+          "value": 10094,
+          "alias": "暴击率FD",
+          "comment": null
+        },
+        {
+          "name": "CriticalRateFinalPct",
+          "value": 10095,
+          "alias": "暴击率FP",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercent",
+          "value": 1010,
+          "alias": "暴击伤害比例",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercentBase",
+          "value": 10101,
+          "alias": "暴击伤害比例B",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercentBaseAdd",
+          "value": 10102,
+          "alias": "暴击伤害比例BD",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercentBasePct",
+          "value": 10103,
+          "alias": "暴击伤害比例BP",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercentFinalAdd",
+          "value": 10104,
+          "alias": "暴击伤害比例FD",
+          "comment": null
+        },
+        {
+          "name": "CriticalDamagePercentFinalPct",
+          "value": 10105,
+          "alias": "暴击伤害比例FP",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercent",
+          "value": 1011,
+          "alias": "反弹伤害比例",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercentBaseRate",
+          "value": 10111,
+          "alias": "反弹伤害比例B",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercentBaseAddRate",
+          "value": 10112,
+          "alias": "反弹伤害比例BD",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercentBasePctRate",
+          "value": 10113,
+          "alias": "反弹伤害比例BP",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercentFinalAddRate",
+          "value": 10114,
+          "alias": "反弹伤害比例FD",
+          "comment": null
+        },
+        {
+          "name": "ReboundDamagePercentFinalPctRate",
+          "value": 10115,
+          "alias": "反弹伤害比例FP",
+          "comment": null
+        },
+        {
+          "name": "BlockRate",
+          "value": 1012,
+          "alias": "格挡率",
+          "comment": null
+        },
+        {
+          "name": "BlockRateBase",
+          "value": 10121,
+          "alias": "格挡率B",
+          "comment": null
+        },
+        {
+          "name": "BlockRateBaseAdd",
+          "value": 10122,
+          "alias": "格挡率BD",
+          "comment": null
+        },
+        {
+          "name": "BlockRateBasePct",
+          "value": 10123,
+          "alias": "格挡率BP",
+          "comment": null
+        },
+        {
+          "name": "BlockRateFinalAdd",
+          "value": 10124,
+          "alias": "格挡率FD",
+          "comment": null
+        },
+        {
+          "name": "BlockRateFinalPct",
+          "value": 10125,
+          "alias": "格挡率FP",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercent",
+          "value": 1013,
+          "alias": "格挡伤害比例",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercentBase",
+          "value": 10131,
+          "alias": "格挡伤害比例B",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercentBaseAdd",
+          "value": 10132,
+          "alias": "格挡伤害比例BD",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercentBasePct",
+          "value": 10133,
+          "alias": "格挡伤害比例BP",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercentFinalAdd",
+          "value": 10134,
+          "alias": "格挡伤害比例FD",
+          "comment": null
+        },
+        {
+          "name": "BlockDamagePercentFinalPct",
+          "value": 10135,
+          "alias": "格挡伤害比例FP",
+          "comment": null
+        },
+        {
+          "name": "EvasionRate",
+          "value": 1014,
+          "alias": "闪避率",
+          "comment": null
+        },
+        {
+          "name": "EvasionRateBase",
+          "value": 10141,
+          "alias": "闪避率B",
+          "comment": null
+        },
+        {
+          "name": "EvasionRateBaseAdd",
+          "value": 10142,
+          "alias": "闪避率BD",
+          "comment": null
+        },
+        {
+          "name": "EvasionRateBasePct",
+          "value": 10143,
+          "alias": "闪避率BP",
+          "comment": null
+        },
+        {
+          "name": "EvasionRateFinalAdd",
+          "value": 10144,
+          "alias": "闪避率FD",
+          "comment": null
+        },
+        {
+          "name": "EvasionRateFinalPct",
+          "value": 10145,
+          "alias": "闪避率FP",
+          "comment": null
+        },
+        {
+          "name": "CounterRate",
+          "value": 1015,
+          "alias": "反击率",
+          "comment": null
+        },
+        {
+          "name": "CounterRateBase",
+          "value": 10151,
+          "alias": "反击率B",
+          "comment": null
+        },
+        {
+          "name": "CounterRateBaseAdd",
+          "value": 10152,
+          "alias": "反击率BD",
+          "comment": null
+        },
+        {
+          "name": "CounterRateBasePct",
+          "value": 10153,
+          "alias": "反击率BP",
+          "comment": null
+        },
+        {
+          "name": "CounterRateFinalAdd",
+          "value": 10154,
+          "alias": "反击率FD",
+          "comment": null
+        },
+        {
+          "name": "CounterRateFinalPct",
+          "value": 10155,
+          "alias": "反击率FP",
+          "comment": null
+        },
+        {
+          "name": "HitRate",
+          "value": 1016,
+          "alias": "命中率",
+          "comment": null
+        },
+        {
+          "name": "HitRateBase",
+          "value": 10161,
+          "alias": "命中率B",
+          "comment": null
+        },
+        {
+          "name": "HitRateBaseAdd",
+          "value": 10162,
+          "alias": "命中率BD",
+          "comment": null
+        },
+        {
+          "name": "HitRateBasePct",
+          "value": 10163,
+          "alias": "命中率BP",
+          "comment": null
+        },
+        {
+          "name": "HitRateFinalAdd",
+          "value": 10164,
+          "alias": "命中率FD",
+          "comment": null
+        },
+        {
+          "name": "HitRateFinalPct",
+          "value": 10165,
+          "alias": "命中率FP",
+          "comment": null
+        },
+        {
+          "name": "FrostDamage",
+          "value": 1017,
+          "alias": "冰冻伤害",
+          "comment": null
+        },
+        {
+          "name": "FrostDamageBase",
+          "value": 10171,
+          "alias": "冰冻伤害B",
+          "comment": null
+        },
+        {
+          "name": "FrostDamageBaseAdd",
+          "value": 10172,
+          "alias": "冰冻伤害BD",
+          "comment": null
+        },
+        {
+          "name": "FrostDamageBasePct",
+          "value": 10173,
+          "alias": "冰冻伤害BP",
+          "comment": null
+        },
+        {
+          "name": "FrostDamageFinalAdd",
+          "value": 10174,
+          "alias": "冰冻伤害FD",
+          "comment": null
+        },
+        {
+          "name": "FrostDamageFinalPct",
+          "value": 10175,
+          "alias": "冰冻伤害FP",
+          "comment": null
+        },
+        {
+          "name": "FrostResist",
+          "value": 1025,
+          "alias": "冰冻抗性",
+          "comment": null
+        },
+        {
+          "name": "FrostResistBase",
+          "value": 10251,
+          "alias": "冰冻抗性B",
+          "comment": null
+        },
+        {
+          "name": "FrostResistBaseAdd",
+          "value": 10252,
+          "alias": "冰冻抗性BD",
+          "comment": null
+        },
+        {
+          "name": "FrostResistBasePct",
+          "value": 10253,
+          "alias": "冰冻抗性BP",
+          "comment": null
+        },
+        {
+          "name": "FrostResistFinalAdd",
+          "value": 10254,
+          "alias": "冰冻抗性FD",
+          "comment": null
+        },
+        {
+          "name": "FrostResistFinalPct",
+          "value": 10255,
+          "alias": "冰冻抗性FP",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamage",
+          "value": 1018,
+          "alias": "毒素伤害",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamageBase",
+          "value": 10181,
+          "alias": "毒素伤害B",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamageBaseAdd",
+          "value": 10182,
+          "alias": "毒素伤害BD",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamageBasePct",
+          "value": 10183,
+          "alias": "毒素伤害BP",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamageFinalAdd",
+          "value": 10184,
+          "alias": "毒素伤害FD",
+          "comment": null
+        },
+        {
+          "name": "PoisonDamageFinalPct",
+          "value": 10185,
+          "alias": "毒素伤害FP",
+          "comment": null
+        },
+        {
+          "name": "PoisonResist",
+          "value": 1026,
+          "alias": "毒素抗性",
+          "comment": null
+        },
+        {
+          "name": "PoisonResistBase",
+          "value": 10261,
+          "alias": "毒素抗性B",
+          "comment": null
+        },
+        {
+          "name": "PoisonResistBaseAdd",
+          "value": 10262,
+          "alias": "毒素抗性BD",
+          "comment": null
+        },
+        {
+          "name": "PoisonResistBasePct",
+          "value": 10263,
+          "alias": "毒素抗性BP",
+          "comment": null
+        },
+        {
+          "name": "PoisonResistFinalAdd",
+          "value": 10264,
+          "alias": "毒素抗性FD",
+          "comment": null
+        },
+        {
+          "name": "PoisonResistFinalPct",
+          "value": 10265,
+          "alias": "毒素抗性FP",
+          "comment": null
+        },
+        {
+          "name": "FireDamage",
+          "value": 1019,
+          "alias": "火焰伤害",
+          "comment": null
+        },
+        {
+          "name": "FireDamageBase",
+          "value": 10191,
+          "alias": "火焰伤害B",
+          "comment": null
+        },
+        {
+          "name": "FireDamageBaseAdd",
+          "value": 10192,
+          "alias": "火焰伤害BD",
+          "comment": null
+        },
+        {
+          "name": "FireDamageBasePct",
+          "value": 10193,
+          "alias": "火焰伤害BP",
+          "comment": null
+        },
+        {
+          "name": "FireDamageFinalAdd",
+          "value": 10194,
+          "alias": "火焰伤害FD",
+          "comment": null
+        },
+        {
+          "name": "FireDamageFinalPct",
+          "value": 10195,
+          "alias": "火焰伤害FP",
+          "comment": null
+        },
+        {
+          "name": "FireResist",
+          "value": 1027,
+          "alias": "火焰抗性",
+          "comment": null
+        },
+        {
+          "name": "FireResistBase",
+          "value": 10271,
+          "alias": "火焰抗性B",
+          "comment": null
+        },
+        {
+          "name": "FireResistBaseAdd",
+          "value": 10272,
+          "alias": "火焰抗性BD",
+          "comment": null
+        },
+        {
+          "name": "FireResistBasePct",
+          "value": 10273,
+          "alias": "火焰抗性BP",
+          "comment": null
+        },
+        {
+          "name": "FireResistFinalAdd",
+          "value": 10274,
+          "alias": "火焰抗性FD",
+          "comment": null
+        },
+        {
+          "name": "FireResistFinalPct",
+          "value": 10275,
+          "alias": "火焰抗性FP",
+          "comment": null
+        },
+        {
+          "name": "LightningDamage",
+          "value": 1020,
+          "alias": "雷电伤害",
+          "comment": null
+        },
+        {
+          "name": "LightningDamageBase",
+          "value": 10201,
+          "alias": "雷电伤害B",
+          "comment": null
+        },
+        {
+          "name": "LightningDamageBaseAdd",
+          "value": 10202,
+          "alias": "雷电伤害BD",
+          "comment": null
+        },
+        {
+          "name": "LightningDamageBasePct",
+          "value": 10203,
+          "alias": "雷电伤害BP",
+          "comment": null
+        },
+        {
+          "name": "LightningDamageFinalAdd",
+          "value": 10204,
+          "alias": "雷电伤害FD",
+          "comment": null
+        },
+        {
+          "name": "LightningDamageFinalPct",
+          "value": 10205,
+          "alias": "雷电伤害FP",
+          "comment": null
+        },
+        {
+          "name": "LightningResist",
+          "value": 1028,
+          "alias": "雷电抗性",
+          "comment": null
+        },
+        {
+          "name": "LightningResistBase",
+          "value": 10281,
+          "alias": "雷电抗性B",
+          "comment": null
+        },
+        {
+          "name": "LightningResistBaseAdd",
+          "value": 10282,
+          "alias": "雷电抗性BD",
+          "comment": null
+        },
+        {
+          "name": "LightningResistBasePct",
+          "value": 10283,
+          "alias": "雷电抗性BP",
+          "comment": null
+        },
+        {
+          "name": "LightningResistFinalAdd",
+          "value": 10284,
+          "alias": "雷电抗性FD",
+          "comment": null
+        },
+        {
+          "name": "LightningResistFinalPct",
+          "value": 10285,
+          "alias": "雷电抗性FP",
+          "comment": null
+        },
+        {
+          "name": "DarkDamage",
+          "value": 1021,
+          "alias": "暗黑伤害",
+          "comment": null
+        },
+        {
+          "name": "DarkDamageBase",
+          "value": 10211,
+          "alias": "暗黑伤害B",
+          "comment": null
+        },
+        {
+          "name": "DarkDamageBaseAdd",
+          "value": 10212,
+          "alias": "暗黑伤害BD",
+          "comment": null
+        },
+        {
+          "name": "DarkDamageBasePct",
+          "value": 10213,
+          "alias": "暗黑伤害BP",
+          "comment": null
+        },
+        {
+          "name": "DarkDamageFinalAdd",
+          "value": 10214,
+          "alias": "暗黑伤害FD",
+          "comment": null
+        },
+        {
+          "name": "DarkDamageFinalPct",
+          "value": 10215,
+          "alias": "暗黑伤害FP",
+          "comment": null
+        },
+        {
+          "name": "DarkResist",
+          "value": 1029,
+          "alias": "暗黑抗性",
+          "comment": null
+        },
+        {
+          "name": "DarkResistBase",
+          "value": 10291,
+          "alias": "暗黑抗性B",
+          "comment": null
+        },
+        {
+          "name": "DarkResistBaseAdd",
+          "value": 10292,
+          "alias": "暗黑抗性BD",
+          "comment": null
+        },
+        {
+          "name": "DarkResistBasePct",
+          "value": 10293,
+          "alias": "暗黑抗性BP",
+          "comment": null
+        },
+        {
+          "name": "DarkResistFinalAdd",
+          "value": 10294,
+          "alias": "暗黑抗性FD",
+          "comment": null
+        },
+        {
+          "name": "DarkResistFinalPct",
+          "value": 10295,
+          "alias": "暗黑抗性FP",
+          "comment": null
+        },
+        {
+          "name": "HolyDamage",
+          "value": 1022,
+          "alias": "光明伤害",
+          "comment": null
+        },
+        {
+          "name": "HolyDamageBase",
+          "value": 10221,
+          "alias": "光明伤害B",
+          "comment": null
+        },
+        {
+          "name": "HolyDamageBaseAdd",
+          "value": 10222,
+          "alias": "光明伤害BD",
+          "comment": null
+        },
+        {
+          "name": "HolyDamageBasePct",
+          "value": 10223,
+          "alias": "光明伤害BP",
+          "comment": null
+        },
+        {
+          "name": "HolyDamageFinalAdd",
+          "value": 10224,
+          "alias": "光明伤害FD",
+          "comment": null
+        },
+        {
+          "name": "HolyDamageFinalPct",
+          "value": 10225,
+          "alias": "光明伤害FP",
+          "comment": null
+        },
+        {
+          "name": "HolyResist",
+          "value": 1030,
+          "alias": "光明抗性",
+          "comment": null
+        },
+        {
+          "name": "HolyResistBase",
+          "value": 10301,
+          "alias": "光明抗性B",
+          "comment": null
+        },
+        {
+          "name": "HolyResistBaseAdd",
+          "value": 10302,
+          "alias": "光明抗性BD",
+          "comment": null
+        },
+        {
+          "name": "HolyResistBasePct",
+          "value": 10303,
+          "alias": "光明抗性BP",
+          "comment": null
+        },
+        {
+          "name": "HolyResistFinalAdd",
+          "value": 10304,
+          "alias": "光明抗性FD",
+          "comment": null
+        },
+        {
+          "name": "HolyResistFinalPct",
+          "value": 10305,
+          "alias": "光明抗性FP",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamage",
+          "value": 1023,
+          "alias": "混沌伤害",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamageBase",
+          "value": 10231,
+          "alias": "混沌伤害B",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamageBaseAdd",
+          "value": 10232,
+          "alias": "混沌伤害BD",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamageBasePct",
+          "value": 10233,
+          "alias": "混沌伤害BP",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamageFinalAdd",
+          "value": 10234,
+          "alias": "混沌伤害FD",
+          "comment": null
+        },
+        {
+          "name": "ChaosDamageFinalPct",
+          "value": 10235,
+          "alias": "混沌伤害FP",
+          "comment": null
+        },
+        {
+          "name": "ChaosResist",
+          "value": 1031,
+          "alias": "混沌抗性",
+          "comment": null
+        },
+        {
+          "name": "ChaosResistBase",
+          "value": 10311,
+          "alias": "混沌抗性B",
+          "comment": null
+        },
+        {
+          "name": "ChaosResistBaseAdd",
+          "value": 10312,
+          "alias": "混沌抗性BD",
+          "comment": null
+        },
+        {
+          "name": "ChaosResistBasePct",
+          "value": 10313,
+          "alias": "混沌抗性BP",
+          "comment": null
+        },
+        {
+          "name": "ChaosResistFinalAdd",
+          "value": 10314,
+          "alias": "混沌抗性FD",
+          "comment": null
+        },
+        {
+          "name": "ChaosResistFinalPct",
+          "value": 10315,
+          "alias": "混沌抗性FP",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamage",
+          "value": 1024,
+          "alias": "攻城伤害",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamageBase",
+          "value": 10241,
+          "alias": "攻城伤害B",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamageBaseAdd",
+          "value": 10242,
+          "alias": "攻城伤害BD",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamageBasePct",
+          "value": 10243,
+          "alias": "攻城伤害BP",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamageFinalAdd",
+          "value": 10244,
+          "alias": "攻城伤害FD",
+          "comment": null
+        },
+        {
+          "name": "SiegeDamageFinalPct",
+          "value": 10245,
+          "alias": "攻城伤害FP",
+          "comment": null
+        },
+        {
+          "name": "SiegeResist",
+          "value": 1032,
+          "alias": "攻城抗性",
+          "comment": null
+        },
+        {
+          "name": "SiegeResistBase",
+          "value": 10321,
+          "alias": "攻城抗性B",
+          "comment": null
+        },
+        {
+          "name": "SiegeResistBaseAdd",
+          "value": 10322,
+          "alias": "攻城抗性BD",
+          "comment": null
+        },
+        {
+          "name": "SiegeResistBasePct",
+          "value": 10323,
+          "alias": "攻城抗性BP",
+          "comment": null
+        },
+        {
+          "name": "SiegeResistFinalAdd",
+          "value": 10324,
+          "alias": "攻城抗性FD",
+          "comment": null
+        },
+        {
+          "name": "SiegeResistFinalPct",
+          "value": 10325,
+          "alias": "攻城抗性FP",
+          "comment": null
+        },
+        {
+          "name": "SenseRange",
+          "value": 1033,
+          "alias": "感知范围",
+          "comment": null
+        },
+        {
+          "name": "SenseRangeBase",
+          "value": 10331,
+          "alias": "感知范围B",
+          "comment": null
+        },
+        {
+          "name": "SenseRangeBaseAdd",
+          "value": 10332,
+          "alias": "感知范围BD",
+          "comment": null
+        },
+        {
+          "name": "SenseRangeBasePct",
+          "value": 10333,
+          "alias": "感知范围BP",
+          "comment": null
+        },
+        {
+          "name": "SenseRangeFinalAdd",
+          "value": 10334,
+          "alias": "感知范围FD",
+          "comment": null
+        },
+        {
+          "name": "SenseRangeFinalPct",
+          "value": 10335,
+          "alias": "感知范围FP",
+          "comment": null
+        },
+        {
+          "name": "SenseAngle",
+          "value": 1035,
+          "alias": "感知角度",
+          "comment": null
+        },
+        {
+          "name": "SenseAngleBase",
+          "value": 10351,
+          "alias": "感知角度B",
+          "comment": null
+        },
+        {
+          "name": "SenseAngleBaseAdd",
+          "value": 10352,
+          "alias": "感知角度BD",
+          "comment": null
+        },
+        {
+          "name": "SenseAngleBasePct",
+          "value": 10353,
+          "alias": "感知角度BP",
+          "comment": null
+        },
+        {
+          "name": "SenseAngleFinalAdd",
+          "value": 10354,
+          "alias": "感知角度FD",
+          "comment": null
+        },
+        {
+          "name": "SenseAngleFinalPct",
+          "value": 10355,
+          "alias": "感知角度FP",
+          "comment": null
+        },
+        {
+          "name": "MaxArmor",
+          "value": 1034,
+          "alias": "护盾值",
+          "comment": null
+        },
+        {
+          "name": "MaxArmorBase",
+          "value": 10341,
+          "alias": "护盾值B",
+          "comment": null
+        },
+        {
+          "name": "MaxArmorBaseAdd",
+          "value": 10342,
+          "alias": "护盾值BD",
+          "comment": null
+        },
+        {
+          "name": "MaxArmorBasePct",
+          "value": 10343,
+          "alias": "护盾值BP",
+          "comment": null
+        },
+        {
+          "name": "MaxArmorFinalAdd",
+          "value": 10344,
+          "alias": "护盾值FD",
+          "comment": null
+        },
+        {
+          "name": "MaxArmorFinalPct",
+          "value": 10345,
+          "alias": "护盾值FP",
+          "comment": null
+        },
+        {
+          "name": "FrostImmuneProb",
+          "value": 601,
+          "alias": "冰冻免疫概率",
+          "comment": null
+        },
+        {
+          "name": "PoisonImmuneProb",
+          "value": 602,
+          "alias": "毒素免疫概率",
+          "comment": null
+        },
+        {
+          "name": "FireImmuneProb",
+          "value": 603,
+          "alias": "火焰免疫概率",
+          "comment": null
+        },
+        {
+          "name": "LightningImmuneProb",
+          "value": 604,
+          "alias": "雷电免疫概率",
+          "comment": null
+        },
+        {
+          "name": "DarkImmuneProb",
+          "value": 605,
+          "alias": "暗黑免疫概率",
+          "comment": null
+        },
+        {
+          "name": "HolyImmuneProb",
+          "value": 606,
+          "alias": "光明免疫概率",
+          "comment": null
+        },
+        {
+          "name": "ChaosImmuneProb",
+          "value": 607,
+          "alias": "混沌免疫概率",
+          "comment": null
+        },
+        {
+          "name": "SiegeImmuneProb",
+          "value": 608,
+          "alias": "攻城免疫概率",
+          "comment": null
+        },
+        {
+          "name": "FrostAnomalyValue",
+          "value": 801,
+          "alias": "冰冻异常值",
+          "comment": null
+        },
+        {
+          "name": "PoisonAnomalyValue",
+          "value": 802,
+          "alias": "毒素异常值",
+          "comment": null
+        },
+        {
+          "name": "FireAnomalyValue",
+          "value": 803,
+          "alias": "火焰异常值",
+          "comment": null
+        },
+        {
+          "name": "LightningAnomalyValue",
+          "value": 804,
+          "alias": "雷电异常值",
+          "comment": null
+        },
+        {
+          "name": "DarkAnomalyValue",
+          "value": 805,
+          "alias": "暗黑异常值",
+          "comment": null
+        },
+        {
+          "name": "HolyAnomalyValue",
+          "value": 806,
+          "alias": "光明异常值",
+          "comment": null
+        },
+        {
+          "name": "ChaosAnomalyValue",
+          "value": 807,
+          "alias": "混沌异常值",
+          "comment": null
+        },
+        {
+          "name": "SiegeAnomalyValue",
+          "value": 808,
+          "alias": "攻城异常值",
+          "comment": null
+        },
+        {
+          "name": "MaxGold",
+          "value": 1100,
+          "alias": "金币上限",
+          "comment": null
+        },
+        {
+          "name": "MaxGoldBase",
+          "value": 11001,
+          "alias": "金币上限B",
+          "comment": null
+        },
+        {
+          "name": "MaxGoldBaseAdd",
+          "value": 11002,
+          "alias": "金币上限BD",
+          "comment": null
+        },
+        {
+          "name": "MaxGoldBasePct",
+          "value": 11003,
+          "alias": "金币上限BP",
+          "comment": null
+        },
+        {
+          "name": "MaxGoldFinalAdd",
+          "value": 11004,
+          "alias": "金币上限FD",
+          "comment": null
+        },
+        {
+          "name": "MaxGoldFinalPct",
+          "value": 11005,
+          "alias": "金币上限FP",
+          "comment": null
+        },
+        {
+          "name": "MaxSilver",
+          "value": 1104,
+          "alias": "银币上限",
+          "comment": null
+        },
+        {
+          "name": "MaxSilverBase",
+          "value": 11041,
+          "alias": "银币上限B",
+          "comment": null
+        },
+        {
+          "name": "MaxSilverBaseAdd",
+          "value": 11042,
+          "alias": "银币上限BD",
+          "comment": null
+        },
+        {
+          "name": "MaxSilverBasePct",
+          "value": 11043,
+          "alias": "银币上限BP",
+          "comment": null
+        },
+        {
+          "name": "MaxSilverFinalAdd",
+          "value": 11044,
+          "alias": "银币上限FD",
+          "comment": null
+        },
+        {
+          "name": "MaxSilverFinalPct",
+          "value": 11045,
+          "alias": "银币上限FP",
+          "comment": null
+        },
+        {
+          "name": "MaxWood",
+          "value": 1101,
+          "alias": "木材上限",
+          "comment": null
+        },
+        {
+          "name": "MaxWoodBase",
+          "value": 11011,
+          "alias": "木材上限B",
+          "comment": null
+        },
+        {
+          "name": "MaxWoodBaseAdd",
+          "value": 11012,
+          "alias": "木材上限BD",
+          "comment": null
+        },
+        {
+          "name": "MaxWoodBasePct",
+          "value": 11013,
+          "alias": "木材上限BP",
+          "comment": null
+        },
+        {
+          "name": "MaxWoodFinalAdd",
+          "value": 11014,
+          "alias": "木材上限FD",
+          "comment": null
+        },
+        {
+          "name": "MaxWoodFinalPct",
+          "value": 11015,
+          "alias": "木材上限FP",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulation",
+          "value": 1102,
+          "alias": "人口上限",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulationBase",
+          "value": 11021,
+          "alias": "人口上限B",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulationBaseAdd",
+          "value": 11022,
+          "alias": "人口上限BD",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulationBasePct",
+          "value": 11023,
+          "alias": "人口上限BP",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulationFinalAdd",
+          "value": 11024,
+          "alias": "人口上限FD",
+          "comment": null
+        },
+        {
+          "name": "MaxPopulationFinalPct",
+          "value": 11025,
+          "alias": "人口上限FP",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValue",
+          "value": 1103,
+          "alias": "魔法值上限",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValueBase",
+          "value": 11031,
+          "alias": "魔法值上限B",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValueBaseAdd",
+          "value": 11032,
+          "alias": "魔法值上限BD",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValueBasePct",
+          "value": 11033,
+          "alias": "魔法值上限BP",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValueFinalAdd",
+          "value": 11034,
+          "alias": "魔法值上限FD",
+          "comment": null
+        },
+        {
+          "name": "MaxMagicValueFinalPct",
+          "value": 11035,
+          "alias": "魔法值上限FP",
+          "comment": null
+        },
+        {
+          "name": "SpellPower",
+          "value": 1105,
+          "alias": "法术强度",
+          "comment": null
+        },
+        {
+          "name": "SpellPowerBase",
+          "value": 11051,
+          "alias": "法术强度B",
+          "comment": null
+        },
+        {
+          "name": "SpellPowerAdd",
+          "value": 11052,
+          "alias": "法术强度BD",
+          "comment": null
+        },
+        {
+          "name": "SpellPowerBasePct",
+          "value": 11053,
+          "alias": "法术强度BP",
+          "comment": null
+        },
+        {
+          "name": "MSpellPowerFinalAdd",
+          "value": 11054,
+          "alias": "法术强度上限FD",
+          "comment": null
+        },
+        {
+          "name": "SpellPowerFinalPct",
+          "value": 11055,
+          "alias": "法术强度限FP",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ShareHostilityMode",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Target",
+          "value": 0,
+          "alias": "仅当前目标",
+          "comment": null
+        },
+        {
+          "name": "TargetAndAlliesInRadius",
+          "value": 1,
+          "alias": "目标及范围内同阵营",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "TeamRelation",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {
+          "name": "Self",
+          "value": 0,
+          "alias": "自己",
+          "comment": null
+        },
+        {
+          "name": "Ally",
+          "value": 1,
+          "alias": "友方",
+          "comment": null
+        },
+        {
+          "name": "Enemy",
+          "value": 2,
+          "alias": "敌方",
+          "comment": null
+        },
+        {
+          "name": "Neutral",
+          "value": 3,
+          "alias": "中立",
+          "comment": null
+        }
+      ]
+    }
+  ],
+  "enumReferences": [
+    "DamageStageType",
+    "EBuffApplyTarget",
+    "ECompareType",
+    "EffectKillTarget",
+    "EffectSourceUnit",
+    "EGroupCompletedType",
+    "EKnockbackDirection",
+    "ESearchTargetPriority",
+    "ESearchTargetShape",
+    "ESearchTargetTeam",
+    "ESkillType",
+    "EUnitType",
+    "FlagLabel",
+    "FlagRestrict",
+    "NumericType",
+    "ShareHostilityMode",
+    "TeamRelation"
+  ]
+}

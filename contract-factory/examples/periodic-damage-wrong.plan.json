@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 0,
+  "planId": "plan-periodic-wrong",
+  "base": {
+    "workspaceId": "example",
+    "revision": "svn-2610",
+    "capabilityRegistryVersion": "0.1.0",
+    "defaultValueContractVersion": "0.1.0",
+    "defaultMechanismContractVersion": "0.1.0"
+  },
+  "request": {
+    "text": "持续3秒，每秒造成80点伤害",
+    "focus": {
+      "binding": "Existing",
+      "namespace": "TbSkill",
+      "id": 100101
+    }
+  },
+  "status": "Ready",
+  "operations": [
+    {
+      "operationId": "op-wrong",
+      "kind": "AddEffectIntent",
+      "owner": {
+        "binding": "Existing",
+        "namespace": "TbSkill",
+        "id": 100101
+      },
+      "intent": "InstantDamage",
+      "params": {
+        "fixedDamage": {
+          "value": 80,
+          "source": "ModelProposed"
+        }
+      }
+    }
+  ]
+}
+

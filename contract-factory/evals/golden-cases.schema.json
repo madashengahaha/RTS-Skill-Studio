@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/evals/golden-cases.schema.json",
+  "title": "SkillAgentGoldenCases",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "caseSetVersion", "cases"],
+  "properties": {
+    "schemaVersion": {
+      "const": 0
+    },
+    "caseSetVersion": {
+      "type": "string"
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Case"
+      }
+    }
+  },
+  "$defs": {
+    "Case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "category",
+        "request",
+        "expectedStatus",
+        "assertions",
+        "forbidden"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^p0-[0-9]{3}$"
+        },
+        "category": {
+          "type": "string"
+        },
+        "request": {
+          "type": "string",
+          "minLength": 1
+        },
+        "focus": {
+          "type": "string"
+        },
+        "expectedStatus": {
+          "enum": ["Ready", "NeedsClarification", "Unsupported"]
+        },
+        "assertions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Assertion"
+          }
+        },
+        "forbidden": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Assertion"
+          }
+        }
+      }
+    },
+    "Assertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "status",
+            "hasOperation",
+            "noOperation",
+            "hasIntent",
+            "noIntent",
+            "paramEquals",
+            "operationCount",
+            "clarificationField",
+            "unsupportedCode",
+            "referenceNamespace"
+          ]
+        },
+        "operation": {
+          "type": "string"
+        },
+        "intent": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "fieldPath": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "equals": true,
+        "min": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
+

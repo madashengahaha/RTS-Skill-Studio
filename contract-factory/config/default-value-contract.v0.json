@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 0,
+  "contractVersion": "0.1.0",
+  "conversionRules": [
+    {
+      "key": "SecondsToMilliseconds",
+      "inputUnit": "second",
+      "outputUnit": "millisecond",
+      "factor": 1000
+    },
+    {
+      "key": "PercentToBasisPoints",
+      "inputUnit": "percent",
+      "outputUnit": "basis-point",
+      "factor": 100
+    },
+    {
+      "key": "RatioToBasisPoints",
+      "inputUnit": "ratio",
+      "outputUnit": "basis-point",
+      "factor": 10000
+    },
+    {
+      "key": "WorldUnitToFixed",
+      "inputUnit": "world-unit",
+      "outputUnit": "fixed",
+      "factor": 10000
+    }
+  ],
+  "fields": [
+    {
+      "path": "Skill.skill_type",
+      "scope": "CreateSkill",
+      "default": "Auto",
+      "source": "hero-authoring-schema.creationTemplates.hero-skill",
+      "askWhen": [
+        "用户明确要求手动释放",
+        "用户明确要求被动触发",
+        "用户明确要求自动技能但现有枚举无法表达"
+      ]
+    },
+    {
+      "path": "Skill.probability",
+      "scope": "CreateSkill",
+      "default": 10000,
+      "source": "hero-authoring-schema.creationTemplates.hero-skill"
+    },
+    {
+      "path": "Skill.first_cd_time",
+      "scope": "CreateSkill",
+      "default": 0,
+      "source": "hero-authoring-schema.creationTemplates.hero-skill"
+    },
+    {
+      "path": "Skill.cd_time",
+      "scope": "CreateSkill",
+      "default": 0,
+      "source": "hero-authoring-schema.creationTemplates.hero-skill"
+    },
+    {
+      "path": "Skill.duration_pre",
+      "scope": "CreateSkill",
+      "default": 0,
+      "source": "hero-authoring-schema.creationTemplates.hero-skill"
+    },
+    {
+      "path": "Skill.duration",
+      "scope": "CreateSkill",
+      "default": 0,
+      "source": "hero-authoring-schema.creationTemplates.hero-skill"
+    },
+    {
+      "path": "Skill.duration_after",
+      "scope": "CreateSkill",
+      "default": 0,
+      "source": "hero-authoring-schema.creationTemplates.hero-skill"
+    },
+    {
+      "path": "Skill.trigger_array",
+      "scope": "CreateSkill",
+      "default": [0],
+      "source": "hero-authoring-schema.creationTemplates.hero-skill"
+    },
+    {
+      "path": "Skill.search_real_time",
+      "scope": "CreateSkill",
+      "default": false,
+      "source": "hero-authoring-schema.creationTemplates.hero-skill"
+    },
+    {
+      "path": "Skill.target.team",
+      "scope": "HarmfulIntentWithoutExplicitTarget",
+      "default": "Enemy",
+      "source": "UGC configuration repair record: no-target skills must select enemies"
+    },
+    {
+      "path": "Damage.attackScale",
+      "scope": "DamageWithFixedValueOnly",
+      "default": 0,
+      "source": "Damage parameter semantics"
+    },
+    {
+      "path": "Buff.duration",
+      "scope": "PeriodicDamageWithoutExplicitDuration",
+      "default": null,
+      "askWhen": ["周期伤害未给持续时间时不得静默套用"]
+    },
+    {
+      "path": "Buff.interval",
+      "scope": "PeriodicDamageWithoutExplicitInterval",
+      "default": null,
+      "askWhen": ["周期伤害未给间隔或每秒频率时不得静默套用"]
+    }
+  ],
+  "askPolicy": [
+    {
+      "when": "目标阵营与语义冲突",
+      "action": "Ask"
+    },
+    {
+      "when": "引用名称存在多个候选",
+      "action": "Ask"
+    },
+    {
+      "when": "同一意图可由多种机制实现且默认机制限制不满足",
+      "action": "Ask"
+    },
+    {
+      "when": "字段不在免确认白名单且没有用户输入",
+      "action": "LeaveBlankAndMark"
+    }
+  ]
+}
+

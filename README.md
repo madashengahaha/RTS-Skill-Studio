@@ -25,12 +25,14 @@ under `vendor/TianshuDM` with provenance recorded in [vendor/VENDOR.md](vendor/V
 - Independent .NET 8 solution scaffolded.
 - TianshuDM Contract, Domain, Application, Excel, and SQLite projects vendored.
 - Agent and API projects created.
-- Contract snapshot synchronized from `../RTS-Skill-Agent`.
+- Node contract factory migrated into `contract-factory/`.
+- Product contract snapshot generated into `contracts/rts-skill-agent/`.
 
 ## Layout
 
 ```text
-contracts/rts-skill-agent/  Synced schemas, registry, eval data, and examples
+contract-factory/           Node contract factory, registry tools, and evals
+contracts/rts-skill-agent/  Generated schemas, registry, eval data, examples
 src/RtsSkillStudio.Agent/   Agent, plan, compiler, and validation code
 src/RtsSkillStudio.Api/     Local Studio HTTP host
 vendor/TianshuDM/           Copied source snapshot from TianshuDM

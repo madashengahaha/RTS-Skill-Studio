@@ -1,0 +1,908 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Agent/contracts/skill-config-plan.schema.json",
+  "title": "SkillConfigPlan",
+  "description": "The only mutation proposal emitted by the agent. It contains intent, provenance, assumptions, and unresolved questions, but no field-address writes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "planId",
+    "base",
+    "request",
+    "status",
+    "operations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 0
+    },
+    "planId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base": {
+      "$ref": "#/$defs/Base"
+    },
+    "request": {
+      "$ref": "#/$defs/Request"
+    },
+    "status": {
+      "enum": ["Ready", "NeedsClarification", "Unsupported"]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Assumption"
+      },
+      "default": []
+    },
+    "clarifications": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Clarification"
+      },
+      "default": []
+    },
+    "unsupported": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Unsupported"
+      },
+      "default": []
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Operation"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "Ready"
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "operations": {
+            "minItems": 1
+          },
+          "clarifications": {
+            "maxItems": 0
+          },
+          "unsupported": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "NeedsClarification"
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "clarifications": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "Unsupported"
+          }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "unsupported": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "Base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspaceId",
+        "revision",
+        "capabilityRegistryVersion",
+        "defaultValueContractVersion",
+        "defaultMechanismContractVersion"
+      ],
+      "properties": {
+        "workspaceId": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "capabilityRegistryVersion": {
+          "type": "string"
+        },
+        "defaultValueContractVersion": {
+          "type": "string"
+        },
+        "defaultMechanismContractVersion": {
+          "type": "string"
+        }
+      }
+    },
+    "Request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestedBy": {
+          "type": "string"
+        },
+        "focus": {
+          "$ref": "#/$defs/AssetRef"
+        }
+      }
+    },
+    "Value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "source"],
+      "properties": {
+        "value": true,
+        "source": {
+          "enum": ["ModelProposed", "UserEdited", "Default"]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "default": []
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "Evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": {
+          "enum": ["Capability", "Schema", "RuntimeBinding", "ExistingConfig", "DefaultContract", "UserInput"]
+        },
+        "ref": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "Assumption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "value", "reason"],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/Value"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "requiresConfirmation": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "Clarification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "question", "fieldPath"],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "fieldPath": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean",
+          "default": true
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Candidate"
+          },
+          "default": []
+        }
+      }
+    },
+    "Unsupported": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "manualPath"],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "closestMechanism": {
+          "type": "string"
+        },
+        "requiredRuntimeCapability": {
+          "type": "string"
+        },
+        "manualPath": {
+          "type": "string"
+        }
+      }
+    },
+    "Candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label"],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
+    },
+    "AssetRef": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ExistingAssetRef"
+        },
+        {
+          "$ref": "#/$defs/ProposedAssetRef"
+        },
+        {
+          "$ref": "#/$defs/UnresolvedAssetRef"
+        }
+      ]
+    },
+    "ExistingAssetRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "namespace", "id"],
+      "properties": {
+        "binding": {
+          "const": "Existing"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer"
+        }
+      }
+    },
+    "ProposedAssetRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "localKey", "namespace", "operationId"],
+      "properties": {
+        "binding": {
+          "const": "Proposed"
+        },
+        "localKey": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "operationId": {
+          "type": "string"
+        }
+      }
+    },
+    "UnresolvedAssetRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "namespace", "candidates"],
+      "properties": {
+        "binding": {
+          "const": "Unresolved"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "candidates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Candidate"
+          }
+        }
+      }
+    },
+    "OperationBase": {
+      "type": "object",
+      "required": ["operationId", "kind"],
+      "properties": {
+        "operationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "Operation": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CreateSkillOperation"
+        },
+        {
+          "$ref": "#/$defs/ModifySkillOperation"
+        },
+        {
+          "$ref": "#/$defs/AddEffectIntentOperation"
+        },
+        {
+          "$ref": "#/$defs/ModifyEffectIntentOperation"
+        },
+        {
+          "$ref": "#/$defs/DeleteEffectIntentOperation"
+        },
+        {
+          "$ref": "#/$defs/AddConditionIntentOperation"
+        },
+        {
+          "$ref": "#/$defs/ModifyConditionIntentOperation"
+        },
+        {
+          "$ref": "#/$defs/DeleteConditionIntentOperation"
+        },
+        {
+          "$ref": "#/$defs/LinkExistingOperation"
+        },
+        {
+          "$ref": "#/$defs/RemoveLinkOperation"
+        },
+        {
+          "$ref": "#/$defs/ReorderMembersOperation"
+        }
+      ]
+    },
+    "CreateSkillOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "owner",
+            "skillType",
+            "target"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "CreateSkill"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "owner": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "skillType": {
+              "$ref": "#/$defs/Value"
+            },
+            "target": {
+              "$ref": "#/$defs/TargetPlan"
+            }
+          }
+        }
+      ]
+    },
+    "ModifySkillOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "skill",
+            "fields"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "ModifySkill"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "skill": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "fields": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/Value"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AddEffectIntentOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "owner",
+            "intent",
+            "params"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "AddEffectIntent"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "owner": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "intent": {
+              "type": "string"
+            },
+            "params": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/Value"
+              }
+            },
+            "target": {
+              "$ref": "#/$defs/TargetPlan"
+            },
+            "search": {
+              "$ref": "#/$defs/SearchPlan"
+            },
+            "mechanism": {
+              "$ref": "#/$defs/Value"
+            }
+          }
+        }
+      ]
+    },
+    "ModifyEffectIntentOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "owner",
+            "intentRef",
+            "fields"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "ModifyEffectIntent"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "owner": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "intentRef": {
+              "type": "string"
+            },
+            "fields": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/Value"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "DeleteEffectIntentOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "owner",
+            "intentRef"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "DeleteEffectIntent"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "owner": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "intentRef": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "AddConditionIntentOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "owner",
+            "intent",
+            "params"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "AddConditionIntent"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "owner": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "intent": {
+              "type": "string"
+            },
+            "params": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/Value"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ModifyConditionIntentOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "owner",
+            "intentRef",
+            "fields"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "ModifyConditionIntent"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "owner": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "intentRef": {
+              "type": "string"
+            },
+            "fields": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/Value"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "DeleteConditionIntentOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "owner",
+            "intentRef"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "DeleteConditionIntent"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "owner": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "intentRef": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "LinkExistingOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "parent",
+            "field",
+            "target"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "LinkExisting"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "parent": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "field": {
+              "type": "string"
+            },
+            "parameterIndex": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "target": {
+              "$ref": "#/$defs/ExistingAssetRef"
+            }
+          }
+        }
+      ]
+    },
+    "RemoveLinkOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "parent",
+            "field",
+            "target"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "RemoveLink"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "parent": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "field": {
+              "type": "string"
+            },
+            "parameterIndex": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "target": {
+              "$ref": "#/$defs/ExistingAssetRef"
+            }
+          }
+        }
+      ]
+    },
+    "ReorderMembersOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "group",
+            "orderedMembers"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "ReorderMembers"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "group": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "orderedMembers": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/ExistingAssetRef"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TargetPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team"],
+      "properties": {
+        "team": {
+          "$ref": "#/$defs/Value"
+        },
+        "unitTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Value"
+          }
+        },
+        "shape": {
+          "$ref": "#/$defs/Value"
+        },
+        "radius": {
+          "$ref": "#/$defs/Value"
+        },
+        "count": {
+          "$ref": "#/$defs/Value"
+        },
+        "priority": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Value"
+          }
+        }
+      }
+    },
+    "SearchPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "existing": {
+          "$ref": "#/$defs/ExistingAssetRef"
+        },
+        "intent": {
+          "$ref": "#/$defs/TargetPlan"
+        },
+        "localKey": {
+          "type": "string"
+        }
+      },
+      "oneOf": [
+        {
+          "required": ["existing"]
+        },
+        {
+          "required": ["intent"]
+        }
+      ]
+    }
+  }
+}
+

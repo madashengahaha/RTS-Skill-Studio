@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 0,
+  "overlayVersion": "0.1.0",
+  "effects": {
+    "ChangePropertyReal": {
+      "intents": ["StatModify"],
+      "mechanism": "RealTimePropertyChange",
+      "tags": ["property", "runtime-current-value"]
+    },
+    "Healing": {
+      "intents": ["Healing"],
+      "mechanism": "DirectHealing",
+      "tags": ["healing", "proportional", "fixed"]
+    },
+    "Damage": {
+      "intents": ["InstantDamage", "AreaDamage"],
+      "mechanism": "ImmediateDamage",
+      "tags": ["damage", "pipeline", "fixed", "attack-scale"]
+    },
+    "AddBuff": {
+      "intents": ["AddState"],
+      "mechanism": "AddBuff",
+      "tags": ["state", "lifecycle", "shared-asset"]
+    },
+    "RemoveBuff": {
+      "intents": ["RemoveState"],
+      "mechanism": "RemoveBuff",
+      "tags": ["state", "shared-asset"]
+    },
+    "AddRestrict": {
+      "intents": ["AddState"],
+      "mechanism": "AddRestrict",
+      "tags": ["control", "restriction", "bitmask"]
+    },
+    "RemoveRestrict": {
+      "intents": ["RemoveState"],
+      "mechanism": "RemoveRestrict",
+      "tags": ["control", "restriction", "bitmask"]
+    },
+    "AddProperty": {
+      "intents": ["StatModify"],
+      "mechanism": "AddProperty",
+      "tags": ["property", "repeat-pairs"]
+    },
+    "SubProperty": {
+      "intents": ["StatModify"],
+      "mechanism": "SubProperty",
+      "tags": ["property", "repeat-pairs"]
+    },
+    "SummonUnit": {
+      "intents": ["Summon"],
+      "mechanism": "SummonUnit",
+      "tags": ["summon", "unit-type-dynamic-reference"]
+    },
+    "SummonRandom": {
+      "intents": ["Summon"],
+      "mechanism": "SummonRandom",
+      "tags": ["summon", "random-bag"]
+    },
+    "KillUnit": {
+      "intents": ["InstantDamage"],
+      "mechanism": "KillUnit",
+      "tags": ["death", "execution", "not-damage-pipeline"]
+    },
+    "Research": {
+      "intents": ["ConditionalEffect", "AreaDamage"],
+      "mechanism": "ResearchThenExecute",
+      "tags": ["search", "targeting", "effect-group"]
+    },
+    "ConditionBranch": {
+      "intents": ["ConditionalEffect"],
+      "mechanism": "ConditionBranch",
+      "tags": ["branch", "single-condition"]
+    },
+    "ConditionGroupBranch": {
+      "intents": ["ConditionalEffect"],
+      "mechanism": "ConditionGroupBranch",
+      "tags": ["branch", "condition-group"]
+    },
+    "AddBulletTarget": {
+      "intents": ["Projectile"],
+      "mechanism": "ProjectileToTarget",
+      "tags": ["projectile", "homing-target"]
+    },
+    "AddBulletPosition": {
+      "intents": ["Projectile"],
+      "mechanism": "ProjectileToPosition",
+      "tags": ["projectile", "target-position"]
+    },
+    "AddBulletDirection": {
+      "intents": ["Projectile"],
+      "mechanism": "ProjectileDirectionLineSearch",
+      "tags": ["projectile", "direction", "line-search"]
+    },
+    "AddBulletDirection2": {
+      "intents": ["Projectile"],
+      "mechanism": "ProjectileDirectionCollision",
+      "tags": ["projectile", "direction", "collision"]
+    },
+    "AddHeightBuff": {
+      "intents": ["AddState"],
+      "mechanism": "AddHeightBuff",
+      "tags": ["state", "height-derived-layers"]
+    },
+    "AddBulletAround": {
+      "intents": ["Projectile", "AreaDamage"],
+      "mechanism": "ProjectileRing",
+      "tags": ["projectile", "ring", "fan"]
+    },
+    "SummonAutoTrap": {
+      "intents": ["PersistentArea", "Summon"],
+      "mechanism": "SummonAutoTrap",
+      "tags": ["area", "trap", "persistent"]
+    },
+    "ChainDamage": {
+      "intents": ["ChainDamage"],
+      "mechanism": "ChainDamage",
+      "tags": ["chain", "target-search", "decay"]
+    },
+    "AnomalySettlement": {
+      "intents": ["ConditionalEffect", "InstantDamage"],
+      "mechanism": "AnomalySettlement",
+      "tags": ["anomaly", "threshold", "resource-consumption"]
+    },
+    "AddBulletDirectionToTarget": {
+      "intents": ["Projectile"],
+      "mechanism": "ProjectileDirectionToTarget",
+      "tags": ["projectile", "target-direction", "collision"]
+    },
+    "AddFlagLabel": {
+      "intents": ["TargetMark"],
+      "mechanism": "AddFlagLabel",
+      "tags": ["flag", "marker", "execution-count"]
+    },
+    "RemoveFlagLabel": {
+      "intents": ["TargetMark"],
+      "mechanism": "RemoveFlagLabel",
+      "tags": ["flag", "marker", "execution-count"]
+    },
+    "BlinkToTarget": {
+      "intents": ["MovementControl"],
+      "mechanism": "BlinkToTarget",
+      "tags": ["blink", "movement"]
+    },
+    "Knockback": {
+      "intents": ["MovementControl"],
+      "mechanism": "Knockback",
+      "tags": ["displacement", "knockback", "pull"]
+    },
+    "AddSkillData": {
+      "intents": ["StatModify"],
+      "mechanism": "AddSkillData",
+      "tags": ["skill-runtime-data", "current-skill"]
+    },
+    "SubSkillData": {
+      "intents": ["StatModify"],
+      "mechanism": "SubSkillData",
+      "tags": ["skill-runtime-data", "current-skill"]
+    },
+    "AddSkillDataBySkill": {
+      "intents": ["StatModify"],
+      "mechanism": "AddSkillDataBySkill",
+      "tags": ["skill-runtime-data", "cross-skill"]
+    },
+    "SubSkillDataBySkill": {
+      "intents": ["StatModify"],
+      "mechanism": "SubSkillDataBySkill",
+      "tags": ["skill-runtime-data", "cross-skill"]
+    },
+    "DistanceScaledDamage": {
+      "intents": ["InstantDamage"],
+      "mechanism": "DistanceScaledDamage",
+      "tags": ["damage", "distance-interpolation"]
+    },
+    "ReboundDamage": {
+      "intents": ["InstantDamage"],
+      "mechanism": "ReboundDamage",
+      "tags": ["damage", "rebound"]
+    },
+    "AddSkill": {
+      "intents": ["SkillGrant"],
+      "mechanism": "AddSkill",
+      "tags": ["skill-grant", "repeatable"]
+    },
+    "ClearHitMarks": {
+      "intents": ["TargetMark"],
+      "mechanism": "ClearHitMarks",
+      "tags": ["marker", "clear"]
+    },
+    "AddShield": {
+      "intents": ["AddState"],
+      "mechanism": "AddShield",
+      "tags": ["shield", "unique-buff", "recursion-risk"]
+    },
+    "ShareHostility": {
+      "intents": ["TargetMark"],
+      "mechanism": "ShareHostility",
+      "tags": ["hostility", "temporary-target-state"]
+    }
+  },
+  "conditions": {
+    "PropertyCompare": {
+      "intents": ["ConditionalEffect"],
+      "mechanism": "ConditionPropertyCompare",
+      "tags": ["property", "comparison"]
+    },
+    "HasBuff": {
+      "intents": ["ConditionalEffect"],
+      "mechanism": "ConditionHasBuff",
+      "tags": ["state", "shared-asset"]
+    },
+    "HasRestrict": {
+      "intents": ["ConditionalEffect"],
+      "mechanism": "ConditionHasRestrict",
+      "tags": ["control", "bitmask"]
+    },
+    "IsUnitType": {
+      "intents": ["ConditionalEffect"],
+      "mechanism": "ConditionIsUnitType",
+      "tags": ["unit-type", "bitmask"]
+    },
+    "IsTeamRelation": {
+      "intents": ["ConditionalEffect"],
+      "mechanism": "ConditionIsTeamRelation",
+      "tags": ["team"]
+    },
+    "Probability": {
+      "intents": ["ConditionalEffect"],
+      "mechanism": "ConditionProbability",
+      "tags": ["probability"]
+    },
+    "DistanceCompare": {
+      "intents": ["ConditionalEffect"],
+      "mechanism": "ConditionDistanceCompare",
+      "tags": ["distance"]
+    },
+    "HasFlagLabel": {
+      "intents": ["ConditionalEffect", "TargetMark"],
+      "mechanism": "ConditionHasFlagLabel",
+      "tags": ["flag"]
+    },
+    "IsAlive": {
+      "intents": ["ConditionalEffect"],
+      "mechanism": "ConditionIsAlive",
+      "tags": ["life"]
+    },
+    "HasSearchTarget": {
+      "intents": ["ConditionalEffect"],
+      "mechanism": "ConditionHasSearchTarget",
+      "tags": ["search"]
+    },
+    "TryMarkHit": {
+      "intents": ["TargetMark"],
+      "mechanism": "ConditionTryMarkHit",
+      "tags": ["hit-marker"]
+    }
+  }
+}
+

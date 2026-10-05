@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 0,
+  "snapshotVersion": "0.1.0",
+  "source": {
+    "fileName": "UnityHeroAuthoringEnumOptionReader.cs",
+    "note": "Runtime-only enum options mirrored from TianshuDM and generated Unity config enums."
+  },
+  "enums": [
+    {
+      "name": "ECompareType",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {"name": "Equal", "value": 0, "alias": "等于", "comment": null},
+        {"name": "Greater", "value": 1, "alias": "大于", "comment": null},
+        {"name": "Less", "value": 2, "alias": "小于", "comment": null},
+        {"name": "GreaterOrEqual", "value": 3, "alias": "大于等于", "comment": null},
+        {"name": "LessOrEqual", "value": 4, "alias": "小于等于", "comment": null}
+      ]
+    },
+    {
+      "name": "EGroupCompletedType",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {"name": "None", "value": 0, "alias": "无", "comment": null},
+        {"name": "All", "value": 1, "alias": "满足所有条件", "comment": null},
+        {"name": "Any", "value": 2, "alias": "满足任一条件", "comment": null}
+      ]
+    },
+    {
+      "name": "EKnockbackDirection",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {"name": "AwayFromCaster", "value": 0, "alias": "远离施法者", "comment": null},
+        {"name": "TowardCaster", "value": 1, "alias": "朝向施法者", "comment": null},
+        {"name": "CasterForward", "value": 2, "alias": "施法者前方", "comment": null},
+        {"name": "FixedWorldDirection", "value": 3, "alias": "固定世界方向", "comment": null}
+      ]
+    },
+    {
+      "name": "EffectKillTarget",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {"name": "Owner", "value": 1, "alias": "施法者", "comment": null},
+        {"name": "Target", "value": 2, "alias": "目标", "comment": null}
+      ]
+    },
+    {
+      "name": "EffectSourceUnit",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {"name": "Owner", "value": 0, "alias": "施法者", "comment": null},
+        {"name": "Target", "value": 1, "alias": "目标", "comment": null},
+        {"name": "Carrier", "value": 2, "alias": "载体", "comment": null}
+      ]
+    },
+    {
+      "name": "EBuffApplyTarget",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {"name": "Target", "value": 0, "alias": "当前效果目标", "comment": null},
+        {"name": "Caster", "value": 1, "alias": "施法者", "comment": null}
+      ]
+    },
+    {
+      "name": "ShareHostilityMode",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {"name": "Target", "value": 0, "alias": "仅当前目标", "comment": null},
+        {
+          "name": "TargetAndAlliesInRadius",
+          "value": 1,
+          "alias": "目标及范围内同阵营",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "TeamRelation",
+      "flags": false,
+      "comment": null,
+      "values": [
+        {"name": "Self", "value": 0, "alias": "自己", "comment": null},
+        {"name": "Ally", "value": 1, "alias": "友方", "comment": null},
+        {"name": "Enemy", "value": 2, "alias": "敌方", "comment": null},
+        {"name": "Neutral", "value": 3, "alias": "中立", "comment": null}
+      ]
+    },
+    {
+      "name": "ESkillType",
+      "flags": false,
+      "comment": "技能类型",
+      "values": [
+        {"name": "None", "value": 0, "alias": "无类型", "comment": null},
+        {"name": "Normal", "value": 1, "alias": "普通攻击", "comment": null},
+        {"name": "Manual", "value": 2, "alias": "手动技能", "comment": null},
+        {"name": "Dead", "value": 3, "alias": "死亡技能", "comment": null},
+        {"name": "Counter", "value": 4, "alias": "反击技能", "comment": null},
+        {"name": "Auto", "value": 5, "alias": "自动释放技能", "comment": null},
+        {"name": "Placement", "value": 6, "alias": "放置技能", "comment": null},
+        {"name": "Passive", "value": 7, "alias": "被动技能", "comment": null},
+        {"name": "Damage", "value": 8, "alias": "造成伤害时触发技能", "comment": null},
+        {"name": "OnKill", "value": 9, "alias": "击杀时触发技能", "comment": null}
+      ]
+    },
+    {
+      "name": "ESearchTargetPriority",
+      "flags": false,
+      "comment": "索敌优先级",
+      "values": [
+        {"name": "None", "value": 0, "alias": "无", "comment": null},
+        {"name": "MinDistance", "value": 1, "alias": "最近距离", "comment": null},
+        {"name": "MaxDistance", "value": 2, "alias": "最远距离", "comment": null},
+        {"name": "Random", "value": 3, "alias": "随机", "comment": null},
+        {"name": "MaxCoverage", "value": 4, "alias": "单位锚定覆盖评分", "comment": null},
+        {"name": "LowestHpPct", "value": 5, "alias": "HP百分比最低", "comment": null},
+        {"name": "HighestThreatScore", "value": 6, "alias": "现有属性评分威胁", "comment": null},
+        {"name": "Warrior", "value": 7, "alias": "战士", "comment": null},
+        {"name": "Mage", "value": 8, "alias": "法师", "comment": null},
+        {"name": "Archer", "value": 9, "alias": "弓箭手", "comment": null},
+        {"name": "Priest", "value": 10, "alias": "牧师", "comment": null},
+        {"name": "Knight", "value": 11, "alias": "骑士", "comment": null},
+        {"name": "Assassin", "value": 12, "alias": "刺客", "comment": null},
+        {"name": "Warlock", "value": 13, "alias": "术士", "comment": null},
+        {"name": "Auxiliary", "value": 14, "alias": "辅助", "comment": null},
+        {"name": "Tank", "value": 15, "alias": "坦克", "comment": null}
+      ]
+    }
+  ]
+}

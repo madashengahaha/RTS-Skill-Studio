@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 0,
+  "contractVersion": "0.1.0",
+  "selectionOrder": [
+    "PlanExplicitMechanism",
+    "VersionedDefaultMechanism",
+    "RejectCompilation"
+  ],
+  "mechanisms": [
+    {
+      "intent": "InstantDamage",
+      "preferred": "ImmediateDamage",
+      "allowedAlternatives": ["DistanceScaledDamage", "ReboundDamage", "AnomalySettlement"],
+      "selectionRules": [
+        "无距离或反弹语义时使用 ImmediateDamage",
+        "明确按距离插值时使用 DistanceScaledDamage",
+        "明确反弹最近伤害时使用 ReboundDamage"
+      ]
+    },
+    {
+      "intent": "AreaDamage",
+      "preferred": "SearchThenImmediateDamage",
+      "allowedAlternatives": ["ResearchThenExecute", "ProjectileRing", "TrapIntervalDamage"],
+      "selectionRules": [
+        "范围一次性伤害使用 Search + ImmediateDamage",
+        "需要重新索敌后再执行效果组时使用 ResearchThenExecute",
+        "环形弹幕使用 ProjectileRing",
+        "持续区域使用 TrapIntervalDamage"
+      ]
+    },
+    {
+      "intent": "PeriodicDamage",
+      "preferred": "BuffIntervalDamage",
+      "allowedAlternatives": ["SkillTriggerArray", "TrapIntervalDamage"],
+      "selectionRules": [
+        "默认通过 AddBuff + Buff.interval_effect 承载周期伤害",
+        "只有明确要求单技能时间点序列且无状态承载时使用 SkillTriggerArray",
+        "只有明确要求可独立存在或可被其他对象触发的区域效果时使用 TrapIntervalDamage"
+      ],
+      "semanticDifferences": [
+        "Buff 受驱散、替换、层数和死亡清除规则影响",
+        "SkillTriggerArray 与单个技能实例绑定，不形成共享状态",
+        "Trap 有独立实体生命周期和索敌行为"
+      ]
+    },
+    {
+      "intent": "DelayedDamage",
+      "preferred": "SkillTriggerArray",
+      "allowedAlternatives": ["BuffEnterEffect", "BulletFinishEffect"],
+      "selectionRules": [
+        "在技能自身时间轴上延迟时使用 SkillTriggerArray",
+        "延迟由状态生命周期承载时使用 BuffEnterEffect",
+        "延迟由弹道飞行或结束事件承载时使用 BulletFinishEffect"
+      ]
+    },
+    {
+      "intent": "PersistentArea",
+      "preferred": "TrapIntervalDamage",
+      "allowedAlternatives": ["BuffIntervalSearch", "SkillTriggerArray"],
+      "selectionRules": [
+        "需要独立可存在区域时使用 Trap",
+        "区域绑定在目标状态上时使用 BuffIntervalSearch",
+        "仅沿技能时间轴重复时使用 SkillTriggerArray"
+      ]
+    },
+    {
+      "intent": "Projectile",
+      "preferred": "ProjectileToTarget",
+      "allowedAlternatives": [
+        "ProjectileToPosition",
+        "ProjectileDirectionLineSearch",
+        "ProjectileDirectionCollision",
+        "ProjectileRing",
+        "ProjectileDirectionToTarget"
+      ],
+      "selectionRules": [
+        "明确跟踪目标时使用 ProjectileToTarget",
+        "指向目标位置时使用 ProjectileToPosition",
+        "固定方向且要求直线命中时使用 ProjectileDirectionLineSearch",
+        "固定方向且要求沿途碰撞时使用 ProjectileDirectionCollision",
+        "环形或扇形多弹道时使用 ProjectileRing",
+        "沿施法者到目标方向并允许角度偏移时使用 ProjectileDirectionToTarget"
+      ]
+    },
+    {
+      "intent": "ChainDamage",
+      "preferred": "ChainDamage",
+      "allowedAlternatives": ["BulletResearchChain", "TrapResearchChain"],
+      "selectionRules": [
+        "默认使用 ChainDamage",
+        "仅当传播必须可视化或通过弹道节点时使用 BulletResearchChain",
+        "仅当传播由独立区域实体驱动时使用 TrapResearchChain"
+      ]
+    },
+    {
+      "intent": "Healing",
+      "preferred": "DirectHealing",
+      "allowedAlternatives": ["BuffIntervalHealing"],
+      "selectionRules": [
+        "单次治疗使用 DirectHealing",
+        "明确持续恢复且需要状态时可使用 BuffIntervalHealing"
+      ]
+    },
+    {
+      "intent": "AddState",
+      "preferred": "AddBuff",
+      "allowedAlternatives": ["AddRestrict", "AddHeightBuff", "AddShield"],
+      "selectionRules": [
+        "普通持续状态使用 AddBuff",
+        "仅限制移动或攻击时使用 AddRestrict",
+        "层数由高度计算时使用 AddHeightBuff",
+        "明确护盾语义时使用 AddShield"
+      ]
+    },
+    {
+      "intent": "RemoveState",
+      "preferred": "RemoveBuff",
+      "allowedAlternatives": ["RemoveRestrict"],
+      "selectionRules": [
+        "普通状态使用 RemoveBuff",
+        "限制标记使用 RemoveRestrict"
+      ]
+    },
+    {
+      "intent": "StatModify",
+      "preferred": "AddProperty",
+      "allowedAlternatives": [
+        "SubProperty",
+        "ChangePropertyReal",
+        "AddSkillData",
+        "SubSkillData",
+        "AddSkillDataBySkill",
+        "SubSkillDataBySkill"
+      ],
+      "selectionRules": [
+        "普通属性增加使用 AddProperty",
+        "普通属性减少使用 SubProperty",
+        "实时当前值改变必须明确使用 ChangePropertyReal",
+        "技能运行时数据必须明确作用域"
+      ]
+    },
+    {
+      "intent": "ConditionalEffect",
+      "preferred": "ConditionGroupBranch",
+      "allowedAlternatives": ["ConditionBranch", "ResearchThenExecute"],
+      "selectionRules": [
+        "单个条件使用 ConditionBranch",
+        "多个条件或组合方式使用 ConditionGroupBranch",
+        "判定依赖重新索敌结果时使用 ResearchThenExecute"
+      ]
+    },
+    {
+      "intent": "Summon",
+      "preferred": "SummonUnit",
+      "allowedAlternatives": ["SummonRandom", "SummonAutoTrap"],
+      "selectionRules": [
+        "固定单位使用 SummonUnit",
+        "随机包使用 SummonRandom",
+        "区域机关使用 SummonAutoTrap"
+      ]
+    },
+    {
+      "intent": "SkillGrant",
+      "preferred": "AddSkill",
+      "allowedAlternatives": [],
+      "selectionRules": ["使用现有 AddSkill 动作"]
+    },
+    {
+      "intent": "TargetMark",
+      "preferred": "FlagLabel",
+      "allowedAlternatives": ["AddBuffMarker", "HitOnceMarker", "HostilityMarker"],
+      "selectionRules": [
+        "普通标签使用 AddFlagLabel",
+        "需要生命周期或可见状态时使用 Buff",
+        "一次命中约束使用 HitOnceComponent 相关动作",
+        "临时仇恨共享使用 ShareHostility"
+      ]
+    },
+    {
+      "intent": "MovementControl",
+      "preferred": "Knockback",
+      "allowedAlternatives": ["BlinkToTarget"],
+      "selectionRules": [
+        "击退或拉近使用 Knockback",
+        "瞬移到目标附近使用 BlinkToTarget"
+      ]
+    }
+  ]
+}

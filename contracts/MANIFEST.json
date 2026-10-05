@@ -1,5 +1,5 @@
 {
-  "sourceRoot": "../RTS-Skill-Agent",
+  "sourceRoot": "contract-factory",
   "files": [
     {
       "path": "config/capability-registry.v0.json",

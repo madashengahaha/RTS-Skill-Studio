@@ -1,0 +1,404 @@
+{
+  "schemaVersion": 0,
+  "registryVersion": "0.1.0",
+  "entities": [
+    {
+      "key": "Skill",
+      "namespace": "TbSkill",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Skill root"
+    },
+    {
+      "key": "EffectGroup",
+      "namespace": "EffectGroup",
+      "kind": "Virtual",
+      "identity": "group_id",
+      "shared": true,
+      "role": "Ordered effect container"
+    },
+    {
+      "key": "Effect",
+      "namespace": "TbEffect",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Effect action row"
+    },
+    {
+      "key": "ConditionGroup",
+      "namespace": "ConditionGroup",
+      "kind": "Virtual",
+      "identity": "group_id",
+      "shared": true,
+      "role": "Ordered condition container"
+    },
+    {
+      "key": "Condition",
+      "namespace": "TbCondition",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Condition row"
+    },
+    {
+      "key": "Buff",
+      "namespace": "TbBuff",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Timed state and lifecycle effects"
+    },
+    {
+      "key": "Bullet",
+      "namespace": "TbBullet",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Projectile definition"
+    },
+    {
+      "key": "Search",
+      "namespace": "TbSearch",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Target search definition"
+    },
+    {
+      "key": "DamagePipeline",
+      "namespace": "TbDamagePipeline",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Damage stage sequence"
+    },
+    {
+      "key": "SkillResource",
+      "namespace": "TbSkillResource",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Skill presentation resource"
+    },
+    {
+      "key": "Trap",
+      "namespace": "TbTrap",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Summoned area behavior root"
+    },
+    {
+      "key": "Hero",
+      "namespace": "TbHero",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Skill owner"
+    },
+    {
+      "key": "Item",
+      "namespace": "TbItem",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Effect-group root and skill unlock carrier"
+    },
+    {
+      "key": "Soldier",
+      "namespace": "TbSoldier",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Skill owner"
+    },
+    {
+      "key": "Building",
+      "namespace": "TbBuilding",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Skill owner"
+    },
+    {
+      "key": "Equipment",
+      "namespace": "TbEquipment",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Skill owner"
+    },
+    {
+      "key": "HeroUpgrade",
+      "namespace": "TbHeroUpgrade",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Hero upgrade and unlock carrier"
+    },
+    {
+      "key": "SoldierUpgrade",
+      "namespace": "TbSoldierUpgrade",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Soldier upgrade and unlock carrier"
+    },
+    {
+      "key": "EquipmentUpgrade",
+      "namespace": "TbEquipmentUpgrade",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Equipment upgrade and unlock carrier"
+    },
+    {
+      "key": "BattleHeroShop",
+      "namespace": "TbBattleHeroShop",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Battle skill unlock table"
+    },
+    {
+      "key": "BattleSoldierLevelUp",
+      "namespace": "TbBattleSoldierLevelUp",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Battle soldier skill unlock table"
+    },
+    {
+      "key": "Transmigrator",
+      "namespace": "TbTransmigrator",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Default skill carrier"
+    },
+    {
+      "key": "Stage",
+      "namespace": "TbStage",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": false,
+      "role": "Stage generation and component carrier"
+    },
+    {
+      "key": "RandomBag",
+      "namespace": "TbRandomBag",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Random bag definition"
+    },
+    {
+      "key": "RandomSet",
+      "namespace": "TbRandomSet",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Random output set"
+    },
+    {
+      "key": "SpawnSet",
+      "namespace": "TbSpawnSet",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Spawn set definition"
+    },
+    {
+      "key": "RandomCard",
+      "namespace": "TbRandomCard",
+      "kind": "Table",
+      "identity": "id",
+      "shared": true,
+      "role": "Random card pool member"
+    },
+    {
+      "key": "Card",
+      "namespace": "TbCard",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Card template"
+    },
+    {
+      "key": "Resource",
+      "namespace": "TbResource",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Resource path"
+    },
+    {
+      "key": "FunctionComponent",
+      "namespace": "TbFunctionComponent",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "Runtime function component"
+    },
+    {
+      "key": "ViewFunctionComponent",
+      "namespace": "TbViewFunctionComponent",
+      "kind": "Table",
+      "identity": "Id",
+      "shared": true,
+      "role": "View function component"
+    }
+  ],
+  "planOperations": [
+    "CreateSkill",
+    "ModifySkill",
+    "AddEffectIntent",
+    "ModifyEffectIntent",
+    "DeleteEffectIntent",
+    "AddConditionIntent",
+    "ModifyConditionIntent",
+    "DeleteConditionIntent",
+    "LinkExisting",
+    "RemoveLink",
+    "ReorderMembers"
+  ],
+  "readOnlyTools": [
+    "get_capability_context",
+    "resolve_asset",
+    "get_graph",
+    "search_similar_skills",
+    "explain_execution_chain"
+  ],
+  "valueSources": [
+    "ModelProposed",
+    "UserEdited",
+    "Default"
+  ],
+  "similarityScoring": {
+    "version": "0.1.0",
+    "skillWeights": {
+      "intents": 0.45,
+      "mechanisms": 0.35,
+      "tags": 0.1,
+      "references": 0.1
+    }
+  },
+  "entityFields": [
+    {
+      "path": "Skill.skill_type",
+      "enumName": "ESkillType"
+    },
+    {
+      "path": "Search.shape",
+      "enumName": "ESearchTargetShape"
+    },
+    {
+      "path": "Search.team",
+      "enumName": "ESearchTargetTeam"
+    },
+    {
+      "path": "Search.type",
+      "enumName": "EUnitType"
+    },
+    {
+      "path": "Search.included_flag",
+      "enumName": "FlagLabel"
+    },
+    {
+      "path": "Search.excluded_flag",
+      "enumName": "FlagLabel"
+    },
+    {
+      "path": "Search.prioritys",
+      "enumName": "ESearchTargetPriority"
+    },
+    {
+      "path": "DamagePipeline.PipelineStage_param",
+      "enumName": "DamageStageType"
+    }
+  ],
+  "intents": [
+    {
+      "key": "InstantDamage",
+      "label": "即时伤害",
+      "harmful": true
+    },
+    {
+      "key": "PeriodicDamage",
+      "label": "周期伤害",
+      "harmful": true
+    },
+    {
+      "key": "DelayedDamage",
+      "label": "延迟伤害",
+      "harmful": true
+    },
+    {
+      "key": "AreaDamage",
+      "label": "范围伤害",
+      "harmful": true
+    },
+    {
+      "key": "PersistentArea",
+      "label": "持续区域",
+      "harmful": true
+    },
+    {
+      "key": "Projectile",
+      "label": "弹道效果",
+      "harmful": null
+    },
+    {
+      "key": "ChainDamage",
+      "label": "链式伤害",
+      "harmful": true
+    },
+    {
+      "key": "Healing",
+      "label": "治疗",
+      "harmful": false
+    },
+    {
+      "key": "AddState",
+      "label": "添加状态",
+      "harmful": null
+    },
+    {
+      "key": "RemoveState",
+      "label": "移除状态",
+      "harmful": null
+    },
+    {
+      "key": "StatModify",
+      "label": "属性修改",
+      "harmful": null
+    },
+    {
+      "key": "ConditionalEffect",
+      "label": "条件效果",
+      "harmful": null
+    },
+    {
+      "key": "Summon",
+      "label": "召唤",
+      "harmful": null
+    },
+    {
+      "key": "SkillGrant",
+      "label": "技能授予",
+      "harmful": null
+    },
+    {
+      "key": "TargetMark",
+      "label": "目标标记",
+      "harmful": null
+    },
+    {
+      "key": "MovementControl",
+      "label": "位移控制",
+      "harmful": null
+    }
+  ]
+}

@@ -324,11 +324,11 @@ public sealed class SkillWorkspaceService(
         CancellationToken cancellationToken
     )
     {
-        if (depth is < 1 or > 12)
+        if (depth is < 1 or > 32)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(depth),
-                "链路深度必须在 1 到 12 之间。"
+                "链路深度必须在 1 到 32 之间。"
             );
         }
 

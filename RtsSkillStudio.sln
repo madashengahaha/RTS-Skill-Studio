@@ -23,6 +23,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TianshuDM.Infrastructure.Ex
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TianshuDM.Infrastructure.Sqlite", "vendor\TianshuDM\TianshuDM.Infrastructure.Sqlite\TianshuDM.Infrastructure.Sqlite.csproj", "{5806425E-82E3-4677-804F-99AF9D36A59F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{57347ADB-377D-4185-A4EC-8250C7E32D98}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RtsSkillStudio.Tests", "tests\RtsSkillStudio.Tests\RtsSkillStudio.Tests.csproj", "{86699799-6C03-4072-B8A4-EFF32A87FF53}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,6 +64,10 @@ Global
 		{5806425E-82E3-4677-804F-99AF9D36A59F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5806425E-82E3-4677-804F-99AF9D36A59F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5806425E-82E3-4677-804F-99AF9D36A59F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86699799-6C03-4072-B8A4-EFF32A87FF53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86699799-6C03-4072-B8A4-EFF32A87FF53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86699799-6C03-4072-B8A4-EFF32A87FF53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86699799-6C03-4072-B8A4-EFF32A87FF53}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D6BEA176-609F-4368-9F96-F8A0E68A3720} = {2BB38470-9A8E-4A55-835F-CC826AADF9A0}
@@ -70,5 +78,6 @@ Global
 		{7C963112-5753-440C-868B-39B695FBE0CC} = {4B8417C3-262D-403D-B130-F5332FC3170A}
 		{9719DE4B-1F95-41C5-B4EB-4B3D0953E50E} = {4B8417C3-262D-403D-B130-F5332FC3170A}
 		{5806425E-82E3-4677-804F-99AF9D36A59F} = {4B8417C3-262D-403D-B130-F5332FC3170A}
+		{86699799-6C03-4072-B8A4-EFF32A87FF53} = {57347ADB-377D-4185-A4EC-8250C7E32D98}
 	EndGlobalSection
 EndGlobal

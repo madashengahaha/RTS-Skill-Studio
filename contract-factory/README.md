@@ -71,6 +71,11 @@ npm run verify:enums -- --builtin /path/to/builtin.xml
 npm run verify:source -- --schema /path/to/hero-authoring-schema.json
 ```
 
+The paths and generated Unity enum files are configured in
+`config/external-sources.v0.json`; the commands also run without arguments when
+that configuration is valid. Set `RTS_SKILL_PROJECT_ROOT` to override the project
+root on another machine.
+
 The source schema is read-only. The command writes only
 `config/capability-registry.v0.json` in this repository.
 

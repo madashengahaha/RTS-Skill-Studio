@@ -9,7 +9,7 @@
     {
       "name": "ECompareType",
       "flags": false,
-      "comment": null,
+      "comment": "参数约定枚举，来源于 ConditionHandler 的比较运算；Unity 生成目录不存在同名枚举。",
       "values": [
         {"name": "Equal", "value": 0, "alias": "等于", "comment": null},
         {"name": "Greater", "value": 1, "alias": "大于", "comment": null},
@@ -84,7 +84,7 @@
     {
       "name": "TeamRelation",
       "flags": false,
-      "comment": null,
+      "comment": "参数约定枚举，来源于 ConditionHandler_IsTeamRelation.relationType；不可与 Unity 生成的 EFactionRelation 混用。",
       "values": [
         {"name": "Self", "value": 0, "alias": "自己", "comment": null},
         {"name": "Ally", "value": 1, "alias": "友方", "comment": null},
@@ -98,15 +98,48 @@
       "comment": "技能类型",
       "values": [
         {"name": "None", "value": 0, "alias": "无类型", "comment": null},
-        {"name": "Normal", "value": 1, "alias": "普通攻击", "comment": null},
-        {"name": "Manual", "value": 2, "alias": "手动技能", "comment": null},
-        {"name": "Dead", "value": 3, "alias": "死亡技能", "comment": null},
-        {"name": "Counter", "value": 4, "alias": "反击技能", "comment": null},
-        {"name": "Auto", "value": 5, "alias": "自动释放技能", "comment": null},
-        {"name": "Placement", "value": 6, "alias": "放置技能", "comment": null},
-        {"name": "Passive", "value": 7, "alias": "被动技能", "comment": null},
-        {"name": "Damage", "value": 8, "alias": "造成伤害时触发技能", "comment": null},
-        {"name": "OnKill", "value": 9, "alias": "击杀时触发技能", "comment": null}
+        {"name": "Normal", "value": 1, "alias": "普攻", "comment": null},
+        {"name": "Manual", "value": 2, "alias": "手动", "comment": null},
+        {"name": "Dead", "value": 3, "alias": "死亡", "comment": null},
+        {"name": "Counter", "value": 4, "alias": "反击", "comment": null},
+        {"name": "Auto", "value": 5, "alias": "自动", "comment": null},
+        {"name": "Placement", "value": 6, "alias": "放置", "comment": null},
+        {"name": "Passive", "value": 7, "alias": "被动", "comment": null},
+        {"name": "Damage", "value": 8, "alias": "伤害", "comment": null},
+        {"name": "OnKill", "value": 9, "alias": "击杀", "comment": null}
+      ]
+    },
+    {
+      "name": "EConsumeType",
+      "flags": false,
+      "comment": "技能消耗类型",
+      "values": [
+        {"name": "None", "value": 0, "alias": "无", "comment": null},
+        {"name": "Property", "value": 1, "alias": "消耗属性", "comment": null},
+        {"name": "TeamProperty", "value": 2, "alias": "队伍属性", "comment": null}
+      ]
+    },
+    {
+      "name": "ESkillBuffType",
+      "flags": false,
+      "comment": "BUFF类型",
+      "values": [
+        {"name": "None", "value": 0, "alias": "无", "comment": null},
+        {"name": "Buff", "value": 1, "alias": "增益", "comment": null},
+        {"name": "Debuff", "value": 2, "alias": "减益", "comment": null},
+        {"name": "Control", "value": 3, "alias": "控制", "comment": null},
+        {"name": "Slow", "value": 4, "alias": "减速", "comment": null},
+        {"name": "Disengage", "value": 5, "alias": "脱战", "comment": null}
+      ]
+    },
+    {
+      "name": "ESkillBuffOverlapType",
+      "flags": false,
+      "comment": "BUFF叠加类型",
+      "values": [
+        {"name": "Unique", "value": 0, "alias": "唯一", "comment": null},
+        {"name": "Dispersive", "value": 1, "alias": "分散", "comment": null},
+        {"name": "Concentrated", "value": 2, "alias": "集中", "comment": null}
       ]
     },
     {
@@ -118,9 +151,9 @@
         {"name": "MinDistance", "value": 1, "alias": "最近距离", "comment": null},
         {"name": "MaxDistance", "value": 2, "alias": "最远距离", "comment": null},
         {"name": "Random", "value": 3, "alias": "随机", "comment": null},
-        {"name": "MaxCoverage", "value": 4, "alias": "单位锚定覆盖评分", "comment": null},
-        {"name": "LowestHpPct", "value": 5, "alias": "HP百分比最低", "comment": null},
-        {"name": "HighestThreatScore", "value": 6, "alias": "现有属性评分威胁", "comment": null},
+        {"name": "MaxCoverage", "value": 4, "alias": "覆盖范围最多", "comment": null},
+        {"name": "LowestHpPct", "value": 5, "alias": "血量百分比最少", "comment": null},
+        {"name": "HighestThreatScore", "value": 6, "alias": "威胁评分最高", "comment": null},
         {"name": "Warrior", "value": 7, "alias": "战士", "comment": null},
         {"name": "Mage", "value": 8, "alias": "法师", "comment": null},
         {"name": "Archer", "value": 9, "alias": "弓箭手", "comment": null},

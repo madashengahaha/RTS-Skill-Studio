@@ -286,7 +286,8 @@
         "allowsMultipleEnumValues": {
           "type": "boolean",
           "default": false
-        }
+        },
+        "defaultValue": true
       }
     },
     "Semantic": {
@@ -362,6 +363,13 @@
         },
         "comment": {
           "type": ["string", "null"]
+        },
+        "sourceKind": {
+          "enum": [
+            "BuiltinXml",
+            "UnityGeneratedEnum",
+            "ParameterConvention"
+          ]
         },
         "values": {
           "type": "array",

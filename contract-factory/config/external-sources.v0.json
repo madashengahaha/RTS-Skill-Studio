@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 0,
+  "projectRootEnvironmentVariable": "RTS_SKILL_PROJECT_ROOT",
+  "defaultProjectRoot": "E:/VP/Unity/RTS_DR/Trunk",
+  "sourceRevision": "runtime-code-2026-10-06",
+  "paths": {
+    "builtinXml": "Unity/Assets/Config/Excel/Defines/builtin.xml",
+    "unityGeneratedConfig": "Unity/Assets/Scripts/Model/Generate/Client/Config",
+    "heroAuthoringSchema": "其他/配置/config/hero-authoring-schema.json"
+  },
+  "unityGeneratedEnums": [
+    "DamageStageType.cs",
+    "EConditionType.cs",
+    "EConsumeType.cs",
+    "EffectActionType.cs",
+    "EGroupCompletedType.cs",
+    "ESearchTargetPriority.cs",
+    "ESearchTargetShape.cs",
+    "ESearchTargetTeam.cs",
+    "ESkillBuffOverlapType.cs",
+    "ESkillBuffType.cs",
+    "ESkillType.cs",
+    "EUnitType.cs",
+    "FlagLabel.cs",
+    "FlagRestrict.cs",
+    "NumericType.cs"
+  ]
+}

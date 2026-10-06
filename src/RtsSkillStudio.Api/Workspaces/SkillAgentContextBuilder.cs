@@ -9,8 +9,8 @@ public sealed partial class SkillAgentContextBuilder(
     ILogger<SkillAgentContextBuilder> logger
 )
 {
-    private const int MaxHistoryNodes = 36;
-    private const int MaxHistoryEdges = 60;
+    private const int MaxHistoryNodes = 80;
+    private const int MaxHistoryEdges = 160;
     private const int MaxFieldValues = 8;
 
     private static readonly string[] BareCandidateNamespaces =
@@ -113,7 +113,7 @@ public sealed partial class SkillAgentContextBuilder(
             StudioAssetRef asset = resolution.Asset;
             SkillChainSnapshot chain = await workspace.GetAssetChainAsync(
                 asset,
-                depth: 6,
+                depth: 32,
                 cancellationToken
             );
             SkillChainNode? focus = chain.Nodes.FirstOrDefault(

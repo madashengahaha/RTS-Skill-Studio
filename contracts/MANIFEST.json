@@ -3,11 +3,11 @@
   "files": [
     {
       "path": "config/capability-registry.v0.json",
-      "sha256": "46e35c9e6012c4144d590734bb6097981b3e9777749eb088c33aa4ec2f0b849d"
+      "sha256": "7a93247cff86fbbedaf2988ca56df26bc36fac4029b3283447db746841c26a4b"
     },
     {
       "path": "config/default-mechanism-contract.v0.json",
-      "sha256": "a133b9852ea34344be442a3ec5b9f754de221aaa8d91f20753a4b5df7ae868cb"
+      "sha256": "2788f5a6812972139d2c9e37074b3cde76fea5ff2f95d3b369b60d9ebc50d848"
     },
     {
       "path": "config/default-value-contract.v0.json",
@@ -15,11 +15,11 @@
     },
     {
       "path": "config/enum-overlays.v0.json",
-      "sha256": "26eaf855272267b599b3f44f3e8ad4ff40bb2cd1a3e5123eebe4104de3bbe09b"
+      "sha256": "1392ebd8b59145d1a66eae65d6759ab43c3eb625da76953f02be8e520c99f3b5"
     },
     {
       "path": "config/enum-values.v0.json",
-      "sha256": "fe33114d7b0aa82ce5b80e0f7150e0dff8ff656efae4a7b0b8a1aff29cf400d9"
+      "sha256": "ca8c939f745ef4c8461eee8c4e86e1b1cb28cddb8dcab9f020a2c91a78e5c1fd"
     },
     {
       "path": "config/read-only-tools.v0.json",
@@ -27,11 +27,11 @@
     },
     {
       "path": "config/registry-foundation.v0.json",
-      "sha256": "cd76e69a85c2572eafa8c78e5349cebe6e65a2de59816aadcd7edb6582bcd61f"
+      "sha256": "db5eafecd59441b69b5860351e9df0cd6d34c2ecf72dbf5e1bdbc81fbe161098"
     },
     {
       "path": "config/semantic-overlay.v0.json",
-      "sha256": "3484f8caf09fda30b280a57672519a6b736b4f0c0c189068ff1058d985838051"
+      "sha256": "76dcfbb91c0c45e575a833f0a1ac838595428fa5d68904cab7ba02c523f25f29"
     },
     {
       "path": "contracts/authoring-patch.schema.json",
@@ -39,7 +39,7 @@
     },
     {
       "path": "contracts/capability-registry.schema.json",
-      "sha256": "2ed41f377ac3c123c5cf4f0321692030f45974117774f28e2943156e08dc7c27"
+      "sha256": "3e5756f67b9f4594bc906b40950e6ccffe16ab04bf0a4d0090a591671649ff3d"
     },
     {
       "path": "contracts/read-only-results.schema.json",
@@ -63,7 +63,7 @@
     },
     {
       "path": "evals/golden-cases.v0.json",
-      "sha256": "9e8b8d30e8265170a59225384c88553bf3df88d7abf2db7e4b774791098f5261"
+      "sha256": "a20a5cdc99cf0a0c84a944b6650a99d60cc774b045737a700a3a12d669053be2"
     },
     {
       "path": "evals/read-only-cases.v0.json",
@@ -78,5 +78,5 @@
       "sha256": "404d3989cf8344c6178599c28d62c991ac7229c9df5470f47e3101c702cd3f6a"
     }
   ],
-  "combinedSha256": "fcc27e6d102e73b92c813506cfc778ae8715040be91b895343594752ed83b5f8"
+  "combinedSha256": "9a9a0bd04f6c369422074aeafc776c97ee72270af4237301a0d9d3b81701114e"
 }

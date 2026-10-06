@@ -1,5 +1,65 @@
 # Implementation Log
 
+## 2026-10-06 - Runtime Contract Alignment and Full Chain Traversal
+
+### Scope
+
+Resolved the validation differences using the Unity generated enums and effect
+executor code as the authority.
+
+### Decisions
+
+- `EffectActionType` is authoritative for executable effect actions.
+- The capability registry no longer exposes `AddShield`, which is absent from the
+  runtime enum and executor set.
+- `AddMaxPropertyWithCurrent` and `SubMaxPropertyWithCurrent` are exposed with
+  repeated property/value pairs.
+- Buff-target parameters are optional where the runtime parser defaults to the
+  current effect target.
+- `Healing` exposes all six runtime-backed parameters.
+- The graph projector resolves `SummonUnit` through `EUnitType` to the actual unit
+  table instead of emitting `UnitByType` placeholders.
+- Search `type + table_id[]` references now produce graph edges to concrete unit
+  tables.
+- Behavior projection supports depth 32 so valid deep chains are not truncated at
+  the previous depth-12 boundary.
+- The Agent context now requests the full bounded chain and keeps its existing
+  node, edge, and field-value limits.
+- `import-builtin-enums.mjs` now reads the selected Unity generated C# enum files
+  in addition to `builtin.xml`; overlapping enum definitions must have identical
+  members and numeric values.
+- External source paths and the pinned source revision live in
+  `config/external-sources.v0.json`, so `npm run verify:enums` and
+  `npm run verify:source` work without arguments.
+- `TeamRelation` and `ECompareType` are marked as parameter-convention enums;
+  `TeamRelation` explicitly warns against confusion with `EFactionRelation`.
+- Condition parameter defaults from runtime handlers are carried into the
+  registry, including the differing `sourceUnit` defaults.
+- Unsupported `SummonUnit`/Search unit types now remain visible as explicit graph
+  nodes instead of being silently omitted.
+- Added the remaining directly referenced generated enums to
+  `unityGeneratedEnums`, including `EUnitType`, `NumericType`, search enums, flag
+  enums, and `EGroupCompletedType`.
+- Added effect-side `defaultValue` metadata for buff targets, `ClearHitMarks`, and
+  `Knockback`.
+
+### Verified
+
+```text
+npm run verify:enums -- --builtin /path/to/builtin.xml
+npm run verify:source -- --schema /path/to/hero-authoring-schema.json
+npm run validate
+npm test
+dotnet test tests/RtsSkillStudio.Tests/RtsSkillStudio.Tests.csproj
+```
+
+The corrected projector resolves:
+
+- `100104 -> TbTrap:60001` as a real missing target.
+- `100804 -> TbSoldier:40002 -> TbSkill:12340015` as a valid chain.
+- `12340014 -> TbBuilding:30001/30005` as valid search-driven links.
+- `100602 -> TbEffect:100600090` at a depth beyond the previous limit.
+
 ## 2026-10-05 - P1 Second Review Remediation
 
 ### Scope

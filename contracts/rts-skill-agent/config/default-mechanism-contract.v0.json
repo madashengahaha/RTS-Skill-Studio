@@ -104,12 +104,11 @@
     {
       "intent": "AddState",
       "preferred": "AddBuff",
-      "allowedAlternatives": ["AddRestrict", "AddHeightBuff", "AddShield"],
+      "allowedAlternatives": ["AddRestrict", "AddHeightBuff"],
       "selectionRules": [
         "普通持续状态使用 AddBuff",
         "仅限制移动或攻击时使用 AddRestrict",
-        "层数由高度计算时使用 AddHeightBuff",
-        "明确护盾语义时使用 AddShield"
+        "层数由高度计算时使用 AddHeightBuff"
       ]
     },
     {
@@ -130,13 +129,16 @@
         "AddSkillData",
         "SubSkillData",
         "AddSkillDataBySkill",
-        "SubSkillDataBySkill"
+        "SubSkillDataBySkill",
+        "AddMaxPropertyWithCurrent",
+        "SubMaxPropertyWithCurrent"
       ],
       "selectionRules": [
         "普通属性增加使用 AddProperty",
         "普通属性减少使用 SubProperty",
         "实时当前值改变必须明确使用 ChangePropertyReal",
-        "技能运行时数据必须明确作用域"
+        "技能运行时数据必须明确作用域",
+        "属性上限及同步当前值使用 AddMaxPropertyWithCurrent 或 SubMaxPropertyWithCurrent"
       ]
     },
     {

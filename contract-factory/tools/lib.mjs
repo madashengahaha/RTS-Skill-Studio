@@ -22,6 +22,20 @@ export async function writeJson(relativeOrAbsolutePath, value) {
   await writeFile(fullPath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
+export async function externalSourcePath(name) {
+  const sources = await readJson("config/external-sources.v0.json");
+  const relativePath = sources.paths?.[name];
+  assert(
+    typeof relativePath === "string" && relativePath.length > 0,
+    `External source ${name} is not configured.`
+  );
+  const root =
+    process.env[sources.projectRootEnvironmentVariable] ??
+    sources.defaultProjectRoot;
+  assert(root, "External project root is not configured.");
+  return path.resolve(root, relativePath);
+}
+
 export function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
 }

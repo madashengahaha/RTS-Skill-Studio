@@ -1,6 +1,6 @@
 {
   "name": "rts-skill-agent",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "type": "module",
   "description": "Controlled natural-language configuration contracts and evaluation fixtures for RTS skills",

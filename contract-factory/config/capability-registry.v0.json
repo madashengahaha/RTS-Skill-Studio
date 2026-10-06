@@ -5,7 +5,7 @@
     "heroAuthoringSchemaVersion": 12,
     "sha256": "e62fabf9609d86d71359a9f4279760316d26e57e3206f4a1055e0d53f9470aa5",
     "sourcePath": "hero-authoring-schema.json",
-    "sourceRevision": "fa37737"
+    "sourceRevision": "runtime-code-2026-10-06"
   },
   "entities": [
     {
@@ -675,6 +675,22 @@
       "enumName": "ESkillType"
     },
     {
+      "path": "Skill.consume_type",
+      "enumName": "EConsumeType"
+    },
+    {
+      "path": "Skill.release_condition_type",
+      "enumName": "EGroupCompletedType"
+    },
+    {
+      "path": "Buff.status_effect_type",
+      "enumName": "ESkillBuffType"
+    },
+    {
+      "path": "Buff.overlap_type",
+      "enumName": "ESkillBuffOverlapType"
+    },
+    {
       "path": "Search.shape",
       "enumName": "ESearchTargetShape"
     },
@@ -842,7 +858,7 @@
       "description": "以施法者当前攻击力倍率加固定值计算治疗；不填参数时按当前攻击力治疗。",
       "warning": null,
       "minParameterCount": 0,
-      "maxParameterCount": 3,
+      "maxParameterCount": 6,
       "parameters": [
         {
           "index": 0,
@@ -874,9 +890,51 @@
         },
         {
           "index": 2,
-          "key": "fallbackScale",
-          "label": "攻击力备用倍率",
-          "description": "仅当第 1 项倍率小于等于 0 时使用；属于运行时兼容参数。",
+          "key": "maxHpScale",
+          "label": "目标最大生命比例",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 3,
+          "key": "durationSeconds",
+          "label": "持续秒数",
+          "description": "每秒一跳；0 表示不配置持续恢复。",
+          "kind": "Integer",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 4,
+          "key": "flatPerSecond",
+          "label": "每秒固定恢复",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 5,
+          "key": "maxHpScalePerSecond",
+          "label": "每秒目标最大生命比例",
+          "description": null,
           "kind": "ScaledInteger",
           "required": false,
           "referenceTarget": null,
@@ -985,13 +1043,13 @@
       "label": "添加 Buff",
       "description": "向指定对象添加一个 Buff。",
       "warning": null,
-      "minParameterCount": 2,
+      "minParameterCount": 1,
       "maxParameterCount": 2,
       "parameters": [
         {
           "index": 0,
           "key": "buffId",
-          "label": "BuffID",
+          "label": "Buff",
           "description": null,
           "kind": "Reference",
           "required": true,
@@ -1006,15 +1064,16 @@
           "index": 1,
           "key": "applyTarget",
           "label": "作用对象",
-          "description": null,
+          "description": "省略时使用当前效果目标；1 表示施法者。",
           "kind": "Enum",
-          "required": true,
+          "required": false,
           "referenceTarget": null,
           "enumName": "EBuffApplyTarget",
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 0
         }
       ],
       "semantic": {
@@ -1035,13 +1094,13 @@
       "label": "移除 Buff",
       "description": "从指定对象移除一个 Buff。",
       "warning": null,
-      "minParameterCount": 2,
+      "minParameterCount": 1,
       "maxParameterCount": 2,
       "parameters": [
         {
           "index": 0,
           "key": "buffId",
-          "label": "BuffID",
+          "label": "Buff",
           "description": null,
           "kind": "Reference",
           "required": true,
@@ -1056,15 +1115,16 @@
           "index": 1,
           "key": "applyTarget",
           "label": "作用对象",
-          "description": null,
+          "description": "省略时使用当前效果目标；1 表示施法者。",
           "kind": "Enum",
-          "required": true,
+          "required": false,
           "referenceTarget": null,
           "enumName": "EBuffApplyTarget",
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 0
         }
       ],
       "semantic": {
@@ -2029,13 +2089,13 @@
       "label": "按高度添加 Buff",
       "description": "以当前高度换算 Buff 层数，并向指定对象添加一个 Buff。",
       "warning": null,
-      "minParameterCount": 2,
+      "minParameterCount": 1,
       "maxParameterCount": 2,
       "parameters": [
         {
           "index": 0,
           "key": "buffId",
-          "label": "BuffID",
+          "label": "Buff",
           "description": null,
           "kind": "Reference",
           "required": true,
@@ -2050,15 +2110,16 @@
           "index": 1,
           "key": "applyTarget",
           "label": "作用对象",
-          "description": null,
+          "description": "省略时使用当前效果目标；1 表示施法者。",
           "kind": "Enum",
-          "required": true,
+          "required": false,
           "referenceTarget": null,
           "enumName": "EBuffApplyTarget",
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 0
         }
       ],
       "semantic": {
@@ -2396,7 +2457,7 @@
       "key": "AnomalySettlement",
       "legacyValue": 25,
       "label": "异常结算",
-      "description": "检查并消耗目标的异常属性值，满足消耗要求后执行指定结算效果组。",
+      "description": "检查并消耗目标的异常属性值；第三个效果组参数可选，缺省时只消耗异常值。",
       "warning": null,
       "minParameterCount": 1,
       "maxParameterCount": 3,
@@ -2404,7 +2465,7 @@
         {
           "index": 0,
           "key": "anomalyType",
-          "label": "异常属性",
+          "label": "异常类型",
           "description": null,
           "kind": "Enum",
           "required": true,
@@ -2419,7 +2480,7 @@
           "index": 1,
           "key": "consume",
           "label": "消耗量",
-          "description": "-1 表示消耗全部；非负值不足时不会执行结算效果组。",
+          "description": "-1 表示全部消耗。",
           "kind": "ScaledInteger",
           "required": false,
           "referenceTarget": null,
@@ -2427,13 +2488,14 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": -1
         },
         {
           "index": 2,
           "key": "effectGroupId",
           "label": "结算效果组",
-          "description": null,
+          "description": "0 或缺省时只消耗异常值，不执行效果组。",
           "kind": "Reference",
           "required": false,
           "referenceTarget": "EffectGroup",
@@ -2441,7 +2503,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 0
         }
       ],
       "semantic": {
@@ -2570,7 +2633,7 @@
       "description": "给目标添加一个普通标签，实际叠加数量来自本次 Effect 的执行次数。",
       "warning": null,
       "minParameterCount": 1,
-      "maxParameterCount": 1,
+      "maxParameterCount": 2,
       "parameters": [
         {
           "index": 0,
@@ -2581,6 +2644,20 @@
           "required": true,
           "referenceTarget": null,
           "enumName": "FlagLabel",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "legacyCount",
+          "label": "兼容数量参数",
+          "description": "运行时忽略该参数，实际数量来自效果执行次数。",
+          "kind": "Integer",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
@@ -2606,7 +2683,7 @@
       "description": "从目标移除一个普通标签，实际移除数量来自本次 Effect 的执行次数。",
       "warning": null,
       "minParameterCount": 1,
-      "maxParameterCount": 1,
+      "maxParameterCount": 2,
       "parameters": [
         {
           "index": 0,
@@ -2617,6 +2694,20 @@
           "required": true,
           "referenceTarget": null,
           "enumName": "FlagLabel",
+          "scale": null,
+          "repeating": false,
+          "repeatStep": 0,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "legacyCount",
+          "label": "兼容数量参数",
+          "description": "运行时忽略该参数，实际数量来自效果执行次数。",
+          "kind": "Integer",
+          "required": false,
+          "referenceTarget": null,
+          "enumName": null,
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
@@ -2719,7 +2810,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 0
         },
         {
           "index": 1,
@@ -2733,13 +2825,14 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 15000
         },
         {
           "index": 2,
           "key": "angle",
           "label": "世界方向角度",
-          "description": "仅“固定世界方向”模式使用，单位为度。",
+          "description": "仅固定世界方向模式使用。",
           "kind": "Integer",
           "required": false,
           "referenceTarget": null,
@@ -2747,7 +2840,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 0
         },
         {
           "index": 3,
@@ -2761,7 +2855,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 0
         }
       ],
       "semantic": {
@@ -3188,7 +3283,7 @@
           "enumName": null,
           "scale": null,
           "repeating": true,
-          "repeatStep": 0,
+          "repeatStep": 1,
           "allowsMultipleEnumValues": false
         }
       ],
@@ -3216,7 +3311,7 @@
           "index": 0,
           "key": "sourceUnit",
           "label": "单位来源",
-          "description": null,
+          "description": "省略时使用 carrier。",
           "kind": "Enum",
           "required": false,
           "referenceTarget": null,
@@ -3224,7 +3319,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 2
         }
       ],
       "semantic": {
@@ -3235,70 +3331,6 @@
         "tags": [
           "marker",
           "clear"
-        ]
-      }
-    },
-    {
-      "key": "AddShield",
-      "legacyValue": 39,
-      "label": "添加护盾",
-      "description": "为目标添加或刷新唯一叠加的护盾 Buff，并按固定值或目标当前属性计算本次护盾量。",
-      "warning": "引用的 Buff 必须配置为唯一叠加（Unique）；不要把 AddShield 放入同一护盾 Buff 的进入效果，否则会递归创建。",
-      "minParameterCount": 3,
-      "maxParameterCount": 3,
-      "parameters": [
-        {
-          "index": 0,
-          "key": "buffId",
-          "label": "护盾 Buff",
-          "description": "选择负责承载护盾运行时状态的 Buff。",
-          "kind": "Reference",
-          "required": true,
-          "referenceTarget": "TbBuff",
-          "enumName": null,
-          "scale": null,
-          "repeating": false,
-          "repeatStep": 0,
-          "allowsMultipleEnumValues": false
-        },
-        {
-          "index": 1,
-          "key": "baseProperty",
-          "label": "计算基准属性",
-          "description": "选择 0 表示使用固定盾量；选择属性时按目标该属性的当前值乘以下方比例。",
-          "kind": "Enum",
-          "required": true,
-          "referenceTarget": null,
-          "enumName": "NumericType",
-          "scale": null,
-          "repeating": false,
-          "repeatStep": 0,
-          "allowsMultipleEnumValues": false
-        },
-        {
-          "index": 2,
-          "key": "value",
-          "label": "固定盾量或属性比例",
-          "description": "基准属性为 0 时填写固定盾量；否则填写比例，例如 1 表示 100%。",
-          "kind": "ScaledInteger",
-          "required": true,
-          "referenceTarget": null,
-          "enumName": null,
-          "scale": 10000,
-          "repeating": false,
-          "repeatStep": 0,
-          "allowsMultipleEnumValues": false
-        }
-      ],
-      "semantic": {
-        "intents": [
-          "AddState"
-        ],
-        "mechanism": "AddShield",
-        "tags": [
-          "shield",
-          "unique-buff",
-          "recursion-risk"
         ]
       }
     },
@@ -3348,6 +3380,108 @@
         "tags": [
           "hostility",
           "temporary-target-state"
+        ]
+      }
+    },
+    {
+      "key": "AddMaxPropertyWithCurrent",
+      "legacyValue": 41,
+      "label": "增加上限并同步当前值",
+      "description": "按成对参数增加属性上限，并按实际上限变化量同步当前值。",
+      "warning": null,
+      "minParameterCount": 0,
+      "maxParameterCount": null,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "property",
+          "label": "属性",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": true,
+          "repeatStep": 2,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "value",
+          "label": "数值",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": true,
+          "repeatStep": 2,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "StatModify"
+        ],
+        "mechanism": "AddMaxPropertyWithCurrent",
+        "tags": [
+          "property",
+          "max-value",
+          "current-value-sync",
+          "repeat-pairs"
+        ]
+      }
+    },
+    {
+      "key": "SubMaxPropertyWithCurrent",
+      "legacyValue": 42,
+      "label": "降低上限并同步当前值",
+      "description": "按成对参数降低属性上限，并按原当前值与上限比例同步当前值。",
+      "warning": null,
+      "minParameterCount": 0,
+      "maxParameterCount": null,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "property",
+          "label": "属性",
+          "description": null,
+          "kind": "Enum",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": "NumericType",
+          "scale": null,
+          "repeating": true,
+          "repeatStep": 2,
+          "allowsMultipleEnumValues": false
+        },
+        {
+          "index": 1,
+          "key": "value",
+          "label": "数值",
+          "description": null,
+          "kind": "ScaledInteger",
+          "required": true,
+          "referenceTarget": null,
+          "enumName": null,
+          "scale": 10000,
+          "repeating": true,
+          "repeatStep": 2,
+          "allowsMultipleEnumValues": false
+        }
+      ],
+      "semantic": {
+        "intents": [
+          "StatModify"
+        ],
+        "mechanism": "SubMaxPropertyWithCurrent",
+        "tags": [
+          "property",
+          "max-value",
+          "current-value-sync",
+          "repeat-pairs"
         ]
       }
     }
@@ -3465,7 +3599,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 1
         }
       ],
       "semantic": {
@@ -3491,7 +3626,7 @@
         {
           "index": 0,
           "key": "restrict",
-          "label": "限制标记",
+          "label": "限制类型",
           "description": null,
           "kind": "Enum",
           "required": true,
@@ -3500,7 +3635,7 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": true
+          "allowsMultipleEnumValues": false
         },
         {
           "index": 1,
@@ -3514,7 +3649,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 1
         }
       ],
       "semantic": {
@@ -3563,7 +3699,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 1
         }
       ],
       "semantic": {
@@ -3581,7 +3718,7 @@
       "key": "IsTeamRelation",
       "legacyValue": 5,
       "label": "阵营关系",
-      "description": null,
+      "description": "比较 owner 与 target 的阵营关系；只读取参数 0，运行时忽略旧注释中的第二个参数。",
       "warning": null,
       "minParameterCount": 1,
       "maxParameterCount": 1,
@@ -3589,7 +3726,7 @@
         {
           "index": 0,
           "key": "relation",
-          "label": "关系",
+          "label": "阵营关系",
           "description": null,
           "kind": "Enum",
           "required": true,
@@ -3728,7 +3865,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 1
         }
       ],
       "semantic": {
@@ -3763,7 +3901,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 0
         }
       ],
       "semantic": {
@@ -3831,7 +3970,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "defaultValue": 2
         }
       ],
       "semantic": {
@@ -3887,6 +4027,7 @@
       "name": "DamageStageType",
       "flags": false,
       "comment": "伤害管线阶段类型，策划按此枚举配置管线执行顺序",
+      "sourceKind": "UnityGeneratedEnum",
       "values": [
         {
           "name": "None",
@@ -3897,43 +4038,43 @@
         {
           "name": "Immune",
           "value": 1,
-          "alias": "免疫判定",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Evasion",
           "value": 2,
-          "alias": "闪避判定",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Critical",
           "value": 3,
-          "alias": "暴击判定",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Defense",
           "value": 5,
-          "alias": "攻防计算",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Block",
           "value": 6,
-          "alias": "格挡判定",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Anomaly",
           "value": 7,
-          "alias": "异常判定",
+          "alias": "",
           "comment": null
         },
         {
           "name": "TriggerDamageSkill",
           "value": 8,
-          "alias": "造成伤害时触发技能",
+          "alias": "",
           "comment": null
         }
       ]
@@ -3942,6 +4083,7 @@
       "name": "EBuffApplyTarget",
       "flags": false,
       "comment": null,
+      "sourceKind": "ParameterConvention",
       "values": [
         {
           "name": "Target",
@@ -3960,7 +4102,8 @@
     {
       "name": "ECompareType",
       "flags": false,
-      "comment": null,
+      "comment": "参数约定枚举，来源于 ConditionHandler 的比较运算；Unity 生成目录不存在同名枚举。",
+      "sourceKind": "ParameterConvention",
       "values": [
         {
           "name": "Equal",
@@ -3995,9 +4138,36 @@
       ]
     },
     {
+      "name": "EConsumeType",
+      "flags": false,
+      "comment": "技能消耗类型",
+      "sourceKind": "UnityGeneratedEnum",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "无",
+          "comment": null
+        },
+        {
+          "name": "Property",
+          "value": 1,
+          "alias": "消耗属性",
+          "comment": null
+        },
+        {
+          "name": "TeamProperty",
+          "value": 2,
+          "alias": "队伍属性",
+          "comment": null
+        }
+      ]
+    },
+    {
       "name": "EffectKillTarget",
       "flags": false,
       "comment": null,
+      "sourceKind": "ParameterConvention",
       "values": [
         {
           "name": "Owner",
@@ -4017,6 +4187,7 @@
       "name": "EffectSourceUnit",
       "flags": false,
       "comment": null,
+      "sourceKind": "ParameterConvention",
       "values": [
         {
           "name": "Owner",
@@ -4042,6 +4213,7 @@
       "name": "EGroupCompletedType",
       "flags": false,
       "comment": null,
+      "sourceKind": "UnityGeneratedEnum",
       "values": [
         {
           "name": "None",
@@ -4067,6 +4239,7 @@
       "name": "EKnockbackDirection",
       "flags": false,
       "comment": null,
+      "sourceKind": "ParameterConvention",
       "values": [
         {
           "name": "AwayFromCaster",
@@ -4098,6 +4271,7 @@
       "name": "ESearchTargetPriority",
       "flags": false,
       "comment": "索敌优先级",
+      "sourceKind": "UnityGeneratedEnum",
       "values": [
         {
           "name": "None",
@@ -4126,19 +4300,19 @@
         {
           "name": "MaxCoverage",
           "value": 4,
-          "alias": "单位锚定覆盖评分",
+          "alias": "覆盖范围最多",
           "comment": null
         },
         {
           "name": "LowestHpPct",
           "value": 5,
-          "alias": "HP百分比最低",
+          "alias": "血量百分比最少",
           "comment": null
         },
         {
           "name": "HighestThreatScore",
           "value": 6,
-          "alias": "现有属性评分威胁",
+          "alias": "威胁评分最高",
           "comment": null
         },
         {
@@ -4201,6 +4375,7 @@
       "name": "ESearchTargetShape",
       "flags": false,
       "comment": "索敌形状",
+      "sourceKind": "UnityGeneratedEnum",
       "values": [
         {
           "name": "None",
@@ -4211,43 +4386,43 @@
         {
           "name": "Circle",
           "value": 1,
-          "alias": "圆形",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Sector",
           "value": 2,
-          "alias": "扇形",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Rectangle",
           "value": 3,
-          "alias": "矩形",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Cross",
           "value": 4,
-          "alias": "十字",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Line",
           "value": 5,
-          "alias": "直线",
+          "alias": "",
           "comment": null
         },
         {
           "name": "All",
           "value": 6,
-          "alias": "全体",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Ring",
           "value": 7,
-          "alias": "环形",
+          "alias": "",
           "comment": null
         }
       ]
@@ -4256,6 +4431,7 @@
       "name": "ESearchTargetTeam",
       "flags": false,
       "comment": "索敌类型",
+      "sourceKind": "UnityGeneratedEnum",
       "values": [
         {
           "name": "None",
@@ -4266,73 +4442,143 @@
         {
           "name": "Self",
           "value": 1,
-          "alias": "自己",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Friend",
           "value": 2,
-          "alias": "友方含自己",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FriendExcludeSelf",
           "value": 3,
-          "alias": "友方不含自己",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Enemy",
           "value": 4,
-          "alias": "敌方队伍",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Counter",
           "value": 6,
-          "alias": "反击",
+          "alias": "",
           "comment": null
         },
         {
           "name": "All",
           "value": 7,
-          "alias": "全体",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Global",
           "value": 8,
-          "alias": "全局",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FriendTeam",
           "value": 9,
-          "alias": "友方全局",
+          "alias": "",
           "comment": null
         },
         {
           "name": "EnemyTeam",
           "value": 10,
-          "alias": "敌方全局",
+          "alias": "",
           "comment": null
         },
         {
           "name": "OwnerPlayer",
           "value": 11,
-          "alias": "所属玩家",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AITarget",
           "value": 12,
-          "alias": "AI目标",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FlowTarget",
           "value": 13,
-          "alias": "传递的目标",
+          "alias": "",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ESkillBuffOverlapType",
+      "flags": false,
+      "comment": "BUFF叠加类型",
+      "sourceKind": "UnityGeneratedEnum",
+      "values": [
+        {
+          "name": "Unique",
+          "value": 0,
+          "alias": "唯一",
+          "comment": null
+        },
+        {
+          "name": "Dispersive",
+          "value": 1,
+          "alias": "分散",
+          "comment": null
+        },
+        {
+          "name": "Concentrated",
+          "value": 2,
+          "alias": "集中",
+          "comment": null
+        }
+      ]
+    },
+    {
+      "name": "ESkillBuffType",
+      "flags": false,
+      "comment": "BUFF类型",
+      "sourceKind": "UnityGeneratedEnum",
+      "values": [
+        {
+          "name": "None",
+          "value": 0,
+          "alias": "无",
+          "comment": null
+        },
+        {
+          "name": "Buff",
+          "value": 1,
+          "alias": "增益",
+          "comment": null
+        },
+        {
+          "name": "Debuff",
+          "value": 2,
+          "alias": "减益",
+          "comment": null
+        },
+        {
+          "name": "Control",
+          "value": 3,
+          "alias": "控制",
+          "comment": null
+        },
+        {
+          "name": "Slow",
+          "value": 4,
+          "alias": "减速",
+          "comment": null
+        },
+        {
+          "name": "Disengage",
+          "value": 5,
+          "alias": "脱战",
           "comment": null
         }
       ]
@@ -4341,6 +4587,7 @@
       "name": "ESkillType",
       "flags": false,
       "comment": "技能类型",
+      "sourceKind": "UnityGeneratedEnum",
       "values": [
         {
           "name": "None",
@@ -4351,55 +4598,55 @@
         {
           "name": "Normal",
           "value": 1,
-          "alias": "普通攻击",
+          "alias": "普攻",
           "comment": null
         },
         {
           "name": "Manual",
           "value": 2,
-          "alias": "手动技能",
+          "alias": "手动",
           "comment": null
         },
         {
           "name": "Dead",
           "value": 3,
-          "alias": "死亡技能",
+          "alias": "死亡",
           "comment": null
         },
         {
           "name": "Counter",
           "value": 4,
-          "alias": "反击技能",
+          "alias": "反击",
           "comment": null
         },
         {
           "name": "Auto",
           "value": 5,
-          "alias": "自动释放技能",
+          "alias": "自动",
           "comment": null
         },
         {
           "name": "Placement",
           "value": 6,
-          "alias": "放置技能",
+          "alias": "放置",
           "comment": null
         },
         {
           "name": "Passive",
           "value": 7,
-          "alias": "被动技能",
+          "alias": "被动",
           "comment": null
         },
         {
           "name": "Damage",
           "value": 8,
-          "alias": "造成伤害时触发技能",
+          "alias": "伤害",
           "comment": null
         },
         {
           "name": "OnKill",
           "value": 9,
-          "alias": "击杀时触发技能",
+          "alias": "击杀",
           "comment": null
         }
       ]
@@ -4408,6 +4655,7 @@
       "name": "EUnitType",
       "flags": true,
       "comment": "实体类型",
+      "sourceKind": "UnityGeneratedEnum",
       "values": [
         {
           "name": "None",
@@ -4418,61 +4666,61 @@
         {
           "name": "Hero",
           "value": 1,
-          "alias": "英雄",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Block",
           "value": 2,
-          "alias": "地块",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Building",
           "value": 4,
-          "alias": "建筑",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Soldier",
           "value": 8,
-          "alias": "士兵",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Item",
           "value": 16,
-          "alias": "物品",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Bullet",
           "value": 32,
-          "alias": "子弹",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Global",
           "value": 64,
-          "alias": "全局",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Team",
           "value": 128,
-          "alias": "队伍",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Player",
           "value": 256,
-          "alias": "玩家",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Trap",
           "value": 512,
-          "alias": "陷阱",
+          "alias": "",
           "comment": null
         }
       ]
@@ -4481,6 +4729,7 @@
       "name": "FlagLabel",
       "flags": false,
       "comment": "普通标签",
+      "sourceKind": "UnityGeneratedEnum",
       "values": [
         {
           "name": "None",
@@ -4491,61 +4740,61 @@
         {
           "name": "Count1",
           "value": 1,
-          "alias": "数量1",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Count2",
           "value": 2,
-          "alias": "数量2",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Count3",
           "value": 3,
-          "alias": "数量3",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Count4",
           "value": 4,
-          "alias": "数量4",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Count5",
           "value": 5,
-          "alias": "数量5",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CritKill",
           "value": 6,
-          "alias": "暴击击杀标记",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Stealth",
           "value": 7,
-          "alias": "隐身",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Corpse",
           "value": 8,
-          "alias": "尸体",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Alive",
           "value": 10,
-          "alias": "活着",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Reviving",
           "value": 9,
-          "alias": "正在复活",
+          "alias": "",
           "comment": null
         }
       ]
@@ -4554,6 +4803,7 @@
       "name": "FlagRestrict",
       "flags": true,
       "comment": "禁止标签",
+      "sourceKind": "UnityGeneratedEnum",
       "values": [
         {
           "name": "None",
@@ -4564,37 +4814,37 @@
         {
           "name": "NotMove",
           "value": 1,
-          "alias": "禁止移动",
+          "alias": "",
           "comment": null
         },
         {
           "name": "NotAttack",
           "value": 2,
-          "alias": "禁止普通技能",
+          "alias": "",
           "comment": null
         },
         {
           "name": "NotManual",
           "value": 4,
-          "alias": "禁止手动技能",
+          "alias": "",
           "comment": null
         },
         {
           "name": "NotAIAlert",
           "value": 8,
-          "alias": "禁止AI警戒",
+          "alias": "",
           "comment": null
         },
         {
           "name": "NotRotate",
           "value": 16,
-          "alias": "禁止旋转",
+          "alias": "",
           "comment": null
         },
         {
           "name": "NotProduct",
           "value": 32,
-          "alias": "禁止生产",
+          "alias": "",
           "comment": null
         }
       ]
@@ -4603,6 +4853,7 @@
       "name": "NumericType",
       "flags": false,
       "comment": "属性类型",
+      "sourceKind": "UnityGeneratedEnum",
       "values": [
         {
           "name": "None",
@@ -4613,1675 +4864,1675 @@
         {
           "name": "Hp",
           "value": 1,
-          "alias": "血量",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Mp",
           "value": 2,
-          "alias": "蓝量",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Armor",
           "value": 34,
-          "alias": "护甲",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Gold",
           "value": 100,
-          "alias": "金币",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Silver",
           "value": 104,
-          "alias": "银币",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Wood",
           "value": 101,
-          "alias": "木材",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Population",
           "value": 102,
-          "alias": "人口",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MagicValue",
           "value": 103,
-          "alias": "魔力",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AddNormalTargetCount",
           "value": 501,
-          "alias": "增加普攻目标",
+          "alias": "",
           "comment": null
         },
         {
           "name": "GuaranteedCrit",
           "value": 1000001,
-          "alias": "必定暴击",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DamageBonus",
           "value": 1000002,
-          "alias": "额外伤害加成",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BuffDurationIncrease",
           "value": 1000003,
-          "alias": "额外buff时间",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Probability",
           "value": 1000004,
-          "alias": "额外技能概率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SkillRangeScale",
           "value": 1000005,
-          "alias": "额外技能范围缩放",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AddTargetCount",
           "value": 1000006,
-          "alias": "增加目标",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SpecialMax",
           "value": 500,
-          "alias": "分隔特殊约定属性",
-          "comment": "分隔特殊约定属性 1~499区间内的属性加1000对应他的最大值属性"
+          "alias": "",
+          "comment": null
         },
         {
           "name": "Max",
           "value": 10000,
-          "alias": "分隔父子属性",
-          "comment": "分隔父子属性 10000~99999区间内的属性变化时都要更新其父属性"
+          "alias": "",
+          "comment": null
         },
         {
           "name": "MaxHp",
           "value": 1001,
-          "alias": "生命值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxHpBase",
           "value": 10011,
-          "alias": "生命值B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxHpBaseAdd",
           "value": 10012,
-          "alias": "生命值BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxHpBasePct",
           "value": 10013,
-          "alias": "生命值BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxHpFinalAdd",
           "value": 10014,
-          "alias": "生命值FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxHpFinalPct",
           "value": 10015,
-          "alias": "生命值FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMp",
           "value": 1002,
-          "alias": "魔法值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMpBase",
           "value": 10021,
-          "alias": "魔法值B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMpBaseAdd",
           "value": 10022,
-          "alias": "魔法值BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMpBasePct",
           "value": 10023,
-          "alias": "魔法值BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMpFinalAdd",
           "value": 10024,
-          "alias": "魔法值FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMpFinalPct",
           "value": 10025,
-          "alias": "魔法值FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Atk",
           "value": 1003,
-          "alias": "攻击力",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkBase",
           "value": 10031,
-          "alias": "攻击力B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkBaseAdd",
           "value": 10032,
-          "alias": "攻击力BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkBasePct",
           "value": 10033,
-          "alias": "攻击力BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkFinalAdd",
           "value": 10034,
-          "alias": "攻击力FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkFinalPct",
           "value": 10035,
-          "alias": "攻击力FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Def",
           "value": 1004,
-          "alias": "防御力",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DefBase",
           "value": 10041,
-          "alias": "防御力B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DefBaseAdd",
           "value": 10042,
-          "alias": "防御力BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DefBasePct",
           "value": 10043,
-          "alias": "防御力BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DefFinalAdd",
           "value": 10044,
-          "alias": "防御力FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DefFinalPct",
           "value": 10045,
-          "alias": "防御力FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "Speed",
           "value": 1005,
-          "alias": "速度",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SpeedBase",
           "value": 10051,
-          "alias": "速度B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SpeedBaseAdd",
           "value": 10052,
-          "alias": "速度BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SpeedBasePct",
           "value": 10053,
-          "alias": "速度BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SpeedFinalAdd",
           "value": 10054,
-          "alias": "速度FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SpeedFinalPct",
           "value": 10055,
-          "alias": "速度FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AOI",
           "value": 1006,
-          "alias": "AOI值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AOIBase",
           "value": 10061,
-          "alias": "AOI值B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AOIBaseAdd",
           "value": 10062,
-          "alias": "AOI值BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AOIBasePct",
           "value": 10063,
-          "alias": "AOI值BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AOIFinalAdd",
           "value": 10064,
-          "alias": "AOI值FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AOIFinalPct",
           "value": 10065,
-          "alias": "AOI值FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkSpeed",
           "value": 1007,
-          "alias": "攻速",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkSpeedBase",
           "value": 10071,
-          "alias": "攻速B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkSpeedBaseAdd",
           "value": 10072,
-          "alias": "攻速BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkSpeedBasePct",
           "value": 10073,
-          "alias": "攻速BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkSpeedFinalAdd",
           "value": 10074,
-          "alias": "攻速FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkSpeedFinalPct",
           "value": 10075,
-          "alias": "攻速FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkRange",
           "value": 1008,
-          "alias": "攻击距离",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkRangeBase",
           "value": 10081,
-          "alias": "攻击距离B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkRangeBaseAdd",
           "value": 10082,
-          "alias": "攻击距离BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkRangeBasePct",
           "value": 10083,
-          "alias": "攻击距离BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkRangeFinalAdd",
           "value": 10084,
-          "alias": "攻击距离FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "AtkRangeFinalPct",
           "value": 10085,
-          "alias": "攻击距离FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalRate",
           "value": 1009,
-          "alias": "暴击率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalRateBase",
           "value": 10091,
-          "alias": "暴击率B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalRateBaseAdd",
           "value": 10092,
-          "alias": "暴击率BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalRateBasePct",
           "value": 10093,
-          "alias": "暴击率BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalRateFinalAdd",
           "value": 10094,
-          "alias": "暴击率FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalRateFinalPct",
           "value": 10095,
-          "alias": "暴击率FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalDamagePercent",
           "value": 1010,
-          "alias": "暴击伤害比例",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalDamagePercentBase",
           "value": 10101,
-          "alias": "暴击伤害比例B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalDamagePercentBaseAdd",
           "value": 10102,
-          "alias": "暴击伤害比例BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalDamagePercentBasePct",
           "value": 10103,
-          "alias": "暴击伤害比例BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalDamagePercentFinalAdd",
           "value": 10104,
-          "alias": "暴击伤害比例FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CriticalDamagePercentFinalPct",
           "value": 10105,
-          "alias": "暴击伤害比例FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ReboundDamagePercent",
           "value": 1011,
-          "alias": "反弹伤害比例",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ReboundDamagePercentBaseRate",
           "value": 10111,
-          "alias": "反弹伤害比例B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ReboundDamagePercentBaseAddRate",
           "value": 10112,
-          "alias": "反弹伤害比例BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ReboundDamagePercentBasePctRate",
           "value": 10113,
-          "alias": "反弹伤害比例BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ReboundDamagePercentFinalAddRate",
           "value": 10114,
-          "alias": "反弹伤害比例FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ReboundDamagePercentFinalPctRate",
           "value": 10115,
-          "alias": "反弹伤害比例FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockRate",
           "value": 1012,
-          "alias": "格挡率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockRateBase",
           "value": 10121,
-          "alias": "格挡率B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockRateBaseAdd",
           "value": 10122,
-          "alias": "格挡率BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockRateBasePct",
           "value": 10123,
-          "alias": "格挡率BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockRateFinalAdd",
           "value": 10124,
-          "alias": "格挡率FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockRateFinalPct",
           "value": 10125,
-          "alias": "格挡率FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockDamagePercent",
           "value": 1013,
-          "alias": "格挡伤害比例",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockDamagePercentBase",
           "value": 10131,
-          "alias": "格挡伤害比例B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockDamagePercentBaseAdd",
           "value": 10132,
-          "alias": "格挡伤害比例BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockDamagePercentBasePct",
           "value": 10133,
-          "alias": "格挡伤害比例BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockDamagePercentFinalAdd",
           "value": 10134,
-          "alias": "格挡伤害比例FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "BlockDamagePercentFinalPct",
           "value": 10135,
-          "alias": "格挡伤害比例FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "EvasionRate",
           "value": 1014,
-          "alias": "闪避率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "EvasionRateBase",
           "value": 10141,
-          "alias": "闪避率B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "EvasionRateBaseAdd",
           "value": 10142,
-          "alias": "闪避率BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "EvasionRateBasePct",
           "value": 10143,
-          "alias": "闪避率BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "EvasionRateFinalAdd",
           "value": 10144,
-          "alias": "闪避率FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "EvasionRateFinalPct",
           "value": 10145,
-          "alias": "闪避率FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CounterRate",
           "value": 1015,
-          "alias": "反击率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CounterRateBase",
           "value": 10151,
-          "alias": "反击率B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CounterRateBaseAdd",
           "value": 10152,
-          "alias": "反击率BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CounterRateBasePct",
           "value": 10153,
-          "alias": "反击率BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CounterRateFinalAdd",
           "value": 10154,
-          "alias": "反击率FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "CounterRateFinalPct",
           "value": 10155,
-          "alias": "反击率FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HitRate",
           "value": 1016,
-          "alias": "命中率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HitRateBase",
           "value": 10161,
-          "alias": "命中率B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HitRateBaseAdd",
           "value": 10162,
-          "alias": "命中率BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HitRateBasePct",
           "value": 10163,
-          "alias": "命中率BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HitRateFinalAdd",
           "value": 10164,
-          "alias": "命中率FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HitRateFinalPct",
           "value": 10165,
-          "alias": "命中率FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostDamage",
           "value": 1017,
-          "alias": "冰冻伤害",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostDamageBase",
           "value": 10171,
-          "alias": "冰冻伤害B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostDamageBaseAdd",
           "value": 10172,
-          "alias": "冰冻伤害BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostDamageBasePct",
           "value": 10173,
-          "alias": "冰冻伤害BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostDamageFinalAdd",
           "value": 10174,
-          "alias": "冰冻伤害FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostDamageFinalPct",
           "value": 10175,
-          "alias": "冰冻伤害FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostResist",
           "value": 1025,
-          "alias": "冰冻抗性",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostResistBase",
           "value": 10251,
-          "alias": "冰冻抗性B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostResistBaseAdd",
           "value": 10252,
-          "alias": "冰冻抗性BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostResistBasePct",
           "value": 10253,
-          "alias": "冰冻抗性BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostResistFinalAdd",
           "value": 10254,
-          "alias": "冰冻抗性FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostResistFinalPct",
           "value": 10255,
-          "alias": "冰冻抗性FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonDamage",
           "value": 1018,
-          "alias": "毒素伤害",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonDamageBase",
           "value": 10181,
-          "alias": "毒素伤害B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonDamageBaseAdd",
           "value": 10182,
-          "alias": "毒素伤害BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonDamageBasePct",
           "value": 10183,
-          "alias": "毒素伤害BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonDamageFinalAdd",
           "value": 10184,
-          "alias": "毒素伤害FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonDamageFinalPct",
           "value": 10185,
-          "alias": "毒素伤害FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonResist",
           "value": 1026,
-          "alias": "毒素抗性",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonResistBase",
           "value": 10261,
-          "alias": "毒素抗性B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonResistBaseAdd",
           "value": 10262,
-          "alias": "毒素抗性BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonResistBasePct",
           "value": 10263,
-          "alias": "毒素抗性BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonResistFinalAdd",
           "value": 10264,
-          "alias": "毒素抗性FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonResistFinalPct",
           "value": 10265,
-          "alias": "毒素抗性FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireDamage",
           "value": 1019,
-          "alias": "火焰伤害",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireDamageBase",
           "value": 10191,
-          "alias": "火焰伤害B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireDamageBaseAdd",
           "value": 10192,
-          "alias": "火焰伤害BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireDamageBasePct",
           "value": 10193,
-          "alias": "火焰伤害BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireDamageFinalAdd",
           "value": 10194,
-          "alias": "火焰伤害FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireDamageFinalPct",
           "value": 10195,
-          "alias": "火焰伤害FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireResist",
           "value": 1027,
-          "alias": "火焰抗性",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireResistBase",
           "value": 10271,
-          "alias": "火焰抗性B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireResistBaseAdd",
           "value": 10272,
-          "alias": "火焰抗性BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireResistBasePct",
           "value": 10273,
-          "alias": "火焰抗性BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireResistFinalAdd",
           "value": 10274,
-          "alias": "火焰抗性FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireResistFinalPct",
           "value": 10275,
-          "alias": "火焰抗性FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningDamage",
           "value": 1020,
-          "alias": "雷电伤害",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningDamageBase",
           "value": 10201,
-          "alias": "雷电伤害B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningDamageBaseAdd",
           "value": 10202,
-          "alias": "雷电伤害BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningDamageBasePct",
           "value": 10203,
-          "alias": "雷电伤害BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningDamageFinalAdd",
           "value": 10204,
-          "alias": "雷电伤害FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningDamageFinalPct",
           "value": 10205,
-          "alias": "雷电伤害FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningResist",
           "value": 1028,
-          "alias": "雷电抗性",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningResistBase",
           "value": 10281,
-          "alias": "雷电抗性B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningResistBaseAdd",
           "value": 10282,
-          "alias": "雷电抗性BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningResistBasePct",
           "value": 10283,
-          "alias": "雷电抗性BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningResistFinalAdd",
           "value": 10284,
-          "alias": "雷电抗性FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningResistFinalPct",
           "value": 10285,
-          "alias": "雷电抗性FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkDamage",
           "value": 1021,
-          "alias": "暗黑伤害",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkDamageBase",
           "value": 10211,
-          "alias": "暗黑伤害B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkDamageBaseAdd",
           "value": 10212,
-          "alias": "暗黑伤害BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkDamageBasePct",
           "value": 10213,
-          "alias": "暗黑伤害BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkDamageFinalAdd",
           "value": 10214,
-          "alias": "暗黑伤害FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkDamageFinalPct",
           "value": 10215,
-          "alias": "暗黑伤害FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkResist",
           "value": 1029,
-          "alias": "暗黑抗性",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkResistBase",
           "value": 10291,
-          "alias": "暗黑抗性B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkResistBaseAdd",
           "value": 10292,
-          "alias": "暗黑抗性BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkResistBasePct",
           "value": 10293,
-          "alias": "暗黑抗性BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkResistFinalAdd",
           "value": 10294,
-          "alias": "暗黑抗性FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkResistFinalPct",
           "value": 10295,
-          "alias": "暗黑抗性FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyDamage",
           "value": 1022,
-          "alias": "光明伤害",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyDamageBase",
           "value": 10221,
-          "alias": "光明伤害B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyDamageBaseAdd",
           "value": 10222,
-          "alias": "光明伤害BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyDamageBasePct",
           "value": 10223,
-          "alias": "光明伤害BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyDamageFinalAdd",
           "value": 10224,
-          "alias": "光明伤害FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyDamageFinalPct",
           "value": 10225,
-          "alias": "光明伤害FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyResist",
           "value": 1030,
-          "alias": "光明抗性",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyResistBase",
           "value": 10301,
-          "alias": "光明抗性B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyResistBaseAdd",
           "value": 10302,
-          "alias": "光明抗性BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyResistBasePct",
           "value": 10303,
-          "alias": "光明抗性BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyResistFinalAdd",
           "value": 10304,
-          "alias": "光明抗性FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyResistFinalPct",
           "value": 10305,
-          "alias": "光明抗性FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosDamage",
           "value": 1023,
-          "alias": "混沌伤害",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosDamageBase",
           "value": 10231,
-          "alias": "混沌伤害B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosDamageBaseAdd",
           "value": 10232,
-          "alias": "混沌伤害BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosDamageBasePct",
           "value": 10233,
-          "alias": "混沌伤害BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosDamageFinalAdd",
           "value": 10234,
-          "alias": "混沌伤害FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosDamageFinalPct",
           "value": 10235,
-          "alias": "混沌伤害FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosResist",
           "value": 1031,
-          "alias": "混沌抗性",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosResistBase",
           "value": 10311,
-          "alias": "混沌抗性B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosResistBaseAdd",
           "value": 10312,
-          "alias": "混沌抗性BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosResistBasePct",
           "value": 10313,
-          "alias": "混沌抗性BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosResistFinalAdd",
           "value": 10314,
-          "alias": "混沌抗性FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosResistFinalPct",
           "value": 10315,
-          "alias": "混沌抗性FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeDamage",
           "value": 1024,
-          "alias": "攻城伤害",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeDamageBase",
           "value": 10241,
-          "alias": "攻城伤害B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeDamageBaseAdd",
           "value": 10242,
-          "alias": "攻城伤害BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeDamageBasePct",
           "value": 10243,
-          "alias": "攻城伤害BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeDamageFinalAdd",
           "value": 10244,
-          "alias": "攻城伤害FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeDamageFinalPct",
           "value": 10245,
-          "alias": "攻城伤害FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeResist",
           "value": 1032,
-          "alias": "攻城抗性",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeResistBase",
           "value": 10321,
-          "alias": "攻城抗性B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeResistBaseAdd",
           "value": 10322,
-          "alias": "攻城抗性BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeResistBasePct",
           "value": 10323,
-          "alias": "攻城抗性BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeResistFinalAdd",
           "value": 10324,
-          "alias": "攻城抗性FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeResistFinalPct",
           "value": 10325,
-          "alias": "攻城抗性FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseRange",
           "value": 1033,
-          "alias": "感知范围",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseRangeBase",
           "value": 10331,
-          "alias": "感知范围B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseRangeBaseAdd",
           "value": 10332,
-          "alias": "感知范围BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseRangeBasePct",
           "value": 10333,
-          "alias": "感知范围BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseRangeFinalAdd",
           "value": 10334,
-          "alias": "感知范围FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseRangeFinalPct",
           "value": 10335,
-          "alias": "感知范围FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseAngle",
           "value": 1035,
-          "alias": "感知角度",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseAngleBase",
           "value": 10351,
-          "alias": "感知角度B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseAngleBaseAdd",
           "value": 10352,
-          "alias": "感知角度BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseAngleBasePct",
           "value": 10353,
-          "alias": "感知角度BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseAngleFinalAdd",
           "value": 10354,
-          "alias": "感知角度FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SenseAngleFinalPct",
           "value": 10355,
-          "alias": "感知角度FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxArmor",
           "value": 1034,
-          "alias": "护盾值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxArmorBase",
           "value": 10341,
-          "alias": "护盾值B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxArmorBaseAdd",
           "value": 10342,
-          "alias": "护盾值BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxArmorBasePct",
           "value": 10343,
-          "alias": "护盾值BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxArmorFinalAdd",
           "value": 10344,
-          "alias": "护盾值FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxArmorFinalPct",
           "value": 10345,
-          "alias": "护盾值FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostImmuneProb",
           "value": 601,
-          "alias": "冰冻免疫概率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonImmuneProb",
           "value": 602,
-          "alias": "毒素免疫概率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireImmuneProb",
           "value": 603,
-          "alias": "火焰免疫概率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningImmuneProb",
           "value": 604,
-          "alias": "雷电免疫概率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkImmuneProb",
           "value": 605,
-          "alias": "暗黑免疫概率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyImmuneProb",
           "value": 606,
-          "alias": "光明免疫概率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosImmuneProb",
           "value": 607,
-          "alias": "混沌免疫概率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeImmuneProb",
           "value": 608,
-          "alias": "攻城免疫概率",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FrostAnomalyValue",
           "value": 801,
-          "alias": "冰冻异常值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "PoisonAnomalyValue",
           "value": 802,
-          "alias": "毒素异常值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "FireAnomalyValue",
           "value": 803,
-          "alias": "火焰异常值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "LightningAnomalyValue",
           "value": 804,
-          "alias": "雷电异常值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "DarkAnomalyValue",
           "value": 805,
-          "alias": "暗黑异常值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "HolyAnomalyValue",
           "value": 806,
-          "alias": "光明异常值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "ChaosAnomalyValue",
           "value": 807,
-          "alias": "混沌异常值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SiegeAnomalyValue",
           "value": 808,
-          "alias": "攻城异常值",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxGold",
           "value": 1100,
-          "alias": "金币上限",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxGoldBase",
           "value": 11001,
-          "alias": "金币上限B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxGoldBaseAdd",
           "value": 11002,
-          "alias": "金币上限BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxGoldBasePct",
           "value": 11003,
-          "alias": "金币上限BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxGoldFinalAdd",
           "value": 11004,
-          "alias": "金币上限FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxGoldFinalPct",
           "value": 11005,
-          "alias": "金币上限FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxSilver",
           "value": 1104,
-          "alias": "银币上限",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxSilverBase",
           "value": 11041,
-          "alias": "银币上限B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxSilverBaseAdd",
           "value": 11042,
-          "alias": "银币上限BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxSilverBasePct",
           "value": 11043,
-          "alias": "银币上限BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxSilverFinalAdd",
           "value": 11044,
-          "alias": "银币上限FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxSilverFinalPct",
           "value": 11045,
-          "alias": "银币上限FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxWood",
           "value": 1101,
-          "alias": "木材上限",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxWoodBase",
           "value": 11011,
-          "alias": "木材上限B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxWoodBaseAdd",
           "value": 11012,
-          "alias": "木材上限BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxWoodBasePct",
           "value": 11013,
-          "alias": "木材上限BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxWoodFinalAdd",
           "value": 11014,
-          "alias": "木材上限FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxWoodFinalPct",
           "value": 11015,
-          "alias": "木材上限FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxPopulation",
           "value": 1102,
-          "alias": "人口上限",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxPopulationBase",
           "value": 11021,
-          "alias": "人口上限B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxPopulationBaseAdd",
           "value": 11022,
-          "alias": "人口上限BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxPopulationBasePct",
           "value": 11023,
-          "alias": "人口上限BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxPopulationFinalAdd",
           "value": 11024,
-          "alias": "人口上限FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxPopulationFinalPct",
           "value": 11025,
-          "alias": "人口上限FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMagicValue",
           "value": 1103,
-          "alias": "魔法值上限",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMagicValueBase",
           "value": 11031,
-          "alias": "魔法值上限B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMagicValueBaseAdd",
           "value": 11032,
-          "alias": "魔法值上限BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMagicValueBasePct",
           "value": 11033,
-          "alias": "魔法值上限BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMagicValueFinalAdd",
           "value": 11034,
-          "alias": "魔法值上限FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MaxMagicValueFinalPct",
           "value": 11035,
-          "alias": "魔法值上限FP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SpellPower",
           "value": 1105,
-          "alias": "法术强度",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SpellPowerBase",
           "value": 11051,
-          "alias": "法术强度B",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SpellPowerAdd",
           "value": 11052,
-          "alias": "法术强度BD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SpellPowerBasePct",
           "value": 11053,
-          "alias": "法术强度BP",
+          "alias": "",
           "comment": null
         },
         {
           "name": "MSpellPowerFinalAdd",
           "value": 11054,
-          "alias": "法术强度上限FD",
+          "alias": "",
           "comment": null
         },
         {
           "name": "SpellPowerFinalPct",
           "value": 11055,
-          "alias": "法术强度限FP",
+          "alias": "",
           "comment": null
         }
       ]
@@ -6290,6 +6541,7 @@
       "name": "ShareHostilityMode",
       "flags": false,
       "comment": null,
+      "sourceKind": "ParameterConvention",
       "values": [
         {
           "name": "Target",
@@ -6308,7 +6560,8 @@
     {
       "name": "TeamRelation",
       "flags": false,
-      "comment": null,
+      "comment": "参数约定枚举，来源于 ConditionHandler_IsTeamRelation.relationType；不可与 Unity 生成的 EFactionRelation 混用。",
+      "sourceKind": "ParameterConvention",
       "values": [
         {
           "name": "Self",
@@ -6341,6 +6594,7 @@
     "DamageStageType",
     "EBuffApplyTarget",
     "ECompareType",
+    "EConsumeType",
     "EffectKillTarget",
     "EffectSourceUnit",
     "EGroupCompletedType",
@@ -6348,6 +6602,8 @@
     "ESearchTargetPriority",
     "ESearchTargetShape",
     "ESearchTargetTeam",
+    "ESkillBuffOverlapType",
+    "ESkillBuffType",
     "ESkillType",
     "EUnitType",
     "FlagLabel",

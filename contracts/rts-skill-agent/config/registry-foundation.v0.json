@@ -291,6 +291,22 @@
       "enumName": "ESkillType"
     },
     {
+      "path": "Skill.consume_type",
+      "enumName": "EConsumeType"
+    },
+    {
+      "path": "Skill.release_condition_type",
+      "enumName": "EGroupCompletedType"
+    },
+    {
+      "path": "Buff.status_effect_type",
+      "enumName": "ESkillBuffType"
+    },
+    {
+      "path": "Buff.overlap_type",
+      "enumName": "ESkillBuffOverlapType"
+    },
+    {
       "path": "Search.shape",
       "enumName": "ESearchTargetShape"
     },

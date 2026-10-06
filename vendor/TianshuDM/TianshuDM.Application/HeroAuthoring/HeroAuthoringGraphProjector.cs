@@ -40,6 +40,17 @@ public sealed class HeroAuthoringGraphProjector(IHeroAuthoringSemanticSchemaSour
             ["block"] = "TbBlock",
         };
 
+    private static readonly Dictionary<int, string> UnitTableKeys =
+        new Dictionary<int, string>
+        {
+            [1] = "hero",
+            [2] = "block",
+            [4] = "building",
+            [8] = "soldier",
+            [16] = "item",
+            [512] = "trap",
+        };
+
     public static bool TryGetNamespace(string tableKey, out string nodeNamespace) =>
         Namespaces.TryGetValue(tableKey, out nodeNamespace!);
 
@@ -71,14 +82,14 @@ public sealed class HeroAuthoringGraphProjector(IHeroAuthoringSemanticSchemaSour
     public HeroAuthoringGraph ProjectSkillBehavior(
         GameDataCatalog catalog,
         int skillId,
-        int depth = 12) =>
+        int depth = 32) =>
         ProjectBehavior(catalog, "TbSkill", skillId, depth);
 
     public HeroAuthoringGraph ProjectBehavior(
         GameDataCatalog catalog,
         string rootNamespace,
         int rootId,
-        int depth = 12)
+        int depth = 32)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         if (!HeroAuthoringRootProfiles.TryNormalize(rootNamespace, out _))
@@ -87,9 +98,9 @@ public sealed class HeroAuthoringGraphProjector(IHeroAuthoringSemanticSchemaSour
                 $"行为根只支持 {HeroAuthoringRootProfiles.SupportedNames}。",
                 nameof(rootNamespace));
         }
-        if (depth is < 0 or > 12)
+        if (depth is < 0 or > 32)
         {
-            throw new ArgumentOutOfRangeException(nameof(depth), "行为根层级必须在 0 到 12 之间。");
+            throw new ArgumentOutOfRangeException(nameof(depth), "行为根层级必须在 0 到 32 之间。");
         }
 
         (Dictionary<string, HeroAuthoringGraphNode> nodes, List<HeroAuthoringGraphEdge> edges) = BuildGraph(catalog);
@@ -117,6 +128,7 @@ public sealed class HeroAuthoringGraphProjector(IHeroAuthoringSemanticSchemaSour
         AddVirtualGroups(catalog, nodes, edges);
         AddTypedActionReferences(catalog, schema, nodes, edges, "effect", schema.Effects);
         AddTypedActionReferences(catalog, schema, nodes, edges, "condition", schema.Conditions);
+        AddSearchUnitReferences(catalog, nodes, edges);
         AddSkillConditionGates(catalog, nodes, edges);
         AddDerivedHeroSkills(catalog, schema, nodes, edges);
         return (nodes, edges);
@@ -340,19 +352,50 @@ public sealed class HeroAuthoringGraphProjector(IHeroAuthoringSemanticSchemaSour
                 {
                     if (index >= parameters.Count || !TryPositiveId(parameters[index], out int targetId)) continue;
                     (string role, string label) = TypedReferencePresentation(definition, parameter);
-                    if (parameter.ReferenceTarget is "EffectGroup" or "ConditionGroup")
+                    string targetNamespace = parameter.ReferenceTarget!;
+                    if (targetNamespace == "UnitByType")
                     {
-                        string groupLabel = parameter.ReferenceTarget == "EffectGroup"
+                        if (definition.Key != "SummonUnit"
+                            || !TryPositiveId(Parameter(parameters, 0), out int unitType))
+                        {
+                            continue;
+                        }
+                        if (!UnitTableKeys.TryGetValue(unitType, out string? unitTableKey)
+                            || !TryGetNamespace(unitTableKey, out targetNamespace))
+                        {
+                            EnsureVirtualNode(
+                                nodes,
+                                "UnitType",
+                                unitType,
+                                $"未支持召唤类型 {unitType}",
+                                "未支持召唤类型");
+                            AddEdge(
+                                nodes,
+                                edges,
+                                source,
+                                "UnitType",
+                                unitType,
+                                role,
+                                "未支持召唤类型",
+                                $"单位配置 {targetId}",
+                                sourceField: "action_param",
+                                parameterIndex: index);
+                            continue;
+                        }
+                    }
+                    else if (targetNamespace is "EffectGroup" or "ConditionGroup")
+                    {
+                        string groupLabel = targetNamespace == "EffectGroup"
                             ? $"效果组 {targetId}"
                             : $"条件组 {targetId}";
-                        string groupKind = parameter.ReferenceTarget == "EffectGroup" ? "效果组" : "条件组";
-                        EnsureVirtualNode(nodes, parameter.ReferenceTarget, targetId, groupLabel, groupKind);
+                        string groupKind = targetNamespace == "EffectGroup" ? "效果组" : "条件组";
+                        EnsureVirtualNode(nodes, targetNamespace, targetId, groupLabel, groupKind);
                     }
                     AddEdge(
                         nodes,
                         edges,
                         source,
-                        parameter.ReferenceTarget!,
+                        targetNamespace,
                         targetId,
                         role,
                         label,
@@ -362,6 +405,89 @@ public sealed class HeroAuthoringGraphProjector(IHeroAuthoringSemanticSchemaSour
                 }
             }
         }
+    }
+
+    private static void AddSearchUnitReferences(
+        GameDataCatalog catalog,
+        IDictionary<string, HeroAuthoringGraphNode> nodes,
+        ICollection<HeroAuthoringGraphEdge> edges)
+    {
+        if (!TryTable(catalog, "search", out GameDataTable? searches)) return;
+        GameDataFieldDefinition? typeField = searches.Fields.FirstOrDefault(
+            field => string.Equals(field.Key, "type", StringComparison.OrdinalIgnoreCase));
+        if (typeField is null) return;
+
+        foreach (GameDataRecord search in searches.Records)
+        {
+            int[] unitTypes = Values(search, "type")
+                .SelectMany(value => value.Split(
+                    ['|', ','],
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                .Select(value => ResolveEnumLegacyValue(typeField, value))
+                .Where(value => value.HasValue)
+                .Select(value => value!.Value)
+                .Distinct()
+                .ToArray();
+            if (unitTypes.Length == 0) continue;
+
+            string source = Key("TbSearch", search.Id);
+            int[] tableIds = Values(search, "table_id")
+                .Select(value => TryPositiveId(value, out int id) ? id : 0)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToArray();
+            foreach (int tableId in tableIds)
+            {
+                foreach (int unitType in unitTypes)
+                {
+                    if (!UnitTableKeys.TryGetValue(unitType, out string? unitTableKey)
+                        || !TryGetNamespace(unitTableKey, out string? targetNamespace))
+                    {
+                        EnsureVirtualNode(
+                            nodes,
+                            "UnitType",
+                            unitType,
+                            $"未支持搜索类型 {unitType}",
+                            "未支持搜索类型");
+                        AddEdge(
+                            nodes,
+                            edges,
+                            source,
+                            "UnitType",
+                            unitType,
+                            "unitType",
+                            "未支持搜索类型",
+                            $"单位配置 {tableId}",
+                            sourceField: "table_id");
+                        continue;
+                    }
+
+                    AddEdge(
+                        nodes,
+                        edges,
+                        source,
+                        targetNamespace,
+                        tableId,
+                        "unitType",
+                        "限定单位",
+                        sourceField: "table_id");
+                }
+            }
+        }
+    }
+
+    private static int? ResolveEnumLegacyValue(
+        GameDataFieldDefinition field,
+        string rawValue)
+    {
+        GameDataOption? option = field.Options.FirstOrDefault(
+            candidate => string.Equals(candidate.Value, rawValue, StringComparison.Ordinal)
+                || string.Equals(candidate.Code, rawValue, StringComparison.Ordinal)
+                || string.Equals(candidate.Label, rawValue, StringComparison.Ordinal));
+        if (option?.LegacyValue is { } legacyValue) return legacyValue;
+        return int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out int numeric)
+            ? numeric
+            : null;
     }
 
     private static (string Role, string Label) TypedReferencePresentation(

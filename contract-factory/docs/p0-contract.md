@@ -37,6 +37,10 @@ validatable contract before a model or product UI is connected.
 ## Source Rules
 
 The structural layer is generated from the current `hero-authoring-schema.json`.
+`config/runtime-action-overrides.v0.json` carries differences proven by the Unity
+generated `EffectActionType` enum and effect executor code. Registry generation
+fails when the resolved action set does not exactly match the runtime enum.
+`defaultValue` is expressed in the same raw integer representation as
+`action_param`; scaled parameters therefore retain their configured scale.
 The semantic layer is maintained in this repository and must be reviewed when Unity
 runtime handlers, enums, or parameter semantics change.
-

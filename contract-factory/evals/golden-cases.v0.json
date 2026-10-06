@@ -220,14 +220,13 @@
     },
     {
       "id": "p0-017",
-      "category": "state",
+      "category": "unsupported",
       "request": "给自己添加一个100点护盾",
       "focus": "TbSkill:101701",
-      "expectedStatus": "Ready",
+      "expectedStatus": "Unsupported",
       "assertions": [
-        {"kind": "status", "equals": "Ready"},
-        {"kind": "hasIntent", "intent": "AddState"},
-        {"kind": "paramEquals", "path": "AddEffectIntent.AddState.mechanism", "equals": "AddShield"}
+        {"kind": "status", "equals": "Unsupported"},
+        {"kind": "unsupportedCode", "code": "RUNTIME_CAPABILITY_NOT_AVAILABLE"}
       ],
       "forbidden": []
     },
@@ -394,4 +393,3 @@
     }
   ]
 }
-

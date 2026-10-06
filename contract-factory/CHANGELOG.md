@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.2.3 - 2026-10-06
+
+### Fixed
+
+- Aligned the generated effect contract with the Unity runtime enum and executor code.
+- Removed unsupported `AddShield` and added `AddMaxPropertyWithCurrent` and
+  `SubMaxPropertyWithCurrent`.
+- Corrected `Healing`, buff-target, height-buff, and flag-label parameter ranges.
+- Added runtime-backed `EConsumeType`, `ESkillBuffType`, and
+  `ESkillBuffOverlapType` enum coverage.
+- Enum generation now reads the generated Unity C# enum files directly and
+  validates them against `builtin.xml`.
+- `verify:enums` and `verify:source` now use configured external source paths and
+  work without command-line arguments.
+- Condition parameters now expose runtime defaults, and convention-only enums are
+  marked as such.
+- All directly referenced Unity-generated config enums now participate in
+  SHA-256 tracking and bidirectional validation.
+- Effect parameters now expose runtime defaults in the same raw representation as
+  `action_param`.
+- Made `EffectActionType` and `EConditionType` registry coverage fail validation
+  when they drift from the generated enum snapshot.
+
+### Verification
+
+- `npm run verify:enums -- --builtin /path/to/builtin.xml`
+- `npm run verify:source -- --schema /path/to/hero-authoring-schema.json`
+- `npm run validate`
+- `npm test`
+
 ## 0.2.2 - 2026-10-05
 
 ### Fixed

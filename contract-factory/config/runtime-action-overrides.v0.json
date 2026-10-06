@@ -1,0 +1,447 @@
+{
+  "schemaVersion": 0,
+  "overrideVersion": "0.1.0",
+  "source": {
+    "generatedEnum": "Unity/Assets/Scripts/Model/Generate/Client/Config/EffectActionType.cs",
+    "executors": "Unity/Assets/Scripts/Hotfix/Share/LockStep/Battle/Effect"
+  },
+  "removeActions": [
+    "AddShield"
+  ],
+  "addActions": [
+    {
+      "key": "AddMaxPropertyWithCurrent",
+      "legacyValue": 41,
+      "label": "增加上限并同步当前值",
+      "minParameterCount": 0,
+      "maxParameterCount": null,
+      "description": "按成对参数增加属性上限，并按实际上限变化量同步当前值。",
+      "parameters": [
+        {
+          "index": 0,
+          "key": "property",
+          "label": "属性",
+          "kind": "Enum",
+          "enumName": "NumericType",
+          "repeating": true,
+          "repeatStep": 2
+        },
+        {
+          "index": 1,
+          "key": "value",
+          "label": "数值",
+          "kind": "ScaledInteger",
+          "scale": 10000,
+          "repeating": true,
+          "repeatStep": 2
+        }
+      ]
+    },
+    {
+      "key": "SubMaxPropertyWithCurrent",
+      "legacyValue": 42,
+      "label": "降低上限并同步当前值",
+      "minParameterCount": 0,
+      "maxParameterCount": null,
+      "description": "按成对参数降低属性上限，并按原当前值与上限比例同步当前值。",
+      "parameters": [
+        {
+          "index": 0,
+          "key": "property",
+          "label": "属性",
+          "kind": "Enum",
+          "enumName": "NumericType",
+          "repeating": true,
+          "repeatStep": 2
+        },
+        {
+          "index": 1,
+          "key": "value",
+          "label": "数值",
+          "kind": "ScaledInteger",
+          "scale": 10000,
+          "repeating": true,
+          "repeatStep": 2
+        }
+      ]
+    }
+  ],
+  "patchActions": {
+    "AddBuff": {
+      "minParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "buffId",
+          "label": "Buff",
+          "kind": "Reference",
+          "referenceTarget": "TbBuff",
+          "required": true
+        },
+        {
+          "index": 1,
+          "key": "applyTarget",
+          "label": "作用对象",
+          "kind": "Enum",
+          "enumName": "EBuffApplyTarget",
+          "required": false,
+          "defaultValue": 0,
+          "description": "省略时使用当前效果目标；1 表示施法者。"
+        }
+      ]
+    },
+    "RemoveBuff": {
+      "minParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "buffId",
+          "label": "Buff",
+          "kind": "Reference",
+          "referenceTarget": "TbBuff",
+          "required": true
+        },
+        {
+          "index": 1,
+          "key": "applyTarget",
+          "label": "作用对象",
+          "kind": "Enum",
+          "enumName": "EBuffApplyTarget",
+          "required": false,
+          "defaultValue": 0,
+          "description": "省略时使用当前效果目标；1 表示施法者。"
+        }
+      ]
+    },
+    "AddHeightBuff": {
+      "minParameterCount": 1,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "buffId",
+          "label": "Buff",
+          "kind": "Reference",
+          "referenceTarget": "TbBuff",
+          "required": true
+        },
+        {
+          "index": 1,
+          "key": "applyTarget",
+          "label": "作用对象",
+          "kind": "Enum",
+          "enumName": "EBuffApplyTarget",
+          "required": false,
+          "defaultValue": 0,
+          "description": "省略时使用当前效果目标；1 表示施法者。"
+        }
+      ]
+    },
+    "Healing": {
+      "maxParameterCount": 6,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "attackScale",
+          "label": "攻击力倍率",
+          "kind": "ScaledInteger",
+          "scale": 10000,
+          "required": false
+        },
+        {
+          "index": 1,
+          "key": "fixedValue",
+          "label": "固定治疗",
+          "kind": "ScaledInteger",
+          "scale": 10000,
+          "required": false
+        },
+        {
+          "index": 2,
+          "key": "maxHpScale",
+          "label": "目标最大生命比例",
+          "kind": "ScaledInteger",
+          "scale": 10000,
+          "required": false
+        },
+        {
+          "index": 3,
+          "key": "durationSeconds",
+          "label": "持续秒数",
+          "kind": "Integer",
+          "required": false,
+          "description": "每秒一跳；0 表示不配置持续恢复。"
+        },
+        {
+          "index": 4,
+          "key": "flatPerSecond",
+          "label": "每秒固定恢复",
+          "kind": "ScaledInteger",
+          "scale": 10000,
+          "required": false
+        },
+        {
+          "index": 5,
+          "key": "maxHpScalePerSecond",
+          "label": "每秒目标最大生命比例",
+          "kind": "ScaledInteger",
+          "scale": 10000,
+          "required": false
+        }
+      ]
+    },
+    "AddFlagLabel": {
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "flagLabel",
+          "label": "标签",
+          "kind": "Enum",
+          "enumName": "FlagLabel",
+          "required": true
+        },
+        {
+          "index": 1,
+          "key": "legacyCount",
+          "label": "兼容数量参数",
+          "kind": "Integer",
+          "required": false,
+          "description": "运行时忽略该参数，实际数量来自效果执行次数。"
+        }
+      ]
+    },
+    "RemoveFlagLabel": {
+      "maxParameterCount": 2,
+      "parameters": [
+        {
+          "index": 0,
+          "key": "flagLabel",
+          "label": "标签",
+          "kind": "Enum",
+          "enumName": "FlagLabel",
+          "required": true
+        },
+        {
+          "index": 1,
+          "key": "legacyCount",
+          "label": "兼容数量参数",
+          "kind": "Integer",
+          "required": false,
+          "description": "运行时忽略该参数，实际数量来自效果执行次数。"
+        }
+      ]
+    },
+    "AnomalySettlement": {
+      "description": "检查并消耗目标的异常属性值；第三个效果组参数可选，缺省时只消耗异常值。",
+      "parameters": [
+        {
+          "index": 0,
+          "key": "anomalyType",
+          "label": "异常类型",
+          "kind": "Enum",
+          "enumName": "NumericType",
+          "required": true
+        },
+        {
+          "index": 1,
+          "key": "consume",
+          "label": "消耗量",
+          "kind": "ScaledInteger",
+          "scale": 10000,
+          "required": false,
+          "defaultValue": -1,
+          "description": "-1 表示全部消耗。"
+        },
+        {
+          "index": 2,
+          "key": "effectGroupId",
+          "label": "结算效果组",
+          "kind": "Reference",
+          "referenceTarget": "EffectGroup",
+          "required": false,
+          "defaultValue": 0,
+          "description": "0 或缺省时只消耗异常值，不执行效果组。"
+        }
+      ]
+    },
+    "ClearHitMarks": {
+      "parameters": [
+        {
+          "index": 0,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "kind": "Enum",
+          "enumName": "EffectSourceUnit",
+          "required": false,
+          "defaultValue": 2,
+          "description": "省略时使用 carrier。"
+        }
+      ]
+    },
+    "Knockback": {
+      "parameters": [
+        {
+          "index": 0,
+          "key": "direction",
+          "label": "方向",
+          "kind": "Enum",
+          "enumName": "EKnockbackDirection",
+          "required": false,
+          "defaultValue": 0
+        },
+        {
+          "index": 1,
+          "key": "distance",
+          "label": "距离",
+          "kind": "ScaledInteger",
+          "scale": 10000,
+          "required": false,
+          "defaultValue": 15000
+        },
+        {
+          "index": 2,
+          "key": "angle",
+          "label": "世界方向角度",
+          "kind": "Integer",
+          "required": false,
+          "defaultValue": 0,
+          "description": "仅固定世界方向模式使用。"
+        },
+        {
+          "index": 3,
+          "key": "smoothMs",
+          "label": "平滑时间毫秒",
+          "kind": "Integer",
+          "required": false,
+          "defaultValue": 0
+        }
+      ]
+    }
+  },
+  "patchConditions": {
+    "HasBuff": {
+      "parameters": [
+        {
+          "index": 0,
+          "key": "buffId",
+          "label": "Buff",
+          "kind": "Reference",
+          "referenceTarget": "TbBuff",
+          "required": true
+        },
+        {
+          "index": 1,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "kind": "Enum",
+          "enumName": "EffectSourceUnit",
+          "required": false,
+          "defaultValue": 1
+        }
+      ]
+    },
+    "HasRestrict": {
+      "parameters": [
+        {
+          "index": 0,
+          "key": "restrict",
+          "label": "限制类型",
+          "kind": "Enum",
+          "enumName": "FlagRestrict",
+          "required": true
+        },
+        {
+          "index": 1,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "kind": "Enum",
+          "enumName": "EffectSourceUnit",
+          "required": false,
+          "defaultValue": 1
+        }
+      ]
+    },
+    "HasFlagLabel": {
+      "parameters": [
+        {
+          "index": 0,
+          "key": "flagLabel",
+          "label": "标签",
+          "kind": "Enum",
+          "enumName": "FlagLabel",
+          "required": true
+        },
+        {
+          "index": 1,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "kind": "Enum",
+          "enumName": "EffectSourceUnit",
+          "required": false,
+          "defaultValue": 1
+        }
+      ]
+    },
+    "IsUnitType": {
+      "parameters": [
+        {
+          "index": 0,
+          "key": "unitType",
+          "label": "单位类型",
+          "kind": "Enum",
+          "enumName": "EUnitType",
+          "required": true,
+          "allowsMultipleEnumValues": true
+        },
+        {
+          "index": 1,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "kind": "Enum",
+          "enumName": "EffectSourceUnit",
+          "required": false,
+          "defaultValue": 1
+        }
+      ]
+    },
+    "IsAlive": {
+      "parameters": [
+        {
+          "index": 0,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "kind": "Enum",
+          "enumName": "EffectSourceUnit",
+          "required": false,
+          "defaultValue": 0
+        }
+      ]
+    },
+    "TryMarkHit": {
+      "parameters": [
+        {
+          "index": 0,
+          "key": "sourceUnit",
+          "label": "单位来源",
+          "kind": "Enum",
+          "enumName": "EffectSourceUnit",
+          "required": false,
+          "defaultValue": 2
+        }
+      ]
+    },
+    "IsTeamRelation": {
+      "description": "比较 owner 与 target 的阵营关系；只读取参数 0，运行时忽略旧注释中的第二个参数。",
+      "parameters": [
+        {
+          "index": 0,
+          "key": "relation",
+          "label": "阵营关系",
+          "kind": "Enum",
+          "enumName": "TeamRelation",
+          "required": true
+        }
+      ]
+    }
+  }
+}

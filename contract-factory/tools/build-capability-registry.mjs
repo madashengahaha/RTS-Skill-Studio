@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   assert,
   duplicateValues,
+  externalSourcePath,
   parseArgs,
   readJson,
   repoRoot,
@@ -14,19 +15,18 @@ import {
 } from "./lib.mjs";
 
 const args = parseArgs(process.argv.slice(2));
-if (!args.schema || typeof args.schema !== "string") {
-  console.error(
-    "Usage: npm run build:registry -- --schema /path/to/hero-authoring-schema.json " +
-      "[--enums config/enum-values.v0.json] [--revision source-revision]"
-  );
-  process.exit(2);
-}
-
-const sourcePath = path.resolve(args.schema);
+const sourcePath =
+  typeof args.schema === "string"
+    ? path.resolve(args.schema)
+    : await externalSourcePath("heroAuthoringSchema");
+const externalSources = await readJson("config/external-sources.v0.json");
 const sourceText = await readFile(sourcePath, "utf8");
 const sourceSchema = JSON.parse(sourceText);
 const foundation = await readJson("config/registry-foundation.v0.json");
 const overlay = await readJson("config/semantic-overlay.v0.json");
+const runtimeActionOverrides = await readJson(
+  "config/runtime-action-overrides.v0.json"
+);
 const defaultValueContract = await readJson("config/default-value-contract.v0.json");
 const mechanismContract = await readJson("config/default-mechanism-contract.v0.json");
 const enumSnapshot = await readJson(
@@ -52,6 +52,26 @@ assert(Array.isArray(enumSnapshot.enums), "Enum snapshot must contain enums.");
 assert(
   Array.isArray(readOnlyToolContract.tools),
   "Read-only tool contract must contain tools."
+);
+assert(
+  Array.isArray(runtimeActionOverrides.removeActions),
+  "Runtime action overrides must contain removeActions."
+);
+assert(
+  Array.isArray(runtimeActionOverrides.addActions),
+  "Runtime action overrides must contain addActions."
+);
+assert(
+  runtimeActionOverrides.patchActions &&
+    typeof runtimeActionOverrides.patchActions === "object" &&
+    !Array.isArray(runtimeActionOverrides.patchActions),
+  "Runtime action overrides must contain patchActions."
+);
+assert(
+  runtimeActionOverrides.patchConditions &&
+    typeof runtimeActionOverrides.patchConditions === "object" &&
+    !Array.isArray(runtimeActionOverrides.patchConditions),
+  "Runtime action overrides must contain patchConditions."
 );
 assert(
   readOnlyToolContract.tools.map((tool) => tool.name).sort().join("|") ===
@@ -135,8 +155,12 @@ function decorateActions(actions, annotations, category) {
           enumName: parameter.enumName ?? null,
           scale: parameter.scale ?? null,
           repeating: parameter.repeating ?? false,
-          repeatStep: parameter.repeatStep ?? 0,
-          allowsMultipleEnumValues: parameter.allowsMultipleEnumValues ?? false
+          repeatStep:
+            parameter.repeatStep ?? (parameter.repeating ? 1 : 0),
+          allowsMultipleEnumValues: parameter.allowsMultipleEnumValues ?? false,
+          ...(parameter.defaultValue !== undefined
+            ? { defaultValue: parameter.defaultValue }
+            : {})
         })),
         semantic
       };
@@ -144,13 +168,66 @@ function decorateActions(actions, annotations, category) {
     .sort((left, right) => left.legacyValue - right.legacyValue);
 }
 
-const effects = decorateActions(
+function applyRuntimeActionOverrides(actions, overrides) {
+  const removed = new Set(overrides.removeActions);
+  const byKey = new Map(
+    actions
+      .filter((action) => !removed.has(action.key))
+      .map((action) => [action.key, action])
+  );
+
+  for (const action of overrides.addActions) {
+    assert(
+      !byKey.has(action.key),
+      `Runtime action override ${action.key} already exists in the source schema.`
+    );
+    byKey.set(action.key, action);
+  }
+
+  for (const [key, patch] of Object.entries(overrides.patchActions)) {
+    const action = byKey.get(key);
+    assert(action, `Runtime action override references unknown action ${key}.`);
+    byKey.set(key, {
+      ...action,
+      ...patch,
+      parameters: patch.parameters ?? action.parameters
+    });
+  }
+
+  return [...byKey.values()];
+}
+
+function applyRuntimePatches(actions, patches, category) {
+  const byKey = new Map(actions.map((action) => [action.key, action]));
+  for (const [key, patch] of Object.entries(patches)) {
+    const action = byKey.get(key);
+    assert(action, `Runtime ${category} override references unknown action ${key}.`);
+    byKey.set(key, {
+      ...action,
+      ...patch,
+      parameters: patch.parameters ?? action.parameters
+    });
+  }
+  return [...byKey.values()];
+}
+
+const runtimeEffects = applyRuntimeActionOverrides(
   sourceSchema.effects,
+  runtimeActionOverrides
+);
+const runtimeConditions = applyRuntimePatches(
+  sourceSchema.conditions,
+  runtimeActionOverrides.patchConditions,
+  "condition"
+);
+
+const effects = decorateActions(
+  runtimeEffects,
   overlay.effects,
   "effects"
 );
 const conditions = decorateActions(
-  sourceSchema.conditions,
+  runtimeConditions,
   overlay.conditions,
   "conditions"
 );
@@ -173,6 +250,38 @@ for (const enumName of enumReferences) {
     `Enum snapshot is missing referenced enum ${enumName}.`
   );
 }
+
+function assertActionCoverage(actions, enumName, category) {
+  const definition = enumDefinitions.get(enumName);
+  assert(definition, `Enum snapshot is missing ${enumName}.`);
+  const expected = definition.values.filter((item) => item.name !== "None");
+  const expectedNames = new Set(expected.map((item) => item.name));
+  const actualNames = new Set(actions.map((action) => action.key));
+  const missing = [...expectedNames].filter((key) => !actualNames.has(key));
+  const unknown = [...actualNames].filter((key) => !expectedNames.has(key));
+  assert(
+    missing.length === 0,
+    `${category} is missing runtime actions: ${missing.join(", ")}.`
+  );
+  assert(
+    unknown.length === 0,
+    `${category} contains actions absent from ${enumName}: ${unknown.join(", ")}.`
+  );
+
+  const expectedValues = new Map(
+    expected.map((item) => [item.name, item.value])
+  );
+  for (const action of actions) {
+    assert(
+      action.legacyValue === expectedValues.get(action.key),
+      `${category}.${action.key} uses legacyValue ${action.legacyValue}, ` +
+        `expected ${expectedValues.get(action.key)}.`
+    );
+  }
+}
+
+assertActionCoverage(effects, "EffectActionType", "effects");
+assertActionCoverage(conditions, "EConditionType", "conditions");
 const enums = enumReferences.map((name) => enumDefinitions.get(name));
 
 const outputPath = "config/capability-registry.v0.json";
@@ -187,9 +296,10 @@ const sourceHash = sha256(sourceText);
 const sourceRevision =
   typeof args.revision === "string"
     ? args.revision
-    : existingRegistry?.source?.sha256 === sourceHash
-      ? existingRegistry?.source?.sourceRevision
-      : undefined;
+    : externalSources.sourceRevision ??
+      (args.check && existingRegistry?.source?.sha256 === sourceHash
+        ? existingRegistry?.source?.sourceRevision
+        : undefined);
 
 const registry = {
   schemaVersion: foundation.schemaVersion,

@@ -187,15 +187,20 @@
       "mechanism": "ClearHitMarks",
       "tags": ["marker", "clear"]
     },
-    "AddShield": {
-      "intents": ["AddState"],
-      "mechanism": "AddShield",
-      "tags": ["shield", "unique-buff", "recursion-risk"]
-    },
     "ShareHostility": {
       "intents": ["TargetMark"],
       "mechanism": "ShareHostility",
       "tags": ["hostility", "temporary-target-state"]
+    },
+    "AddMaxPropertyWithCurrent": {
+      "intents": ["StatModify"],
+      "mechanism": "AddMaxPropertyWithCurrent",
+      "tags": ["property", "max-value", "current-value-sync", "repeat-pairs"]
+    },
+    "SubMaxPropertyWithCurrent": {
+      "intents": ["StatModify"],
+      "mechanism": "SubMaxPropertyWithCurrent",
+      "tags": ["property", "max-value", "current-value-sync", "repeat-pairs"]
     }
   },
   "conditions": {
@@ -256,4 +261,3 @@
     }
   }
 }
-

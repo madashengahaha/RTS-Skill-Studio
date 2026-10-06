@@ -46,12 +46,14 @@ button {
 .app-shell {
   display: grid;
   grid-template-columns: 264px minmax(500px, 1fr) minmax(310px, 390px);
+  grid-template-rows: minmax(0, 1fr);
   width: 100%;
   height: 100%;
 }
 
 .sidebar {
   display: flex;
+  min-height: 0;
   min-width: 0;
   flex-direction: column;
   background: var(--rail);
@@ -361,6 +363,7 @@ button {
 
 .conversation-pane {
   display: grid;
+  min-height: 0;
   min-width: 0;
   grid-template-rows: 72px minmax(0, 1fr) auto;
   background: var(--surface);
@@ -617,6 +620,7 @@ button {
 
 .inspector-pane {
   display: grid;
+  min-height: 0;
   min-width: 0;
   grid-template-rows: 72px 42px minmax(0, 1fr);
   background: #f8f9fa;

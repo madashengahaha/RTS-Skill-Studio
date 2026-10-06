@@ -398,8 +398,6 @@ async function sendMessage(message) {
       body: JSON.stringify({
         provider,
         message,
-        instructions:
-          "你是 RTS Skill Studio 的技能配置 Agent。当前处于只读阶段，只能解释和提出方案，不得声称已经修改 Excel。回答使用中文，结构清晰，并明确不确定项。",
       }),
     });
 

@@ -89,7 +89,7 @@ app.MapPost(
                 .CompleteAsync(
                     new LlmCompletionRequest(
                         request.Message,
-                        request.Instructions,
+                        SkillAgentInstructions.Build(request.Instructions),
                         request.Model
                     ),
                     cancellationToken

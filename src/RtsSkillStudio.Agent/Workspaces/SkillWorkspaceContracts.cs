@@ -28,7 +28,9 @@ public sealed record SkillChainSnapshot(
     int SkillId,
     string FocusKey,
     IReadOnlyList<SkillChainNode> Nodes,
-    IReadOnlyList<SkillChainEdge> Edges
+    IReadOnlyList<SkillChainEdge> Edges,
+    IReadOnlyList<SkillInboundReference> IncomingReferences,
+    bool IncomingReferencesTruncated
 );
 
 public sealed record SkillChainNode(
@@ -56,6 +58,22 @@ public sealed record SkillChainEdge(
     bool Derived,
     string? SourceField,
     int? ParameterIndex
+);
+
+public sealed record SkillInboundReference(
+    string Source,
+    string SourceKind,
+    string SourceLabel,
+    string Relationship,
+    string? SourceField,
+    int? ParameterIndex,
+    IReadOnlyDictionary<string, IReadOnlyList<string>> SourceFields
+);
+
+public sealed record SkillInboundReferenceSet(
+    IReadOnlyList<SkillInboundReference> References,
+    int TotalCount,
+    bool Truncated
 );
 
 public sealed record WriteSmokeTestResult(

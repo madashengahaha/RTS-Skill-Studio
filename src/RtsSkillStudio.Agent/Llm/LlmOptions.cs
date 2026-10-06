@@ -22,6 +22,8 @@ public sealed class LlmProviderOptions
 
     public int TimeoutSeconds { get; set; } = 120;
 
+    public string ReasoningEffort { get; set; } = "";
+
     public string ResolveApiKey()
     {
         if (!string.IsNullOrWhiteSpace(ApiKey))

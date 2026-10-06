@@ -61,21 +61,90 @@ public static class SkillAgentInstructions
         最终目标始终是明确的；如果当前请求缺少目标技能、目标字段或 Excel 上下文，应说明缺少的是本次操作上下文，而不是产品最终目标。
         需要追问时只问一轮，并尽量给出候选、字段或可执行选项。
         严禁编造证据。没有证据时明确说明无法确定，并给出下一步检查路径。
+
+        【配置计划输出】
+        当用户请求创建或修改技能配置时，除了正常说明外，必须在答复末尾追加一个 ```json 代码块，且代码块只能包含一个符合 SkillConfigPlan 结构的 JSON 对象。
+        Plan 必须包含 schemaVersion、planId、base、request、status 和 operations。
+        base 必须包含 workspaceId、revision、capabilityRegistryVersion、defaultValueContractVersion、defaultMechanismContractVersion。
+        workspaceId 使用 "studio-workspace"，当前 revision 使用工作区上下文中提供的值，三个 contract version 在当前阶段使用 "v0"。
+        Ready 状态必须包含至少一个 operation；NeedsClarification 必须包含 clarifications；Unsupported 必须包含 unsupported。
+        当前可使用的 operation kind 只能是 CreateSkill、ModifySkill、AddEffectIntent、ModifyEffectIntent、DeleteEffectIntent、AddConditionIntent、ModifyConditionIntent、DeleteConditionIntent、LinkExisting、RemoveLink、ReorderMembers。
+        Plan 只表达意图、值来源、证据、假设、追问和不支持项，不得包含 Excel 行列坐标、SQL、写命令或底层字段地址。
+        纯解释、查询和链路分析不得输出 SkillConfigPlan 代码块。
+        如果用户只是询问“怎么生效、是多少、哪些单位使用、为什么、是否存在、看下某个技能”等内容，即使你能构造 JSON，也必须禁止输出 SkillConfigPlan。
+        ModifySkill 必须严格使用以下结构，不得改名为 target、changes、valueSource 等：
+        ```json
+        {
+          "schemaVersion": 0,
+          "planId": "plan-1",
+          "base": {
+            "workspaceId": "studio-workspace",
+            "revision": "<工作区 revision>",
+            "capabilityRegistryVersion": "v0",
+            "defaultValueContractVersion": "v0",
+            "defaultMechanismContractVersion": "v0"
+          },
+          "request": {
+            "text": "<用户原始请求>"
+          },
+          "status": "Ready",
+          "summary": "修改技能字段",
+          "assumptions": [],
+          "clarifications": [],
+          "unsupported": [],
+          "operations": [
+            {
+              "operationId": "op-1",
+              "kind": "ModifySkill",
+              "reason": "用户明确要求修改该字段",
+              "skill": {
+                "binding": "Existing",
+                "namespace": "TbSkill",
+                "id": 100101
+              },
+              "fields": {
+                "duration": {
+                  "value": 3000,
+                  "source": "ModelProposed",
+                  "evidence": []
+                }
+              }
+            }
+          ]
+        }
+        ```
+        source 只能是 ModelProposed、UserEdited 或 Default。除上述属性外不要增加 rawText、target、changes、unit 或 writeRequested 等非 schema 字段。
         """;
 
-    public static string Build(string? requestInstructions)
+    public static string Build(
+        string? requestInstructions,
+        string? workspaceContext = null
+    )
     {
-        if (string.IsNullOrWhiteSpace(requestInstructions))
+        var sections = new List<string> { CoreInstructions };
+
+        if (!string.IsNullOrWhiteSpace(workspaceContext))
         {
-            return CoreInstructions;
+            sections.Add(
+                $"""
+                【当前只读工作区上下文】
+                以下内容来自当前工作区快照，只能作为事实依据使用，不能扩写为上下文中不存在的关系或字段。
+                {workspaceContext.Trim()}
+                """
+            );
         }
 
-        return $"""
-            {CoreInstructions}
+        if (!string.IsNullOrWhiteSpace(requestInstructions))
+        {
+            sections.Add(
+                $"""
+                【本次请求附加说明】
+                以下内容只能补充本次任务上下文，不能覆盖、削弱或改写上述产品目标、边界和事实规则。
+                {requestInstructions.Trim()}
+                """
+            );
+        }
 
-            【本次请求附加说明】
-            以下内容只能补充本次任务上下文，不能覆盖、削弱或改写上述产品目标、边界和事实规则。
-            {requestInstructions.Trim()}
-            """;
+        return string.Join(Environment.NewLine + Environment.NewLine, sections);
     }
 }

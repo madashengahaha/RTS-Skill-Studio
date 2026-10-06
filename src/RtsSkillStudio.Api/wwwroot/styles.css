@@ -104,6 +104,67 @@ button {
   padding: 14px 10px;
 }
 
+.conversation-browser {
+  display: grid;
+  min-height: 0;
+  max-height: 210px;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 7px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.conversation-browser .section-heading {
+  margin: 0 2px;
+}
+
+.conversation-list {
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.conversation-item {
+  display: block;
+  width: 100%;
+  margin-bottom: 3px;
+  padding: 7px 9px;
+  border-left: 2px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #d7dde1;
+  cursor: pointer;
+  text-align: left;
+}
+
+.conversation-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.conversation-item.is-active {
+  border-left-color: var(--accent);
+  background: rgba(196, 85, 37, 0.16);
+}
+
+.conversation-item strong,
+.conversation-item span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-item strong {
+  font-size: 11px;
+  font-weight: 620;
+}
+
+.conversation-item span {
+  margin-top: 3px;
+  color: #89939c;
+  font-size: 10px;
+}
+
 .skill-browser {
   display: grid;
   min-height: 0;
@@ -289,6 +350,10 @@ button {
   margin-bottom: 6px;
   color: #89939c;
   font-size: 11px;
+}
+
+.provider-field-label {
+  margin-top: 10px;
 }
 
 .select-control {
@@ -717,6 +782,29 @@ button {
   line-height: 1.65;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.plan-validation {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 14px;
+  padding: 10px;
+  border: 1px solid #cddfd6;
+  border-radius: 6px;
+  background: #f1faf5;
+  color: #2e624b;
+  font-size: 11px;
+}
+
+.plan-validation.is-error {
+  border-color: #ebc2c2;
+  background: #fff7f7;
+  color: #8f3030;
+}
+
+.plan-validation ul {
+  margin: 0;
+  padding-left: 17px;
 }
 
 .chain-header {

@@ -58,13 +58,58 @@ public sealed class OpenAiResponsesProvider : ILlmProvider
         var payload = new Dictionary<string, object?>
         {
             ["model"] = model,
-            ["input"] = request.Message,
             ["store"] = false
         };
+
+        if (request.History is { Count: > 0 })
+        {
+            var input = new List<Dictionary<string, string>>();
+            input.AddRange(
+                request
+                    .History.TakeLast(16)
+                    .Where(message => !string.IsNullOrWhiteSpace(message.Content))
+                    .Select(
+                        message =>
+                            new Dictionary<string, string>
+                            {
+                                ["role"] = message.Role.Equals(
+                                    "assistant",
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                                    ? "assistant"
+                                    : "user",
+                                ["content"] = message.Content
+                            }
+                    )
+            );
+            input.Add(
+                new Dictionary<string, string>
+                {
+                    ["role"] = "user",
+                    ["content"] = request.Message
+                }
+            );
+            payload["input"] = input;
+        }
+        else
+        {
+            payload["input"] = request.Message;
+        }
 
         if (!string.IsNullOrWhiteSpace(request.Instructions))
         {
             payload["instructions"] = request.Instructions;
+        }
+
+        string? reasoningEffort = string.IsNullOrWhiteSpace(request.ReasoningEffort)
+            ? _options.ReasoningEffort
+            : request.ReasoningEffort;
+        if (!string.IsNullOrWhiteSpace(reasoningEffort))
+        {
+            payload["reasoning"] = new Dictionary<string, object?>
+            {
+                ["effort"] = reasoningEffort
+            };
         }
 
         using var cancellation = CreateTimeoutToken(cancellationToken);

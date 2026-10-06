@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>RTS Skill Studio</title>
-    <link rel="stylesheet" href="/styles.css?v=20261006-3" />
+    <link rel="stylesheet" href="/styles.css" />
     <script src="/vendor/lucide.min.js"></script>
   </head>
   <body>
@@ -37,6 +37,18 @@
           </button>
         </nav>
 
+        <section class="conversation-browser">
+          <div class="section-heading">
+            <span>会话</span>
+            <button id="newConversation" class="icon-button" type="button" title="新建对话">
+              <i data-lucide="plus"></i>
+            </button>
+          </div>
+          <div id="conversationList" class="conversation-list">
+            <div class="skill-empty">正在加载会话...</div>
+          </div>
+        </section>
+
         <section class="side-section">
           <div class="section-heading">
             <span>模型</span>
@@ -47,6 +59,18 @@
           <label class="field-label" for="providerSelect">Provider</label>
           <select id="providerSelect" class="select-control" disabled>
             <option>正在读取...</option>
+          </select>
+          <label class="field-label provider-field-label" for="modelSelect">Model</label>
+          <select id="modelSelect" class="select-control" disabled>
+            <option>跟随 Provider</option>
+          </select>
+          <label class="field-label provider-field-label" for="reasoningSelect">Reasoning</label>
+          <select id="reasoningSelect" class="select-control">
+            <option value="">Provider 默认</option>
+            <option value="none">关闭思考</option>
+            <option value="low">低</option>
+            <option value="medium">中</option>
+            <option value="high">高</option>
           </select>
           <div id="providerStatus" class="status-row">
             <span class="status-dot is-pending"></span>
@@ -141,6 +165,6 @@
     </div>
 
     <div id="toast" class="toast" role="status"></div>
-    <script src="/app.js?v=20261006-3"></script>
+    <script src="/app.js"></script>
   </body>
 </html>

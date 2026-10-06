@@ -7,4 +7,7 @@ public sealed class SkillWorkspaceOptions
     public string HeroAuthoringSchemaPath { get; set; } = "";
 
     public string WriteTestRoot { get; set; } = ".studio-work";
+
+    public string ConversationDatabasePath { get; set; } =
+        ".studio-work/studio-conversations.db";
 }

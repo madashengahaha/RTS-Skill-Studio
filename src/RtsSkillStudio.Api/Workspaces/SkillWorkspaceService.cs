@@ -9,6 +9,7 @@ namespace RtsSkillStudio.Api.Workspaces;
 
 public sealed class SkillWorkspaceService(
     SkillWorkspaceOptions options,
+    IHostEnvironment environment,
     ILogger<SkillWorkspaceService> logger
 )
 {
@@ -156,6 +157,12 @@ public sealed class SkillWorkspaceService(
             skillId,
             depth
         );
+        SkillInboundReferenceSet incoming =
+            await GetIncomingReferencesAsync(
+                skillId,
+                40,
+                cancellationToken
+            );
 
         return new SkillChainSnapshot(
             snapshot.Revision,
@@ -186,6 +193,75 @@ public sealed class SkillWorkspaceService(
                 edge.SourceField,
                 edge.ParameterIndex
             )).ToArray()
+            ,
+            incoming.References,
+            incoming.Truncated
+        );
+    }
+
+    public async Task<SkillInboundReferenceSet> GetIncomingReferencesAsync(
+        int skillId,
+        int limit,
+        CancellationToken cancellationToken
+    )
+    {
+        if (limit is < 1 or > 200)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(limit),
+                "引用数量必须在 1 到 200 之间。"
+            );
+        }
+
+        var snapshot = await LoadAsync(cancellationToken);
+        string target = $"TbSkill:{skillId}";
+        Dictionary<string, TianshuDM.Domain.HeroAuthoring.HeroAuthoringGraphNode> nodes =
+            snapshot.Graph.Nodes.ToDictionary(
+                node => node.Key,
+                StringComparer.Ordinal
+            );
+
+        IReadOnlyList<SkillInboundReference> references = snapshot
+            .Graph.Edges.Where(
+                edge => string.Equals(
+                    edge.Target,
+                    target,
+                    StringComparison.Ordinal
+                )
+            )
+            .Select(edge =>
+            {
+                nodes.TryGetValue(edge.Source, out var source);
+                return new SkillInboundReference(
+                    edge.Source,
+                    source?.Kind ?? "",
+                    source?.Label ?? edge.Source,
+                    edge.Label,
+                    edge.SourceField,
+                    edge.ParameterIndex,
+                    source?.Fields
+                        ?? new Dictionary<string, IReadOnlyList<string>>()
+                );
+            })
+            .GroupBy(
+                reference => (
+                    reference.Source,
+                    reference.Relationship,
+                    reference.SourceField,
+                    reference.ParameterIndex
+                )
+            )
+            .Select(group => group.First())
+            .OrderBy(reference => reference.Source, StringComparer.Ordinal)
+            .ThenBy(
+                reference => reference.SourceField,
+                StringComparer.Ordinal
+            )
+            .ToArray();
+        return new SkillInboundReferenceSet(
+            references.Take(limit).ToArray(),
+            references.Count,
+            references.Count > limit
         );
     }
 
@@ -195,7 +271,7 @@ public sealed class SkillWorkspaceService(
     {
         string sourceDataRoot = Path.GetFullPath(options.ExcelDataRoot);
         string outputRoot = Path.Combine(
-            Path.GetFullPath(options.WriteTestRoot),
+            ResolveContentRootPath(options.WriteTestRoot),
             $"write-smoke-{DateTime.UtcNow:yyyyMMdd-HHmmss}"
         );
         string outputDataRoot = Path.Combine(
@@ -550,6 +626,13 @@ public sealed class SkillWorkspaceService(
 
     private static bool Configured(string value) =>
         !string.IsNullOrWhiteSpace(value) && value != "0";
+
+    private string ResolveContentRootPath(string path)
+    {
+        return Path.IsPathRooted(path)
+            ? Path.GetFullPath(path)
+            : Path.GetFullPath(Path.Combine(environment.ContentRootPath, path));
+    }
 
     private sealed record WorkspaceSnapshot(
         GameDataCatalog Catalog,

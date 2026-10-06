@@ -67,12 +67,43 @@ public sealed class OpenAiCompatibleChatProvider : ILlmProvider
             }
         );
 
+        if (request.History is { Count: > 0 })
+        {
+            messages.InsertRange(
+                Math.Max(0, messages.Count - 1),
+                request
+                    .History.TakeLast(16)
+                    .Where(message => !string.IsNullOrWhiteSpace(message.Content))
+                    .Select(
+                        message =>
+                            new Dictionary<string, string>
+                            {
+                                ["role"] = message.Role.Equals(
+                                    "assistant",
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                                    ? "assistant"
+                                    : "user",
+                                ["content"] = message.Content
+                            }
+                    )
+            );
+        }
+
         var payload = new Dictionary<string, object?>
         {
             ["model"] = model,
             ["messages"] = messages,
             ["stream"] = false
         };
+
+        string? reasoningEffort = string.IsNullOrWhiteSpace(request.ReasoningEffort)
+            ? _options.ReasoningEffort
+            : request.ReasoningEffort;
+        if (!string.IsNullOrWhiteSpace(reasoningEffort))
+        {
+            payload["reasoning_effort"] = reasoningEffort;
+        }
 
         using var cancellation = CreateTimeoutToken(cancellationToken);
         var stopwatch = Stopwatch.StartNew();

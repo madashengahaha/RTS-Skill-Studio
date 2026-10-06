@@ -101,8 +101,18 @@ Progress is tracked against the product baseline in the Obsidian document
 - Cloud model routing verified through CC Switch's active Codex provider.
 - Backend-owned Agent policy shared by every provider, including the final product
   goal, current phase, domain terms, evidence rules, and permanent write boundary.
+- Bounded real-workspace context for the selected skill, including its main row fields,
+  downstream nodes, and evidence-bearing graph edges.
+- Persistent SQLite conversation sessions with create, list, switch, selected-skill
+  binding, and multi-turn history.
+- Model enumeration and selection for Ollama and CC Switch, plus configurable
+  reasoning effort.
+- Structured `SkillConfigPlan` extraction for configuration requests, deterministic
+  structural validation, and a real Plan inspector tab.
 - First usable Studio UI:
   - Provider selection and status.
+  - Model and reasoning selection.
+  - Conversation creation and switching.
   - Natural-language conversation.
   - Real skill list and search.
   - Execution-chain, Plan, and evidence inspector.
@@ -125,10 +135,10 @@ Progress is tracked against the product baseline in the Obsidian document
 
 ### In Progress
 
-- Add persistent conversation sessions and multi-turn context.
-- Bind the real skill graph into the Agent context.
-- Replace the generic chat call with a domain Agent loop and read-only tools.
-- Define the first real `SkillConfigPlan` editing cases against current skills.
+- Replace context preloading with an explicit bounded read-only tool loop.
+- Add richer intent routing, clarification handling, and unsupported-result handling.
+- Replace the lightweight Plan validator with full schema validation against the
+  generated contract-factory schema.
 
 ### Next
 
@@ -146,12 +156,11 @@ skill:
 
 ### Current Limits
 
-- The Studio has one browser chat surface and no conversation list, persistence, or
-  new-conversation action.
-- Each chat request sends only the current message. Previous UI messages are not sent
-  back to the model, so there is no real multi-turn context yet.
-- Provider selection is available, but Ollama and CC Switch model enumeration is not
-  wired into the UI, and reasoning effort is not configurable.
+- Conversation rename and delete are not implemented.
+- The Agent currently receives a bounded context built from the selected skill; it
+  does not yet choose and invoke read-only tools dynamically.
+- Plan validation covers the core structural requirements in C#, but is not yet a full
+  JSON Schema validator.
 - The UI can inspect real skill chains, but Plan and evidence tabs are not yet
   backed by a compiled editing workflow.
 - The model can explain a request, but it is not yet given bounded graph tools
@@ -194,12 +203,12 @@ configuration with environment variables.
 CC Switch can be used as an optional development provider while its local proxy
 is running on `127.0.0.1:15721`. The `ccswitch` provider routes through the
 currently selected Codex provider and is not a product dependency. Its `/v1/models`
-endpoint exposes the models supported by that Codex route; the Studio UI is not yet
-using that catalog.
+endpoint exposes the models supported by that Codex route, and the Studio UI loads
+that catalog into its model selector.
 
-Model selection is currently fixed per provider in configuration. Model enumeration,
-explicit model selection, and reasoning-effort controls are planned but not yet
-implemented.
+The provider configuration still supplies the default model. The UI can override it
+per request through the enumerated model list, and reasoning effort can be selected
+independently.
 
 ```powershell
 $env:OPENAI_API_KEY = "<key>"

@@ -26,12 +26,26 @@ public static class SkillAgentInstructions
         Effect 的行为由 action_type 和 action_param 决定，参数顺序和引用目标具有明确业务语义。
         Skill、Effect、Condition、Buff、Bullet、Search、Trap 等对象之间通过真实 ID、虚拟组和动作参数建立跨表引用。
 
+        【技能授予与来源装配规则】
+        Hero.normal_skills 和 Hero.active_skills 是英雄直接引用 Skill 的字段。
+        HeroUpgrade、SoldierUpgrade、EquipmentUpgrade 的 UnlockItem 通常先引用 Item，再由 Item.effect_group_id 进入 EffectGroup，并通过 AddSkill 动作授予 Skill。
+        Item.effect_group_id 可以直接作为 EffectGroup 行为根，Item 不是只能通过 Skill 使用。
+        Equipment.skills 会直接授予装备对象 Skill，Equipment.buffs 会直接授予装备对象 Buff。
+        EquipmentUpgrade.UnlockItem 可以继续通过 Item -> EffectGroup -> AddSkill 授予 Skill。
+        HeroSkillDes 只描述技能展示信息，不是技能装配或授予来源。
+        AddSkill 表示授予技能；AddSkillDataBySkill 表示增加指定技能的数据值，不能把两者都描述成“获得技能”。
+        图投影中的 Hero -> Skill “升级解锁技能”等边可能是 Derived 关系，此时 sourceField 为空，只表示最终可达的装配结论，不代表 Hero 表直接保存了该 Skill。
+        当入向引用没有明确 sourceField 或标记为 derived=true 时，不得声称该技能写在 normal_skills、active_skills 或其他直接字段中；必须说明真实承载路径需继续展开 HeroUpgrade、Item、EffectGroup 和 Effect 链路。
+
         【不可违反的产品边界】
         Excel 是权威数据源，SQLite 只保存工作副本、草稿、历史和校验缓存。
         模型只能理解意图、查询只读证据并提交 SkillConfigPlan。
         模型不得直接填写单元格、生成 SQL、调用写命令、编辑 WorkbookPatch，或声称已经修改 Excel。
         ID、字段、枚举、参数槽、动作类型和引用关系不得编造。
         名称解析不唯一时必须返回候选并追问，不能自动选择第一个。
+        跨表相同数字 ID 只能用于快速检索候选，不能作为对象相同、引用成立、授予成立或装配关系的证据。
+        资产身份必须来自明确的 namespace + id，关系事实必须来自 Excel 真实字段、sourceField、action_param、group_id 或图边证据。
+        没有类型上下文或 namespace 的裸 ID 只能返回候选并追问，不能仅因为其他表中没有同号对象就自动认定其所属表。
         编译器负责单位换算、ID 分配、引用解析、组成员组织、机制选择和补丁生成。
         校验失败必须阻止应用。不能把未执行、未校验或规划中的内容描述成已经完成。
         节点图只用于检查、解释和审计，不是要求策划手工搭节点的主工作流。

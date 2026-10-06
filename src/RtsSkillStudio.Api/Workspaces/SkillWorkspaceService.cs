@@ -13,6 +13,17 @@ public sealed class SkillWorkspaceService(
     ILogger<SkillWorkspaceService> logger
 )
 {
+    private static readonly (string TableKey, string Namespace)[] SearchRoots =
+    [
+        ("skill", "TbSkill"),
+        ("item", "TbItem"),
+        ("buff", "TbBuff"),
+        ("bullet", "TbBullet"),
+        ("search", "TbSearch"),
+        ("trap", "TbTrap"),
+        ("equipment", "TbEquipment")
+    ];
+
     private readonly SemaphoreSlim _loadGate = new(1, 1);
     private WorkspaceSnapshot? _snapshot;
 
@@ -137,8 +148,178 @@ public sealed class SkillWorkspaceService(
             .ToArray();
     }
 
+    public async Task<IReadOnlyList<AssetSearchResult>> SearchAssetsAsync(
+        string? query,
+        int limit,
+        CancellationToken cancellationToken
+    )
+    {
+        if (limit is < 1 or > 50)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(limit),
+                "资产检索数量必须在 1 到 50 之间。"
+            );
+        }
+
+        string term = query?.Trim() ?? "";
+        if (term.Length == 0)
+        {
+            return [];
+        }
+
+        var snapshot = await LoadAsync(cancellationToken);
+        var results = new List<AssetSearchResult>();
+        foreach ((string tableKey, string nodeNamespace) in SearchRoots)
+        {
+            GameDataTable? table = snapshot.Catalog.Tables.FirstOrDefault(
+                candidate => string.Equals(
+                    candidate.Key,
+                    tableKey,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
+            if (table is null)
+            {
+                continue;
+            }
+
+            foreach (GameDataRecord record in table.Records)
+            {
+                string label = Title(table, record);
+                string searchableText = string.Join(
+                    " ",
+                    new[] { label, record.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) }
+                        .Concat(
+                            record.Fields.Values.SelectMany(values => values)
+                        )
+                );
+                if (
+                    !searchableText.Contains(
+                        term,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    continue;
+                }
+
+                results.Add(
+                    new AssetSearchResult(
+                        new StudioAssetRef(nodeNamespace, record.Id),
+                        label,
+                        BuildAssetSearchSummary(table, record),
+                        table.DisplayName,
+                        record.SourceRow
+                    )
+                );
+            }
+        }
+
+        AddEffectGroupSearchResults(snapshot.Catalog, term, results);
+
+        return results
+            .GroupBy(
+                result => result.Ref,
+                EqualityComparer<StudioAssetRef>.Default
+            )
+            .Select(group => group.First())
+            .OrderByDescending(
+                result => result.Ref.Id.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture
+                ) == term
+            )
+            .ThenBy(result => result.Ref.Namespace, StringComparer.Ordinal)
+            .ThenBy(result => result.Ref.Id)
+            .Take(limit)
+            .ToArray();
+    }
+
+    private static void AddEffectGroupSearchResults(
+        GameDataCatalog catalog,
+        string term,
+        ICollection<AssetSearchResult> results
+    )
+    {
+        GameDataTable? effects = catalog.Tables.FirstOrDefault(
+            table => string.Equals(
+                table.Key,
+                "effect",
+                StringComparison.OrdinalIgnoreCase
+            )
+        );
+        if (effects is null)
+        {
+            return;
+        }
+
+        foreach (
+            IGrouping<string, GameDataRecord> group in effects.Records.GroupBy(
+                record =>
+                    Values(record, "group_id").FirstOrDefault(Configured)
+                    ?? ""
+            )
+        )
+        {
+            if (
+                group.Key.Length == 0
+                || !group.Key.Contains(term, StringComparison.OrdinalIgnoreCase)
+            )
+            {
+                continue;
+            }
+
+            if (!int.TryParse(group.Key, out int groupId))
+            {
+                continue;
+            }
+
+            results.Add(
+                new AssetSearchResult(
+                    new StudioAssetRef("EffectGroup", groupId),
+                    $"EffectGroup {groupId}",
+                    $"{group.Count()} 个有序 Effect",
+                    "Effect Group",
+                    group.Min(record => record.SourceRow)
+                )
+            );
+        }
+    }
+
+    private static string BuildAssetSearchSummary(
+        GameDataTable table,
+        GameDataRecord record
+    )
+    {
+        string? text = Values(
+                record,
+                "desc",
+                "description",
+                "remark",
+                "__remark_2",
+                "name"
+            )
+            .FirstOrDefault(Configured);
+        return string.IsNullOrWhiteSpace(text)
+            ? $"{table.DisplayName} · 行 {record.SourceRow}"
+            : text;
+    }
+
     public async Task<SkillChainSnapshot> GetSkillChainAsync(
         int skillId,
+        int depth,
+        CancellationToken cancellationToken
+    )
+    {
+        return await GetAssetChainAsync(
+            new StudioAssetRef("TbSkill", skillId),
+            depth,
+            cancellationToken
+        );
+    }
+
+    public async Task<SkillChainSnapshot> GetAssetChainAsync(
+        StudioAssetRef root,
         int depth,
         CancellationToken cancellationToken
     )
@@ -151,22 +332,45 @@ public sealed class SkillWorkspaceService(
             );
         }
 
+        string rootNamespace = NormalizeAssetNamespace(root.Namespace);
         var snapshot = await LoadAsync(cancellationToken);
-        HeroAuthoringGraph graph = snapshot.Projector.ProjectSkillBehavior(
-            snapshot.Catalog,
-            skillId,
-            depth
-        );
+        HeroAuthoringGraph graph = HeroAuthoringRootProfiles.TryNormalize(
+            rootNamespace,
+            out _
+        )
+            ? snapshot.Projector.ProjectBehavior(
+                snapshot.Catalog,
+                rootNamespace,
+                root.Id,
+                depth
+            )
+            : snapshot.Projector.Project(
+                snapshot.Catalog,
+                rootNamespace,
+                root.Id,
+                Math.Min(depth, 5)
+            );
+        if (
+            !HeroAuthoringRootProfiles.TryNormalize(
+                rootNamespace,
+                out _
+            )
+        )
+        {
+            graph = SelectDownstream(graph, graph.FocusKey);
+        }
         SkillInboundReferenceSet incoming =
             await GetIncomingReferencesAsync(
-                skillId,
+                new StudioAssetRef(rootNamespace, root.Id),
                 40,
                 cancellationToken
             );
 
         return new SkillChainSnapshot(
             snapshot.Revision,
-            skillId,
+            graph.FocusKey,
+            rootNamespace,
+            root.Id,
             graph.FocusKey,
             graph.Nodes.Select(node => new SkillChainNode(
                 node.Key,
@@ -192,8 +396,7 @@ public sealed class SkillWorkspaceService(
                 edge.Derived,
                 edge.SourceField,
                 edge.ParameterIndex
-            )).ToArray()
-            ,
+            )).ToArray(),
             incoming.References,
             incoming.Truncated
         );
@@ -201,6 +404,19 @@ public sealed class SkillWorkspaceService(
 
     public async Task<SkillInboundReferenceSet> GetIncomingReferencesAsync(
         int skillId,
+        int limit,
+        CancellationToken cancellationToken
+    )
+    {
+        return await GetIncomingReferencesAsync(
+            new StudioAssetRef("TbSkill", skillId),
+            limit,
+            cancellationToken
+        );
+    }
+
+    public async Task<SkillInboundReferenceSet> GetIncomingReferencesAsync(
+        StudioAssetRef root,
         int limit,
         CancellationToken cancellationToken
     )
@@ -214,7 +430,8 @@ public sealed class SkillWorkspaceService(
         }
 
         var snapshot = await LoadAsync(cancellationToken);
-        string target = $"TbSkill:{skillId}";
+        string rootNamespace = NormalizeAssetNamespace(root.Namespace);
+        string target = $"{rootNamespace}:{root.Id}";
         Dictionary<string, TianshuDM.Domain.HeroAuthoring.HeroAuthoringGraphNode> nodes =
             snapshot.Graph.Nodes.ToDictionary(
                 node => node.Key,
@@ -239,6 +456,8 @@ public sealed class SkillWorkspaceService(
                     edge.Label,
                     edge.SourceField,
                     edge.ParameterIndex,
+                    edge.Derived,
+                    edge.Detail,
                     source?.Fields
                         ?? new Dictionary<string, IReadOnlyList<string>>()
                 );
@@ -262,6 +481,78 @@ public sealed class SkillWorkspaceService(
             references.Take(limit).ToArray(),
             references.Count,
             references.Count > limit
+        );
+    }
+
+    public static string NormalizeAssetNamespace(string value)
+    {
+        string normalized = value.Trim();
+        return normalized.ToLowerInvariant() switch
+        {
+            "skill" or "tbskill" => "TbSkill",
+            "item" or "tb item" or "tbitem" => "TbItem",
+            "effect" or "tbeffect" => "TbEffect",
+            "effectgroup" or "effect-group" or "effect group" => "EffectGroup",
+            "conditiongroup" or "condition-group" or "condition group" =>
+                "ConditionGroup",
+            "buff" or "tbbuff" => "TbBuff",
+            "bullet" or "tbbullet" => "TbBullet",
+            "search" or "tbsearch" => "TbSearch",
+            "trap" or "tbtrap" => "TbTrap",
+            "equipment" or "tbequipment" => "TbEquipment",
+            "condition" or "tbcondition" => "TbCondition",
+            "damagepipeline" or "damage-pipeline" or "damage pipeline" =>
+                "TbDamagePipeline",
+            "skillresource" or "skill-resource" or "skill resource" =>
+                "TbSkillResource",
+            "resource" or "tbresource" => "TbResource",
+            "soldier" or "tbsoldier" => "TbSoldier",
+            "building" or "tbbuilding" => "TbBuilding",
+            _ => normalized
+        };
+    }
+
+    private static HeroAuthoringGraph SelectDownstream(
+        HeroAuthoringGraph graph,
+        string focusKey
+    )
+    {
+        var included = new HashSet<string>(StringComparer.Ordinal)
+        {
+            focusKey
+        };
+        var queue = new Queue<string>();
+        queue.Enqueue(focusKey);
+        while (queue.Count > 0)
+        {
+            string current = queue.Dequeue();
+            foreach (
+                HeroAuthoringGraphEdge edge in graph.Edges.Where(
+                    edge => string.Equals(
+                        edge.Source,
+                        current,
+                        StringComparison.Ordinal
+                    )
+                )
+            )
+            {
+                if (included.Add(edge.Target))
+                {
+                    queue.Enqueue(edge.Target);
+                }
+            }
+        }
+
+        return new HeroAuthoringGraph(
+            focusKey,
+            graph.Nodes.Where(node => included.Contains(node.Key))
+                .Select(node => node with { IsFocus = node.Key == focusKey })
+                .ToArray(),
+            graph.Edges.Where(
+                edge =>
+                    included.Contains(edge.Source)
+                    && included.Contains(edge.Target)
+            ).ToArray()
         );
     }
 

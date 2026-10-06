@@ -7,7 +7,9 @@ public sealed record LlmChatApiRequest(
     string? Model = null,
     int? SkillId = null,
     IReadOnlyList<LlmChatMessage>? History = null,
-    string? ReasoningEffort = null
+    string? ReasoningEffort = null,
+    string? AssetNamespace = null,
+    int? AssetId = null
 );
 
 public sealed record LlmChatMessage(

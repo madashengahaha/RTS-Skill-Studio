@@ -37,6 +37,17 @@
           </button>
         </nav>
 
+        <section class="asset-search-section">
+          <div class="section-heading">
+            <span>资产</span>
+          </div>
+          <label class="skill-search">
+            <i data-lucide="search"></i>
+            <input id="assetSearch" type="search" placeholder="TbItem:100604" autocomplete="off" />
+          </label>
+          <div id="assetSearchResults" class="asset-search-results"></div>
+        </section>
+
         <section class="conversation-browser">
           <div class="section-heading">
             <span>会话</span>
@@ -75,20 +86,6 @@
           <div id="providerStatus" class="status-row">
             <span class="status-dot is-pending"></span>
             <span>检查连接中</span>
-          </div>
-        </section>
-
-        <section class="skill-browser">
-          <div class="section-heading">
-            <span>技能</span>
-            <span id="skillCount" class="state-label">读取中</span>
-          </div>
-          <label class="skill-search">
-            <i data-lucide="search"></i>
-            <input id="skillSearch" type="search" placeholder="筛选技能" autocomplete="off" />
-          </label>
-          <div id="skillList" class="skill-list">
-            <div class="skill-empty">正在加载技能...</div>
           </div>
         </section>
 

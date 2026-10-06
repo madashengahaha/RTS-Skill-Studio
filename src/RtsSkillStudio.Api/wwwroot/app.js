@@ -6,14 +6,16 @@ const state = {
   conversations: [],
   activeConversationId: null,
   skills: [],
+  selectedAsset: null,
   selectedSkillId: null,
   inspector: {
     tab: "chain",
     chain: null,
+    chains: [],
     planJson: null,
     planErrors: [],
     planDisposition: "None",
-    evidence: null,
+    lastError: null,
   },
   sending: false,
 };
@@ -34,13 +36,12 @@ const elements = {
   sendButton: document.querySelector("#sendButton"),
   inspectorMeta: document.querySelector("#inspectorMeta"),
   inspectorContent: document.querySelector("#inspectorContent"),
-  skillCount: document.querySelector("#skillCount"),
-  skillSearch: document.querySelector("#skillSearch"),
-  skillList: document.querySelector("#skillList"),
+  assetSearch: document.querySelector("#assetSearch"),
   workspaceState: document.querySelector("#workspaceState"),
   workspacePath: document.querySelector("#workspacePath"),
   workspaceRevision: document.querySelector("#workspaceRevision"),
   toast: document.querySelector("#toast"),
+  assetSearchResults: document.querySelector("#assetSearchResults"),
 };
 
 const providerLabels = {
@@ -196,73 +197,15 @@ async function loadWorkspace() {
     if (!response.ok || !status.configured) {
       elements.workspaceState.textContent = "不可用";
       elements.workspaceRevision.textContent = "";
-      elements.skillCount.textContent = "0";
-      elements.skillList.innerHTML = `<div class="skill-empty">${escapeHtml(
-        status.errors?.[0] || "工作区不可用",
-      )}</div>`;
       return;
     }
 
     elements.workspaceState.textContent = "已连接";
     elements.workspaceRevision.textContent = `rev ${status.revision.slice(0, 10)}`;
-    await loadSkills();
   } catch (error) {
     elements.workspaceState.textContent = "读取失败";
-    elements.skillList.innerHTML = `<div class="skill-empty">${escapeHtml(
-      error.message,
-    )}</div>`;
+    showToast(error.message, "error");
   }
-}
-
-async function loadSkills() {
-  elements.skillCount.textContent = "读取中";
-  const response = await fetch("/api/v1/skills?limit=500");
-  if (!response.ok) {
-    throw new Error(`技能列表读取失败：HTTP ${response.status}`);
-  }
-
-  state.skills = await response.json();
-  elements.skillCount.textContent = String(state.skills.length);
-  renderSkillList();
-  renderIcons();
-}
-
-function renderSkillList() {
-  const query = elements.skillSearch.value.trim().toLowerCase();
-  const items = state.skills.filter((skill) => {
-    if (!query) {
-      return true;
-    }
-
-    return (
-      String(skill.id).includes(query) ||
-      skill.label.toLowerCase().includes(query) ||
-      skill.summary.toLowerCase().includes(query)
-    );
-  });
-
-  elements.skillCount.textContent = String(items.length);
-  if (items.length === 0) {
-    elements.skillList.innerHTML =
-      '<div class="skill-empty">没有匹配的技能</div>';
-    return;
-  }
-
-  elements.skillList.innerHTML = items
-    .map(
-      (skill) => `
-        <button
-          class="skill-item ${skill.id === state.selectedSkillId ? "is-active" : ""}"
-          type="button"
-          data-skill-id="${skill.id}"
-          title="${escapeHtml(skill.summary)}"
-        >
-          <strong>${escapeHtml(String(skill.id))} · ${escapeHtml(skill.label)}</strong>
-          <span>${escapeHtml(skill.summary)}</span>
-        </button>
-      `,
-    )
-    .join("");
 }
 
 function selectProvider(name) {
@@ -337,8 +280,8 @@ function appendTypingMessage() {
   return message;
 }
 
-function updateInspector(text) {
-  state.inspector.evidence = text || null;
+function updateInspector(text, isError = false) {
+  state.inspector.lastError = isError ? text || null : null;
   if (state.inspector.tab === "evidence") {
     renderInspector();
   }
@@ -346,91 +289,241 @@ function updateInspector(text) {
 
 function chainInspectorHtml(chain) {
   const nodeById = new Map(chain.nodes.map((node) => [node.key, node]));
+  const outgoing = new Map();
+  for (const edge of chain.edges || []) {
+    if (!outgoing.has(edge.source)) {
+      outgoing.set(edge.source, []);
+    }
+    outgoing.get(edge.source).push(edge);
+  }
+  for (const edges of outgoing.values()) {
+    edges.sort((left, right) => {
+      const leftParam = left.parameterIndex ?? Number.MAX_SAFE_INTEGER;
+      const rightParam = right.parameterIndex ?? Number.MAX_SAFE_INTEGER;
+      return (
+        leftParam - rightParam ||
+        String(left.sourceField || "").localeCompare(
+          String(right.sourceField || ""),
+        ) ||
+        String(left.label || "").localeCompare(String(right.label || "")) ||
+        String(left.target).localeCompare(String(right.target))
+      );
+    });
+  }
+
+  const rendered = new Set();
+  const focus =
+    nodeById.get(chain.focusKey) ||
+    chain.nodes.find((node) => node.isFocus) ||
+    chain.nodes[0];
+
+  function nodeIcon(node, hasChildren, isCycle, isReused) {
+    if (node.isMissing) {
+      return "triangle-alert";
+    }
+    if (isCycle) {
+      return "repeat-2";
+    }
+    if (isReused) {
+      return "copy";
+    }
+    return hasChildren ? "git-branch" : "circle";
+  }
+
+  function renderNode(node, edge, path, isRoot = false) {
+    if (!node) {
+      return "";
+    }
+
+    const children = outgoing.get(node.key) || [];
+    const isCycle = path.has(node.key);
+    const isReused = rendered.has(node.key) && !isRoot;
+    if (!isReused) {
+      rendered.add(node.key);
+    }
+    const renderChildren = children.length > 0 && !isCycle && !isReused;
+    const nextPath = new Set(path);
+    nextPath.add(node.key);
+    const relation = edge?.label || (isRoot ? "根技能" : "关联");
+    const relationMeta = [
+      edge?.sourceField,
+      edge?.parameterIndex === null ||
+      edge?.parameterIndex === undefined
+        ? ""
+        : `param[${edge.parameterIndex}]`,
+      isCycle ? "循环引用" : "",
+      isReused ? "共享节点，已在上方展开" : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const details = chainNodeDetails(node);
+    const className = [
+      "tree-node",
+      isRoot ? "is-root" : "",
+      renderChildren ? "is-branch" : "is-leaf",
+      node.isMissing ? "is-missing" : "",
+      isReused ? "is-reused" : "",
+      isCycle ? "is-cycle" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const toggle = renderChildren
+      ? '<span class="tree-toggle" aria-hidden="true"></span>'
+      : "";
+    const summary = `
+      <div class="tree-summary">
+        ${toggle}
+        <span class="tree-icon">${icon(
+          nodeIcon(node, renderChildren, isCycle, isReused),
+        )}</span>
+        <span class="tree-copy">
+          <span class="tree-title">
+            <span class="chain-badge">${escapeHtml(node.namespace)}:${escapeHtml(
+              String(node.id),
+            )}</span>
+            <strong>${escapeHtml(node.label || node.key)}</strong>
+          </span>
+          <span class="tree-relation">${escapeHtml(relation)}${
+            relationMeta ? ` · ${escapeHtml(relationMeta)}` : ""
+          }</span>
+          ${
+            details
+              ? `<span class="tree-detail">${escapeHtml(details)}</span>`
+              : ""
+          }
+        </span>
+      </div>
+    `;
+
+    if (!renderChildren) {
+      return `<div class="${className}" title="${escapeHtml(node.key)}">${summary}</div>`;
+    }
+
+    return `
+      <details class="${className}" open>
+        <summary title="${escapeHtml(node.key)}">${summary}</summary>
+        <div class="tree-children">
+          ${children
+            .map((childEdge) =>
+              renderNode(
+                nodeById.get(childEdge.target) ||
+                  missingTreeNode(childEdge.target),
+                childEdge,
+                nextPath,
+              ),
+            )
+            .join("")}
+        </div>
+      </details>
+    `;
+  }
+
+  const incoming = chain.incomingReferences || [];
+  const incomingHtml =
+    incoming.length === 0
+      ? ""
+      : `
+        <details class="tree-node tree-incoming is-branch" open>
+          <summary>
+            <div class="tree-summary">
+              <span class="tree-toggle" aria-hidden="true"></span>
+              <span class="tree-icon">${icon("link")}</span>
+              <span class="tree-copy">
+                <span class="tree-title">
+                  <strong>上游引用</strong>
+                </span>
+                <span class="tree-relation">${incoming.length} 条来源引用</span>
+              </span>
+            </div>
+          </summary>
+          <div class="tree-children">
+            ${incoming
+              .map(
+                (reference) => `
+                  <div class="tree-node is-leaf" title="${escapeHtml(
+                    reference.source,
+                  )}">
+                    <div class="tree-summary">
+                      <span class="tree-icon">${icon("corner-down-right")}</span>
+                      <span class="tree-copy">
+                        <span class="tree-title">
+                          <span class="chain-badge">${escapeHtml(
+                            reference.source,
+                          )}</span>
+                          <strong>${escapeHtml(
+                            reference.sourceLabel || reference.source,
+                          )}</strong>
+                        </span>
+                        <span class="tree-relation">${escapeHtml(
+                          reference.relationship || "引用",
+                        )}${
+                          reference.sourceField
+                            ? ` · ${escapeHtml(reference.sourceField)}`
+                            : ""
+                        }${
+                          reference.derived
+                            ? ' · <span class="tree-derived">派生关系</span>'
+                            : ""
+                        }</span>
+                      </span>
+                    </div>
+                  </div>
+                `,
+              )
+              .join("")}
+          </div>
+        </details>
+      `;
+
   return `
     <div class="chain-header">
       <strong>${escapeHtml(chain.focusKey)}</strong>
       <span>revision ${escapeHtml(chain.revision.slice(0, 12))}</span>
     </div>
-    <section class="chain-block">
-      <h3>节点</h3>
-      ${chain.nodes
-        .map((node) => {
-          const details = chainNodeDetails(node);
-          return `
-            <div class="chain-node">
-              <div class="chain-label">
-                <span class="chain-badge">${escapeHtml(node.namespace)}:${node.id}</span>
-                <strong>${escapeHtml(node.label)}</strong>
-              </div>
-              ${details ? `<div class="chain-meta">${escapeHtml(details)}</div>` : ""}
-            </div>
-          `;
-        })
-        .join("")}
-    </section>
-    <section class="chain-block">
-      <h3>关系</h3>
-      ${chain.edges
-        .map((edge) => {
-          const source = nodeById.get(edge.source);
-          const target = nodeById.get(edge.target);
-          return `
-            <div class="chain-edge">
-              <div class="chain-edge-line">
-                ${escapeHtml(source?.namespace || edge.source)}
-                → ${escapeHtml(edge.label)}
-                → ${escapeHtml(target?.namespace || edge.target)}
-              </div>
-              <div class="chain-meta">${escapeHtml(edge.source)} → ${escapeHtml(
-                edge.target,
-              )}${edge.detail ? ` · ${escapeHtml(edge.detail)}` : ""}</div>
-            </div>
-          `;
-        })
-        .join("")}
-    </section>
-    <section class="chain-block">
-      <h3>入向引用</h3>
-      ${
-        (chain.incomingReferences || []).length > 0
-          ? (chain.incomingReferences || [])
-              .map(
-                (reference) => `
-                  <div class="chain-edge">
-                    <div class="chain-edge-line">
-                      ${escapeHtml(reference.sourceLabel || reference.source)}
-                      → ${escapeHtml(reference.relationship)}
-                      → ${escapeHtml(chain.focusKey)}
-                    </div>
-                    <div class="chain-meta">${escapeHtml(
-                      reference.source,
-                    )}${
-                      reference.sourceField
-                        ? ` · ${escapeHtml(reference.sourceField)}`
-                        : ""
-                    }</div>
-                  </div>
-                `,
-              )
-              .join("")
-          : '<div class="chain-meta">没有入向引用</div>'
-      }
-      ${
-        chain.incomingReferencesTruncated
-          ? '<div class="chain-meta">入向引用已截断显示</div>'
-          : ""
-      }
-    </section>
+    <div class="tree-legend">
+      <span>${icon("git-branch")} 分支</span>
+      <span>${icon("circle")} 叶节点</span>
+      <span>${icon("copy")} 共享</span>
+    </div>
+    <div class="chain-tree">
+      ${incomingHtml}
+      ${renderNode(focus, null, new Set(), true)}
+    </div>
   `;
 }
 
+function missingTreeNode(key) {
+  const separator = key.indexOf(":");
+  const namespace = separator >= 0 ? key.slice(0, separator) : key;
+  const rawId = separator >= 0 ? key.slice(separator + 1) : key;
+  const numericId = Number(rawId);
+  return {
+    key,
+    namespace,
+    id: Number.isFinite(numericId) ? numericId : 0,
+    label: key,
+    kind: "缺失",
+    isMissing: true,
+    isFocus: false,
+    fields: {},
+  };
+}
+
 function renderSkillChain(chain, activateTab = true) {
-  state.selectedSkillId = chain.skillId;
+  state.selectedAsset = {
+    namespace: chain.rootNamespace,
+    id: chain.rootId,
+  };
+  state.selectedSkillId =
+    chain.rootNamespace === "TbSkill" ? chain.rootId : null;
   state.inspector.chain = chain;
-  renderSkillList();
+  state.inspector.chains = [chain];
   if (activateTab) {
     showInspectorTab("chain");
-  } else if (state.inspector.tab === "chain") {
+  } else if (
+    state.inspector.tab === "chain" ||
+    state.inspector.tab === "evidence"
+  ) {
     renderInspector();
   }
 }
@@ -446,12 +539,14 @@ function showInspectorTab(tabName) {
 function renderInspector() {
   const {
     chain,
+    chains,
     tab,
     planJson,
     planErrors,
     planDisposition,
-    evidence,
+    lastError,
   } = state.inspector;
+  const visibleChains = chains?.length ? chains : chain ? [chain] : [];
 
   if (tab === "plan") {
     elements.inspectorMeta.textContent = planJson
@@ -509,21 +604,20 @@ function renderInspector() {
   }
 
   if (tab === "evidence") {
-    elements.inspectorMeta.textContent = evidence ? "已获取响应" : "等待响应";
-    elements.inspectorContent.innerHTML = evidence
-      ? `<pre class="inspector-text">${escapeHtml(evidence)}</pre>`
-      : `
-        <div class="inspector-empty">
-          <i data-lucide="scan-search"></i>
-          <h3>暂无证据内容</h3>
-          <p>Agent 回复和校验信息会显示在这里。</p>
-        </div>
-      `;
+    elements.inspectorMeta.textContent = visibleChains.length || planJson
+      ? "结构化证据"
+      : "等待证据";
+    elements.inspectorContent.innerHTML = evidenceInspectorHtml(
+      visibleChains,
+      planJson,
+      planErrors,
+      lastError,
+    );
     renderIcons();
     return;
   }
 
-  if (!chain) {
+  if (visibleChains.length === 0) {
     elements.inspectorMeta.textContent = "等待技能";
     elements.inspectorContent.innerHTML = `
       <div class="inspector-empty">
@@ -536,8 +630,199 @@ function renderInspector() {
     return;
   }
 
-  elements.inspectorMeta.textContent = `${chain.nodes.length} 节点 · ${chain.edges.length} 关系`;
-  elements.inspectorContent.innerHTML = chainInspectorHtml(chain);
+  elements.inspectorMeta.textContent =
+    visibleChains.length > 1
+      ? `${visibleChains.length} 个资产根`
+      : `${visibleChains[0].nodes.length} 节点 · ${visibleChains[0].edges.length} 关系`;
+  elements.inspectorContent.innerHTML =
+    visibleChains.length > 1
+      ? visibleChains
+          .map(
+            (item) => `
+              <section class="multi-chain">
+                ${chainInspectorHtml(item)}
+              </section>
+            `,
+          )
+          .join("")
+      : chainInspectorHtml(visibleChains[0]);
+}
+
+function evidenceInspectorHtml(chains, planJson, planErrors, lastError) {
+  if (chains.length === 0 && !planJson && !lastError) {
+    return `
+      <div class="inspector-empty">
+        <i data-lucide="scan-search"></i>
+        <h3>暂无可验证证据</h3>
+        <p>选择技能或生成 Plan 后，这里会显示字段、关系和校验依据。</p>
+      </div>
+    `;
+  }
+
+  let plan = null;
+  if (planJson) {
+    try {
+      plan = JSON.parse(planJson);
+    } catch {
+      plan = null;
+    }
+  }
+
+  const operations = plan?.operations || [];
+
+  return `
+    ${
+      lastError
+        ? `<section class="evidence-block is-error">
+            <h3>最近错误</h3>
+            <pre class="inspector-text">${escapeHtml(lastError)}</pre>
+          </section>`
+        : ""
+    }
+    ${
+      chains
+        .map(
+          (chain) => {
+            const focus = chain.nodes?.find((node) => node.isFocus);
+            const relations = (chain.edges || []).slice(0, 30);
+            const incoming = (chain.incomingReferences || []).slice(0, 30);
+            return `<section class="evidence-block">
+              <h3>${escapeHtml(chain.rootKey)}</h3>
+              <div class="evidence-row">
+                <span>Revision</span>
+                <code>${escapeHtml(chain.revision)}</code>
+              </div>
+              <div class="evidence-row">
+                <span>根资产</span>
+                <code>${escapeHtml(chain.focusKey)}</code>
+              </div>
+            </section>
+            <section class="evidence-block">
+              <h3>根字段证据</h3>
+              ${
+                focus
+                  ? Object.entries(focus.fields || {})
+                      .filter(([, values]) => values?.length)
+                      .map(
+                        ([key, values]) => `
+                          <div class="evidence-row">
+                            <span>${escapeHtml(key)}</span>
+                            <code>${escapeHtml(values.join(", "))}</code>
+                          </div>
+                        `,
+                      )
+                      .join("")
+                  : '<div class="chain-meta">没有根字段</div>'
+              }
+            </section>
+            <section class="evidence-block">
+              <h3>图关系证据</h3>
+              ${
+                relations
+                  .map(
+                    (edge) => `
+                      <div class="evidence-item">
+                        <strong>${escapeHtml(edge.label)}</strong>
+                        <code>${escapeHtml(edge.source)} → ${escapeHtml(
+                          edge.target,
+                        )}</code>
+                        <span>${escapeHtml(
+                          [
+                            edge.sourceField,
+                            edge.parameterIndex === null ||
+                            edge.parameterIndex === undefined
+                              ? ""
+                              : `param[${edge.parameterIndex}]`,
+                          ]
+                            .filter(Boolean)
+                            .join(" · "),
+                        )}</span>
+                      </div>
+                    `,
+                  )
+                  .join("")
+              }
+            </section>
+            <section class="evidence-block">
+              <h3>入向引用证据</h3>
+              ${
+                incoming
+                  .map(
+                    (reference) => `
+                      <div class="evidence-item">
+                        <strong>${escapeHtml(
+                          reference.sourceLabel || reference.source,
+                        )}</strong>
+                        <code>${escapeHtml(
+                          reference.source,
+                        )} → ${escapeHtml(chain.focusKey)}</code>
+                        <span>${escapeHtml(reference.relationship || "")}${
+                          reference.sourceField
+                            ? ` · ${escapeHtml(reference.sourceField)}`
+                            : ""
+                        }${
+                          reference.derived
+                            ? ` · ${escapeHtml(
+                                reference.detail || "派生关系",
+                              )}`
+                            : ""
+                        }</span>
+                      </div>
+                    `,
+                  )
+                  .join("")
+              }
+            </section>`;
+          },
+        )
+        .join("")
+    }
+    ${
+      plan
+        ? `<section class="evidence-block">
+            <h3>Plan 校验证据</h3>
+            <div class="evidence-row">
+              <span>状态</span>
+              <code>${escapeHtml(planDisposition)}</code>
+            </div>
+            <div class="evidence-row">
+              <span>校验问题</span>
+              <code>${planErrors.length}</code>
+            </div>
+            ${
+              planErrors.length
+                ? `<ul>${planErrors
+                    .map((error) => `<li>${escapeHtml(error)}</li>`)
+                    .join("")}</ul>`
+                : ""
+            }
+          </section>
+          <section class="evidence-block">
+            <h3>Plan 字段来源</h3>
+            ${operations
+              .map((operation) => {
+                const fields = operation.fields || {};
+                return Object.entries(fields)
+                  .map(
+                    ([field, value]) => `
+                      <div class="evidence-item">
+                        <strong>${escapeHtml(
+                          operation.kind,
+                        )} · ${escapeHtml(field)}</strong>
+                        <code>${escapeHtml(
+                          JSON.stringify(value.value),
+                        )}</code>
+                        <span>source = ${escapeHtml(value.source || "")}</span>
+                      </div>
+                    `,
+                  )
+                  .join("");
+              })
+              .join("")}
+          </section>`
+        : ""
+    }
+  `;
 }
 
 function chainNodeDetails(node) {
@@ -561,6 +846,14 @@ function chainNodeDetails(node) {
 }
 
 async function loadSkillChain(skillId, activateTab = true) {
+  return loadAssetChain("TbSkill", skillId, activateTab);
+}
+
+async function loadAssetChain(
+  assetNamespace,
+  assetId,
+  activateTab = true,
+) {
   if (activateTab || state.inspector.tab === "chain") {
     elements.inspectorMeta.textContent = "读取链路";
     elements.inspectorContent.innerHTML =
@@ -568,23 +861,18 @@ async function loadSkillChain(skillId, activateTab = true) {
   }
 
   try {
-    const response = await fetch(`/api/v1/skills/${skillId}/chain?depth=12`);
+    const response = await fetch(
+      `/api/v1/assets/chain?namespace=${encodeURIComponent(
+        assetNamespace,
+      )}&id=${assetId}&depth=6`,
+    );
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(payload.error || payload.detail || `HTTP ${response.status}`);
     }
 
     renderSkillChain(payload, activateTab);
-    if (state.activeConversationId) {
-      fetch(
-        `/api/v1/conversations/${state.activeConversationId}/skill`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ skillId }),
-        },
-      ).catch(() => {});
-    }
+    await persistAssetSelection(assetNamespace, assetId);
   } catch (error) {
     elements.inspectorMeta.textContent = "读取失败";
     elements.inspectorContent.innerHTML = `<div class="inspector-empty"><h3>链路读取失败</h3><p>${escapeHtml(
@@ -592,6 +880,63 @@ async function loadSkillChain(skillId, activateTab = true) {
     )}</p></div>`;
     showToast(error.message, "error");
   }
+}
+
+async function loadAssetChains(assets, activateTab = true) {
+  if (!assets?.length) {
+    return;
+  }
+
+  if (activateTab || state.inspector.tab === "chain") {
+    elements.inspectorMeta.textContent = "读取多资产链路";
+    elements.inspectorContent.innerHTML =
+      '<div class="inspector-empty"><h3>正在读取候选资产链路</h3></div>';
+  }
+
+  const chains = [];
+  for (const asset of assets) {
+    const response = await fetch(
+      `/api/v1/assets/chain?namespace=${encodeURIComponent(
+        asset.namespace,
+      )}&id=${asset.id}&depth=6`,
+    );
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(
+        payload.error || payload.detail || `HTTP ${response.status}`,
+      );
+    }
+    chains.push(payload);
+  }
+
+  state.inspector.chains = chains;
+  state.inspector.chain = chains[0] || null;
+  if (activateTab) {
+    showInspectorTab("chain");
+  } else if (
+    state.inspector.tab === "chain" ||
+    state.inspector.tab === "evidence"
+  ) {
+    renderInspector();
+  }
+}
+
+async function persistAssetSelection(assetNamespace, assetId) {
+  if (!state.activeConversationId) {
+    return;
+  }
+
+  await fetch(
+    `/api/v1/conversations/${state.activeConversationId}/asset`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        assetNamespace,
+        assetId,
+      }),
+    },
+  );
 }
 
 function renderConversationList() {
@@ -604,17 +949,26 @@ function renderConversationList() {
   elements.conversationList.innerHTML = state.conversations
     .map(
       (conversation) => `
-        <button
-          class="conversation-item ${
-            conversation.id === state.activeConversationId ? "is-active" : ""
-          }"
-          type="button"
-          data-conversation-id="${conversation.id}"
-          title="${escapeHtml(conversation.title)}"
-        >
-          <strong>${escapeHtml(conversation.title)}</strong>
-          <span>${conversation.messageCount || 0} 条消息</span>
-        </button>
+        <div class="conversation-item-row">
+          <button
+            class="conversation-item ${
+              conversation.id === state.activeConversationId ? "is-active" : ""
+            }"
+            type="button"
+            data-conversation-id="${conversation.id}"
+            title="${escapeHtml(conversation.title)}"
+          >
+            <strong>${escapeHtml(conversation.title)}</strong>
+            <span>${conversation.messageCount || 0} 条消息</span>
+          </button>
+          <button
+            class="conversation-delete"
+            type="button"
+            data-delete-conversation-id="${conversation.id}"
+            title="删除会话"
+            aria-label="删除会话"
+          >×</button>
+        </div>
       `,
     )
     .join("");
@@ -625,25 +979,59 @@ function renderConversationList() {
   }
 }
 
+function renderAssetSearchResults(results) {
+  if (!results.length) {
+    elements.assetSearchResults.innerHTML =
+      '<div class="asset-search-empty">没有匹配资产</div>';
+    return;
+  }
+
+  elements.assetSearchResults.innerHTML = results
+    .map(
+      (result) => `
+        <button
+          class="asset-search-result"
+          type="button"
+          data-asset-namespace="${escapeHtml(result.ref.namespace)}"
+          data-asset-id="${result.ref.id}"
+          title="${escapeHtml(result.summary)}"
+        >
+          <strong>${escapeHtml(result.ref.namespace)}:${result.ref.id}</strong>
+          <span>${escapeHtml(result.label)} · ${escapeHtml(result.kind)}</span>
+        </button>
+      `,
+    )
+    .join("");
+}
+
+async function searchAssets(query) {
+  const response = await fetch(
+    `/api/v1/assets/search?query=${encodeURIComponent(query)}&limit=20`,
+  );
+  if (!response.ok) {
+    throw new Error(`资产检索失败：HTTP ${response.status}`);
+  }
+
+  renderAssetSearchResults(await response.json());
+}
+
 function activateConversation(conversation) {
   state.activeConversationId = conversation.id;
   state.selectedSkillId = conversation.selectedSkillId ?? null;
-  state.history = conversation.messages
-    .filter((message) => message.role === "user" || message.role === "assistant")
-    .map((message) => ({
-      role: message.role,
-      content: message.content,
-    }));
+  state.selectedAsset =
+    conversation.selectedAsset ||
+    (conversation.selectedSkillId
+      ? { namespace: "TbSkill", id: conversation.selectedSkillId }
+      : null);
   window.localStorage.setItem("studio.conversation", conversation.id);
   state.inspector.planJson = conversation.planJson || null;
   state.inspector.planErrors = conversation.planErrors || [];
   state.inspector.planDisposition =
     conversation.planDisposition ||
     (conversation.planJson ? "Expected" : "None");
-  const latestAssistant = [...conversation.messages]
-    .reverse()
-    .find((message) => message.role === "assistant");
-  state.inspector.evidence = latestAssistant?.content || null;
+  state.inspector.chain = null;
+  state.inspector.chains = [];
+  state.inspector.lastError = null;
   renderConversationList();
   renderConversationMessages(conversation.messages);
   showInspectorTab(conversation.planJson ? "plan" : "chain");
@@ -724,7 +1112,18 @@ async function openConversation(conversationId) {
 
   const conversation = await response.json();
   activateConversation(conversation);
-  if (conversation.selectedSkillId) {
+  if (conversation.selectedAsset) {
+    await loadAssetChain(
+      conversation.selectedAsset.namespace,
+      conversation.selectedAsset.id,
+      false,
+    );
+  } else if (
+    Array.isArray(conversation.mentionedAssets) &&
+    conversation.mentionedAssets.length > 1
+  ) {
+    await loadAssetChains(conversation.mentionedAssets, false);
+  } else if (conversation.selectedSkillId) {
     await loadSkillChain(conversation.selectedSkillId, false);
   }
   if (conversation.planJson) {
@@ -778,6 +1177,8 @@ async function sendMessage(message) {
           provider,
           message,
           skillId: state.selectedSkillId,
+          assetNamespace: state.selectedAsset?.namespace || null,
+          assetId: state.selectedAsset?.id || null,
           model: state.selectedModel || null,
           reasoningEffort: state.selectedReasoningEffort || null,
         }),
@@ -791,7 +1192,7 @@ async function sendMessage(message) {
       const detail =
         payload.detail || payload.error || `模型调用失败：HTTP ${response.status}`;
       appendMessage({ role: "assistant", content: detail, error: true });
-      updateInspector(detail);
+      updateInspector(detail, true);
       showToast(detail, "error");
       return;
     }
@@ -805,16 +1206,30 @@ async function sendMessage(message) {
     state.inspector.planJson = payload.planJson || null;
     state.inspector.planErrors = payload.planErrors || [];
     state.inspector.planDisposition = payload.planDisposition || "None";
-    state.inspector.evidence = assistantText;
     if (
-      payload.selectedSkillId &&
-      payload.selectedSkillId !== state.selectedSkillId
+      !payload.selectedAsset &&
+      Array.isArray(payload.mentionedAssets) &&
+      payload.mentionedAssets.length > 1
     ) {
-      state.selectedSkillId = payload.selectedSkillId;
-      renderSkillList();
-      loadSkillChain(payload.selectedSkillId, false).catch(() => {});
+      state.selectedAsset = null;
+      state.selectedSkillId = null;
+      loadAssetChains(payload.mentionedAssets, true).catch(() => {});
+    } else if (payload.selectedAsset || payload.selectedSkillId) {
+      state.selectedAsset = payload.selectedAsset || {
+        namespace: "TbSkill",
+        id: payload.selectedSkillId,
+      };
+      state.selectedSkillId =
+        state.selectedAsset.namespace === "TbSkill"
+          ? state.selectedAsset.id
+          : null;
+      loadAssetChain(
+        state.selectedAsset.namespace,
+        state.selectedAsset.id,
+        false,
+      ).catch(() => {});
     }
-    updateInspector(assistantText);
+    updateInspector(null);
     showInspectorTab(
       payload.expectedPlan ||
         payload.planJson ||
@@ -827,7 +1242,7 @@ async function sendMessage(message) {
     typingMessage.remove();
     const detail = `模型调用失败：${error.message}`;
     appendMessage({ role: "assistant", content: detail, error: true });
-    updateInspector(detail);
+    updateInspector(detail, true);
     showToast(detail, "error");
   } finally {
     state.sending = false;
@@ -865,6 +1280,17 @@ elements.newConversation.addEventListener("click", async () => {
 });
 
 elements.conversationList.addEventListener("click", (event) => {
+  const deleteButton = event.target.closest(
+    "[data-delete-conversation-id]",
+  );
+  if (deleteButton) {
+    event.stopPropagation();
+    deleteConversation(deleteButton.dataset.deleteConversationId).catch(
+      (error) => showToast(error.message, "error"),
+    );
+    return;
+  }
+
   const item = event.target.closest("[data-conversation-id]");
   if (item && item.dataset.conversationId !== state.activeConversationId) {
     openConversation(item.dataset.conversationId).catch((error) =>
@@ -873,13 +1299,92 @@ elements.conversationList.addEventListener("click", (event) => {
   }
 });
 
-elements.skillSearch.addEventListener("input", renderSkillList);
-
-elements.skillList.addEventListener("click", (event) => {
-  const item = event.target.closest("[data-skill-id]");
-  if (item) {
-    loadSkillChain(Number(item.dataset.skillId));
+async function deleteConversation(conversationId) {
+  const target = state.conversations.find(
+    (conversation) => conversation.id === conversationId,
+  );
+  const confirmed = window.confirm(
+    `删除会话“${target?.title || conversationId}”？`,
+  );
+  if (!confirmed) {
+    return;
   }
+
+  const response = await fetch(
+    `/api/v1/conversations/${conversationId}`,
+    { method: "DELETE" },
+  );
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`删除会话失败：HTTP ${response.status}`);
+  }
+
+  const wasActive = state.activeConversationId === conversationId;
+  state.conversations = state.conversations.filter(
+    (conversation) => conversation.id !== conversationId,
+  );
+  if (wasActive) {
+    state.activeConversationId = null;
+  }
+
+  if (state.conversations.length === 0) {
+    await createConversation();
+  } else if (wasActive) {
+    await openConversation(state.conversations[0].id);
+  } else {
+    renderConversationList();
+  }
+}
+
+elements.assetSearch.addEventListener("input", (event) => {
+  if (!event.target.value.trim()) {
+    elements.assetSearchResults.innerHTML = "";
+  }
+});
+
+elements.assetSearch.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") {
+    return;
+  }
+
+  const value = event.target.value.trim();
+  if (!value) {
+    return;
+  }
+
+  const match = value
+    .match(
+      /^(Tb[A-Za-z]+|EffectGroup|ConditionGroup|Skill|Item|Effect|Buff|Bullet|Search|Trap|Equipment)\s*[:：]\s*(\d+)$/i,
+    );
+  if (match) {
+    event.preventDefault();
+    loadAssetChain(match[1], Number(match[2]), true).catch((error) =>
+      showToast(error.message, "error"),
+    );
+    elements.assetSearchResults.innerHTML = "";
+    return;
+  }
+
+  event.preventDefault();
+  searchAssets(value).catch((error) =>
+    showToast(error.message, "error"),
+  );
+});
+
+elements.assetSearchResults.addEventListener("click", (event) => {
+  const item = event.target.closest("[data-asset-namespace]");
+  if (!item) {
+    return;
+  }
+
+  loadAssetChain(
+    item.dataset.assetNamespace,
+    Number(item.dataset.assetId),
+    true,
+  )
+    .then(() => {
+      elements.assetSearchResults.innerHTML = "";
+    })
+    .catch((error) => showToast(error.message, "error"));
 });
 
 elements.composer.addEventListener("submit", (event) => {

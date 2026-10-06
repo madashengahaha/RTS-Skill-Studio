@@ -88,7 +88,7 @@ app.MapPost(
         try
         {
             AgentWorkspaceContext workspaceContext = await contextBuilder.BuildAsync(
-                request.SkillId,
+                ResolveLlmRequestAsset(request),
                 request.Message,
                 cancellationToken
             );
@@ -176,7 +176,7 @@ app.MapGet(
     async (
         StudioConversationStore conversations,
         CancellationToken cancellationToken
-    ) => Results.Ok(await conversations.ListAsync(cancellationToken))
+    ) => Results.Ok(await conversations.ListAsync(10, cancellationToken))
 );
 
 app.MapPost(
@@ -192,6 +192,24 @@ app.MapPost(
                 cancellationToken
             )
         )
+);
+
+app.MapDelete(
+    "/api/v1/conversations/{conversationId}",
+    async (
+        string conversationId,
+        StudioConversationStore conversations,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        bool deleted = await conversations.DeleteAsync(
+            conversationId,
+            cancellationToken
+        );
+        return deleted
+            ? Results.NoContent()
+            : Results.NotFound(new { error = "Conversation not found." });
+    }
 );
 
 app.MapGet(
@@ -262,6 +280,38 @@ app.MapPut(
     }
 );
 
+app.MapPut(
+    "/api/v1/conversations/{conversationId}/asset",
+    async (
+        string conversationId,
+        UpdateConversationAssetRequest request,
+        StudioConversationStore conversations,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        ConversationDetail? conversation = await conversations.GetAsync(
+            conversationId,
+            cancellationToken
+        );
+        if (conversation is null)
+        {
+            return Results.NotFound(new { error = "Conversation not found." });
+        }
+
+        StudioAssetRef? asset = ResolveAsset(
+            request.AssetNamespace,
+            request.AssetId,
+            request.SkillId
+        );
+        await conversations.UpdateSelectedAssetAsync(
+            conversationId,
+            asset,
+            cancellationToken
+        );
+        return Results.NoContent();
+    }
+);
+
 app.MapPost(
     "/api/v1/conversations/{conversationId}/chat",
     async (
@@ -287,12 +337,15 @@ app.MapPost(
             return Results.NotFound(new { error = "Conversation not found." });
         }
 
-        int? skillId = request.SkillId ?? conversation.SelectedSkillId;
-        if (request.SkillId is not null)
+        StudioAssetRef? requestAsset =
+            ResolveConversationRequestAsset(request);
+        StudioAssetRef? selectedAsset = requestAsset
+            ?? conversation.SelectedAsset;
+        if (requestAsset is not null)
         {
-            await conversations.UpdateSelectedSkillAsync(
+            await conversations.UpdateSelectedAssetAsync(
                 conversationId,
-                request.SkillId,
+                requestAsset,
                 cancellationToken
             );
         }
@@ -300,29 +353,38 @@ app.MapPost(
         try
         {
             AgentWorkspaceContext workspaceContext = await contextBuilder.BuildAsync(
-                skillId,
+                selectedAsset,
                 request.Message,
+                cancellationToken
+            );
+            IReadOnlyList<StudioAssetRef> mentionedAssets =
+                workspaceContext.Asset is not null
+                    ? [workspaceContext.Asset]
+                    : workspaceContext.ValidCandidates;
+            await conversations.UpdateMentionedAssetsAsync(
+                conversationId,
+                mentionedAssets,
                 cancellationToken
             );
             if (
                 workspaceContext.RequiresClarification
-                && conversation.SelectedSkillId is not null
+                && conversation.SelectedAsset is not null
             )
             {
-                await conversations.UpdateSelectedSkillAsync(
+                await conversations.UpdateSelectedAssetAsync(
                     conversationId,
                     null,
                     cancellationToken
                 );
             }
             else if (
-                workspaceContext.SkillId is int resolvedSkillId
-                && resolvedSkillId != conversation.SelectedSkillId
+                workspaceContext.Asset is not null
+                && workspaceContext.Asset != conversation.SelectedAsset
             )
             {
-                await conversations.UpdateSelectedSkillAsync(
+                await conversations.UpdateSelectedAssetAsync(
                     conversationId,
-                    resolvedSkillId,
+                    workspaceContext.Asset,
                     cancellationToken
                 );
             }
@@ -429,7 +491,10 @@ app.MapPost(
             return Results.Ok(
                 new ConversationChatResponse(
                     conversationId,
-                    workspaceContext.SkillId,
+                    workspaceContext.Asset?.Namespace == "TbSkill"
+                        ? workspaceContext.Asset.Id
+                        : null,
+                    workspaceContext.Asset,
                     result.Provider,
                     result.Model,
                     displayText,
@@ -437,7 +502,8 @@ app.MapPost(
                     plan.PlanJson,
                     plan.Errors,
                     expectsPlan,
-                    planDisposition
+                    planDisposition,
+                    mentionedAssets
                 )
             );
         }
@@ -540,6 +606,84 @@ app.MapGet(
     }
 );
 
+app.MapGet(
+    "/api/v1/assets/search",
+    async (
+        string? query,
+        int? limit,
+        SkillWorkspaceService workspace,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        try
+        {
+            return Results.Ok(
+                await workspace.SearchAssetsAsync(
+                    query,
+                    limit ?? 20,
+                    cancellationToken
+                )
+            );
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException
+                or FileNotFoundException
+                or ArgumentException
+        )
+        {
+            return Results.Problem(
+                detail: exception.Message,
+                statusCode: StatusCodes.Status503ServiceUnavailable
+            );
+        }
+    }
+);
+
+app.MapGet(
+    "/api/v1/assets/chain",
+    async (
+        string? @namespace,
+        int? id,
+        int? depth,
+        SkillWorkspaceService workspace,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        if (string.IsNullOrWhiteSpace(@namespace) || id is null)
+        {
+            return Results.BadRequest(
+                new { error = "namespace and id are required." }
+            );
+        }
+
+        try
+        {
+            return Results.Ok(
+                await workspace.GetAssetChainAsync(
+                    new StudioAssetRef(@namespace, id.Value),
+                    depth ?? 6,
+                    cancellationToken
+                )
+            );
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return Results.NotFound(new { error = exception.Message });
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException
+                or FileNotFoundException
+                or ArgumentException
+        )
+        {
+            return Results.Problem(
+                detail: exception.Message,
+                statusCode: StatusCodes.Status503ServiceUnavailable
+            );
+        }
+    }
+);
+
 app.MapPost(
     "/api/v1/workspace/write-smoke-test",
     async (
@@ -566,5 +710,44 @@ app.MapPost(
         }
     }
 );
+
+static StudioAssetRef? ResolveLlmRequestAsset(LlmChatApiRequest request)
+{
+    return ResolveAsset(
+        request.AssetNamespace,
+        request.AssetId,
+        request.SkillId
+    );
+}
+
+static StudioAssetRef? ResolveConversationRequestAsset(
+    ConversationChatRequest request
+)
+{
+    return ResolveAsset(
+        request.AssetNamespace,
+        request.AssetId,
+        request.SkillId
+    );
+}
+
+static StudioAssetRef? ResolveAsset(
+    string? assetNamespace,
+    int? assetId,
+    int? skillId
+)
+{
+    if (!string.IsNullOrWhiteSpace(assetNamespace) && assetId is not null)
+    {
+        return new StudioAssetRef(
+            SkillWorkspaceService.NormalizeAssetNamespace(assetNamespace),
+            assetId.Value
+        );
+    }
+
+    return skillId is null
+        ? null
+        : new StudioAssetRef("TbSkill", skillId.Value);
+}
 
 app.Run();

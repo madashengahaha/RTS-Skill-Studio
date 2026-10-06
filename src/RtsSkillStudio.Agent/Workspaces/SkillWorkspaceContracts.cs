@@ -23,15 +23,39 @@ public sealed record SkillSummary(
     int OutgoingReferenceCount
 );
 
+public sealed record StudioAssetRef(
+    string Namespace,
+    int Id
+);
+
+public sealed record AssetSearchResult(
+    StudioAssetRef Ref,
+    string Label,
+    string Summary,
+    string Kind,
+    int SourceRow
+);
+
 public sealed record SkillChainSnapshot(
     string Revision,
-    int SkillId,
+    string RootKey,
+    string RootNamespace,
+    int RootId,
     string FocusKey,
     IReadOnlyList<SkillChainNode> Nodes,
     IReadOnlyList<SkillChainEdge> Edges,
     IReadOnlyList<SkillInboundReference> IncomingReferences,
     bool IncomingReferencesTruncated
-);
+)
+{
+    public int SkillId => string.Equals(
+        RootNamespace,
+        "TbSkill",
+        StringComparison.Ordinal
+    )
+        ? RootId
+        : 0;
+}
 
 public sealed record SkillChainNode(
     string Key,
@@ -67,6 +91,8 @@ public sealed record SkillInboundReference(
     string Relationship,
     string? SourceField,
     int? ParameterIndex,
+    bool Derived,
+    string? Detail,
     IReadOnlyDictionary<string, IReadOnlyList<string>> SourceFields
 );
 

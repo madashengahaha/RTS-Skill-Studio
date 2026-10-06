@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using RtsSkillStudio.Agent.Llm;
+using RtsSkillStudio.Agent.Workspaces;
 using System.Text.Json;
 
 namespace RtsSkillStudio.Api.Workspaces;
@@ -60,6 +61,8 @@ public sealed class StudioConversationStore
                     id TEXT PRIMARY KEY,
                     title TEXT NOT NULL,
                     selected_skill_id INTEGER NULL,
+                    selected_asset_key TEXT NULL,
+                    mentioned_assets_json TEXT NULL,
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 );
@@ -113,6 +116,28 @@ public sealed class StudioConversationStore
             );
             await EnsureColumnAsync(
                 connection,
+                "conversations",
+                "selected_asset_key",
+                "TEXT NULL",
+                cancellationToken
+            );
+            await EnsureColumnAsync(
+                connection,
+                "conversations",
+                "mentioned_assets_json",
+                "TEXT NULL",
+                cancellationToken
+            );
+            await using SqliteCommand migrateAssetKey = connection.CreateCommand();
+            migrateAssetKey.CommandText = """
+                UPDATE conversations
+                SET selected_asset_key = 'TbSkill:' || selected_skill_id
+                WHERE selected_asset_key IS NULL
+                  AND selected_skill_id IS NOT NULL;
+                """;
+            await migrateAssetKey.ExecuteNonQueryAsync(cancellationToken);
+            await EnsureColumnAsync(
+                connection,
                 "conversation_plans",
                 "plan_disposition",
                 "TEXT NOT NULL DEFAULT 'Expected'",
@@ -135,9 +160,18 @@ public sealed class StudioConversationStore
     }
 
     public async Task<IReadOnlyList<ConversationSummary>> ListAsync(
+        int limit,
         CancellationToken cancellationToken
     )
     {
+        if (limit is < 1 or > 10)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(limit),
+                "会话列表数量必须在 1 到 10 之间。"
+            );
+        }
+
         await EnsureInitializedAsync(cancellationToken);
         await using SqliteConnection connection = CreateConnection();
         await connection.OpenAsync(cancellationToken);
@@ -147,14 +181,17 @@ public sealed class StudioConversationStore
                 c.id,
                 c.title,
                 c.selected_skill_id,
+                c.selected_asset_key,
                 c.created_at,
                 c.updated_at,
                 COUNT(m.id)
             FROM conversations c
             LEFT JOIN messages m ON m.conversation_id = c.id
             GROUP BY c.id
-            ORDER BY c.created_at DESC;
+            ORDER BY c.created_at DESC
+            LIMIT $limit;
             """;
+        command.Parameters.AddWithValue("$limit", limit);
 
         var results = new List<ConversationSummary>();
         await using SqliteDataReader reader = await command.ExecuteReaderAsync(
@@ -167,14 +204,60 @@ public sealed class StudioConversationStore
                     reader.GetString(0),
                     reader.GetString(1),
                     reader.IsDBNull(2) ? null : reader.GetInt32(2),
-                    DateTimeOffset.Parse(reader.GetString(3)),
+                    ParseAssetKey(
+                        reader.IsDBNull(3) ? null : reader.GetString(3)
+                    ),
                     DateTimeOffset.Parse(reader.GetString(4)),
-                    reader.GetInt32(5)
+                    DateTimeOffset.Parse(reader.GetString(5)),
+                    reader.GetInt32(6)
                 )
             );
         }
 
         return results;
+    }
+
+    public async Task<bool> DeleteAsync(
+        string conversationId,
+        CancellationToken cancellationToken
+    )
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        await using SqliteConnection connection = CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using SqliteTransaction transaction =
+            (SqliteTransaction)await connection.BeginTransactionAsync(
+                cancellationToken
+            );
+
+        foreach (string table in new[]
+        {
+            "messages",
+            "conversation_plans",
+            "plan_revisions"
+        })
+        {
+            await using SqliteCommand cleanup = connection.CreateCommand();
+            cleanup.Transaction = transaction;
+            cleanup.CommandText =
+                $"DELETE FROM {table} WHERE conversation_id = $conversationId;";
+            cleanup.Parameters.AddWithValue(
+                "$conversationId",
+                conversationId
+            );
+            await cleanup.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await using SqliteCommand delete = connection.CreateCommand();
+        delete.Transaction = transaction;
+        delete.CommandText = """
+            DELETE FROM conversations
+            WHERE id = $conversationId;
+            """;
+        delete.Parameters.AddWithValue("$conversationId", conversationId);
+        int affected = await delete.ExecuteNonQueryAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return affected > 0;
     }
 
     public async Task<ConversationDetail> CreateAsync(
@@ -206,6 +289,8 @@ public sealed class StudioConversationStore
             id,
             resolvedTitle,
             null,
+            null,
+            [],
             DateTimeOffset.Parse(now),
             DateTimeOffset.Parse(now),
             [],
@@ -226,7 +311,14 @@ public sealed class StudioConversationStore
         await connection.OpenAsync(cancellationToken);
         await using SqliteCommand command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, title, selected_skill_id, created_at, updated_at
+            SELECT
+                id,
+                title,
+                selected_skill_id,
+                selected_asset_key,
+                mentioned_assets_json,
+                created_at,
+                updated_at
             FROM conversations
             WHERE id = $id;
             """;
@@ -234,6 +326,8 @@ public sealed class StudioConversationStore
 
         string? title;
         int? selectedSkillId;
+        StudioAssetRef? selectedAsset;
+        IReadOnlyList<StudioAssetRef> mentionedAssets;
         DateTimeOffset createdAt;
         DateTimeOffset updatedAt;
         await using (SqliteDataReader reader = await command.ExecuteReaderAsync(
@@ -249,8 +343,16 @@ public sealed class StudioConversationStore
             selectedSkillId = reader.IsDBNull(2)
                 ? null
                 : reader.GetInt32(2);
-            createdAt = DateTimeOffset.Parse(reader.GetString(3));
-            updatedAt = DateTimeOffset.Parse(reader.GetString(4));
+            selectedAsset = ParseAssetKey(
+                reader.IsDBNull(3) ? null : reader.GetString(3)
+            );
+            mentionedAssets = reader.IsDBNull(4)
+                ? []
+                : JsonSerializer.Deserialize<StudioAssetRef[]>(
+                    reader.GetString(4)
+                ) ?? [];
+            createdAt = DateTimeOffset.Parse(reader.GetString(5));
+            updatedAt = DateTimeOffset.Parse(reader.GetString(6));
         }
 
         var messages = new List<ConversationMessage>();
@@ -316,6 +418,8 @@ public sealed class StudioConversationStore
             id,
             title,
             selectedSkillId,
+            selectedAsset,
+            mentionedAssets,
             createdAt,
             updatedAt,
             messages,
@@ -332,6 +436,21 @@ public sealed class StudioConversationStore
         CancellationToken cancellationToken
     )
     {
+        await UpdateSelectedAssetAsync(
+            conversationId,
+            skillId is null
+                ? null
+                : new StudioAssetRef("TbSkill", skillId.Value),
+            cancellationToken
+        );
+    }
+
+    public async Task UpdateSelectedAssetAsync(
+        string conversationId,
+        StudioAssetRef? asset,
+        CancellationToken cancellationToken
+    )
+    {
         await EnsureInitializedAsync(cancellationToken);
         await using SqliteConnection connection = CreateConnection();
         await connection.OpenAsync(cancellationToken);
@@ -339,12 +458,24 @@ public sealed class StudioConversationStore
         command.CommandText = """
             UPDATE conversations
             SET selected_skill_id = $skillId,
+                selected_asset_key = $assetKey,
                 updated_at = $updatedAt
             WHERE id = $id;
             """;
         command.Parameters.AddWithValue(
             "$skillId",
-            skillId is null ? DBNull.Value : skillId.Value
+            asset is not null
+            && string.Equals(
+                asset.Namespace,
+                "TbSkill",
+                StringComparison.OrdinalIgnoreCase
+            )
+                ? asset.Id
+                : DBNull.Value
+        );
+        command.Parameters.AddWithValue(
+            "$assetKey",
+            asset is null ? DBNull.Value : $"{asset.Namespace}:{asset.Id}"
         );
         command.Parameters.AddWithValue(
             "$updatedAt",
@@ -352,6 +483,48 @@ public sealed class StudioConversationStore
         );
         command.Parameters.AddWithValue("$id", conversationId);
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task UpdateMentionedAssetsAsync(
+        string conversationId,
+        IReadOnlyList<StudioAssetRef> assets,
+        CancellationToken cancellationToken
+    )
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        await using SqliteConnection connection = CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE conversations
+            SET mentioned_assets_json = $mentionedAssets,
+                updated_at = $updatedAt
+            WHERE id = $id;
+            """;
+        command.Parameters.AddWithValue(
+            "$mentionedAssets",
+            JsonSerializer.Serialize(assets)
+        );
+        command.Parameters.AddWithValue(
+            "$updatedAt",
+            DateTimeOffset.UtcNow.ToString("O")
+        );
+        command.Parameters.AddWithValue("$id", conversationId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static StudioAssetRef? ParseAssetKey(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return null;
+        }
+
+        int separator = key.LastIndexOf(':');
+        return separator > 0
+            && int.TryParse(key[(separator + 1)..], out int id)
+            ? new StudioAssetRef(key[..separator], id)
+            : null;
     }
 
     public async Task AppendMessageAsync(
@@ -578,7 +751,8 @@ public sealed class StudioConversationStore
         {
             DataSource = _databasePath,
             Mode = SqliteOpenMode.ReadWriteCreate,
-            Cache = SqliteCacheMode.Shared
+            Cache = SqliteCacheMode.Shared,
+            ForeignKeys = true
         };
         return new SqliteConnection(builder.ToString());
     }
@@ -664,6 +838,7 @@ public sealed record ConversationSummary(
     string Id,
     string Title,
     int? SelectedSkillId,
+    StudioAssetRef? SelectedAsset,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     int MessageCount
@@ -673,6 +848,8 @@ public sealed record ConversationDetail(
     string Id,
     string Title,
     int? SelectedSkillId,
+    StudioAssetRef? SelectedAsset,
+    IReadOnlyList<StudioAssetRef> MentionedAssets,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     IReadOnlyList<ConversationMessage> Messages,
@@ -696,17 +873,26 @@ public sealed record CreateConversationRequest(string? Title);
 
 public sealed record UpdateConversationSkillRequest(int? SkillId);
 
+public sealed record UpdateConversationAssetRequest(
+    string? AssetNamespace,
+    int? AssetId,
+    int? SkillId = null
+);
+
 public sealed record ConversationChatRequest(
     string? Provider,
     string Message,
     string? Model = null,
     int? SkillId = null,
-    string? ReasoningEffort = null
+    string? ReasoningEffort = null,
+    string? AssetNamespace = null,
+    int? AssetId = null
 );
 
 public sealed record ConversationChatResponse(
     string ConversationId,
     int? SelectedSkillId,
+    StudioAssetRef? SelectedAsset,
     string Provider,
     string Model,
     string Text,
@@ -714,7 +900,8 @@ public sealed record ConversationChatResponse(
     string? PlanJson,
     IReadOnlyList<string> PlanErrors,
     bool ExpectedPlan,
-    string PlanDisposition
+    string PlanDisposition,
+    IReadOnlyList<StudioAssetRef> MentionedAssets
 );
 
 public sealed record ConversationPlanRevision(

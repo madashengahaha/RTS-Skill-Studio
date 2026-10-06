@@ -13,8 +13,19 @@ public sealed partial class SkillAgentContextBuilder(
     private const int MaxHistoryEdges = 60;
     private const int MaxFieldValues = 8;
 
+    private static readonly string[] BareCandidateNamespaces =
+    [
+        "TbSkill",
+        "TbItem",
+        "TbBuff",
+        "TbBullet",
+        "TbSearch",
+        "TbTrap",
+        "TbEquipment"
+    ];
+
     public async Task<AgentWorkspaceContext> BuildAsync(
-        int? skillId,
+        StudioAssetRef? selectedAsset,
         string userMessage,
         CancellationToken cancellationToken
     )
@@ -46,24 +57,26 @@ public sealed partial class SkillAgentContextBuilder(
                 );
             }
 
-            SkillResolution resolution = await ResolveSkillIdAsync(
-                skillId,
+            AssetResolution resolution = await ResolveAssetAsync(
+                selectedAsset,
                 userMessage,
                 cancellationToken
             );
-            int? resolvedSkillId = resolution.SkillId;
-            if (resolvedSkillId is null)
+            if (resolution.Asset is null)
             {
                 if (resolution.RequiresClarification)
                 {
                     builder.AppendLine(
-                        "当前请求没有自动选择技能。必须明确告知用户未绑定操作目标，不能沿用旧技能。"
+                        "当前请求没有自动选择资产根。必须明确告知用户未绑定操作目标，不能沿用旧资产。"
                     );
                     if (resolution.ValidCandidates.Count > 0)
                     {
                         builder.AppendLine(
-                            "有效候选技能: "
-                                + string.Join(", ", resolution.ValidCandidates)
+                            "有效候选资产: "
+                                + string.Join(
+                                    ", ",
+                                    resolution.ValidCandidates.Select(FormatAsset)
+                                )
                         );
                         await AppendCandidateSummariesAsync(
                             builder,
@@ -74,10 +87,10 @@ public sealed partial class SkillAgentContextBuilder(
                     if (resolution.InvalidCandidates.Count > 0)
                     {
                         builder.AppendLine(
-                            "无效或未找到的技能 ID: "
+                            "无效或未找到的资产: "
                                 + string.Join(
                                     ", ",
-                                    resolution.InvalidCandidates
+                                    resolution.InvalidCandidates.Select(FormatAsset)
                                 )
                         );
                     }
@@ -85,7 +98,7 @@ public sealed partial class SkillAgentContextBuilder(
                 else
                 {
                     builder.AppendLine(
-                        "当前没有选择技能。涉及具体技能的问题必须先确定目标技能 ID。"
+                        "当前没有选择资产根。涉及具体对象的问题必须先确定 namespace + id。"
                     );
                 }
                 return new AgentWorkspaceContext(
@@ -97,20 +110,31 @@ public sealed partial class SkillAgentContextBuilder(
                 );
             }
 
-            SkillChainSnapshot chain = await workspace.GetSkillChainAsync(
-                resolvedSkillId.Value,
-                depth: 5,
+            StudioAssetRef asset = resolution.Asset;
+            SkillChainSnapshot chain = await workspace.GetAssetChainAsync(
+                asset,
+                depth: 6,
                 cancellationToken
             );
             SkillChainNode? focus = chain.Nodes.FirstOrDefault(
                 node => node.IsFocus
             );
-            builder.AppendLine($"已选择技能: TbSkill:{chain.SkillId}");
+            builder.AppendLine($"已选择资产根: {chain.RootKey}");
 
             if (focus is not null)
             {
-                builder.AppendLine("技能主记录字段:");
+                builder.AppendLine("资产根记录字段:");
                 AppendFields(builder, focus.Fields, "  ");
+            }
+            if (
+                string.Equals(
+                    asset.Namespace,
+                    "TbSkill",
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                AppendSkillSemantics(builder);
             }
 
             builder.AppendLine("下游节点:");
@@ -140,6 +164,7 @@ public sealed partial class SkillAgentContextBuilder(
                         + (edge.ParameterIndex is null
                             ? ""
                             : $" | param[{edge.ParameterIndex}]")
+                        + $" | derived={edge.Derived.ToString().ToLowerInvariant()}"
                 );
             }
 
@@ -152,11 +177,11 @@ public sealed partial class SkillAgentContextBuilder(
 
             SkillInboundReferenceSet incoming =
                 await workspace.GetIncomingReferencesAsync(
-                    resolvedSkillId.Value,
+                    asset,
                     40,
                     cancellationToken
                 );
-            builder.AppendLine("入向引用（哪些来源使用当前技能）:");
+            builder.AppendLine("入向引用（哪些来源使用当前资产）:");
             if (incoming.References.Count == 0)
             {
                 builder.AppendLine("- 当前图中没有入向引用。");
@@ -167,11 +192,15 @@ public sealed partial class SkillAgentContextBuilder(
                 {
                     builder.AppendLine(
                         $"- {reference.Source} | {reference.SourceKind} | {reference.SourceLabel}"
-                            + $" -> TbSkill:{resolvedSkillId.Value}"
+                            + $" -> {chain.RootKey}"
                             + $" | {reference.Relationship}"
                             + (string.IsNullOrWhiteSpace(reference.SourceField)
                                 ? ""
                                 : $" | sourceField={reference.SourceField}")
+                            + $" | derived={reference.Derived.ToString().ToLowerInvariant()}"
+                            + (string.IsNullOrWhiteSpace(reference.Detail)
+                                ? ""
+                                : $" | detail={reference.Detail}")
                     );
                     AppendFields(builder, reference.SourceFields, "    ");
                 }
@@ -185,7 +214,7 @@ public sealed partial class SkillAgentContextBuilder(
 
             return new AgentWorkspaceContext(
                 builder.ToString(),
-                resolvedSkillId,
+                asset,
                 [],
                 [],
                 false
@@ -194,7 +223,7 @@ public sealed partial class SkillAgentContextBuilder(
         catch (KeyNotFoundException)
         {
             return new AgentWorkspaceContext(
-                $"未找到技能 TbSkill:{skillId}。",
+                $"未找到资产根 {FormatAsset(selectedAsset)}。",
                 null,
                 [],
                 [],
@@ -205,11 +234,11 @@ public sealed partial class SkillAgentContextBuilder(
         {
             logger.LogWarning(
                 exception,
-                "Failed to build Agent workspace context for skill {SkillId}.",
-                skillId
+                "Failed to build Agent workspace context for {Asset}.",
+                FormatAsset(selectedAsset)
             );
             return new AgentWorkspaceContext(
-                "当前无法读取技能工作区上下文，必须明确告知用户证据不可用。",
+                "当前无法读取工作区资产上下文，必须明确告知用户证据不可用。",
                 null,
                 [],
                 [],
@@ -218,55 +247,95 @@ public sealed partial class SkillAgentContextBuilder(
         }
     }
 
-    private async Task<SkillResolution> ResolveSkillIdAsync(
-        int? selectedSkillId,
+    private async Task<AssetResolution> ResolveAssetAsync(
+        StudioAssetRef? selectedAsset,
         string userMessage,
         CancellationToken cancellationToken
     )
     {
         bool parameterContext = ParameterContextRegex().IsMatch(userMessage);
-        var candidates = new List<int>();
-        candidates.AddRange(
-            ToCandidates(ExplicitSkillIdRegex().Matches(userMessage))
-        );
-
-        if (candidates.Count == 0)
+        var explicitCandidates = new List<StudioAssetRef>();
+        foreach (Match match in ExplicitAssetRegex().Matches(userMessage))
         {
-            candidates.AddRange(
-                ToCandidates(
-                    BareSkillIdRegex().Matches(userMessage)
-                        .Where(
-                            match =>
-                                !parameterContext
-                                || !IsInsideSquareBrackets(
-                                    userMessage,
-                                    match.Index
-                                )
-                        )
+            if (!int.TryParse(match.Groups["id"].Value, out int id))
+            {
+                continue;
+            }
+
+            string rawNamespace = match.Groups["namespace"].Success
+                ? match.Groups["namespace"].Value
+                : NamespaceFromAlias(match.Groups["alias"].Value);
+            explicitCandidates.Add(
+                new StudioAssetRef(
+                    SkillWorkspaceService.NormalizeAssetNamespace(
+                        rawNamespace
+                    ),
+                    id
                 )
             );
+        }
+        foreach (Match match in SuffixAssetRegex().Matches(userMessage))
+        {
+            if (!int.TryParse(match.Groups["id"].Value, out int id))
+            {
+                continue;
+            }
+
+            explicitCandidates.Add(
+                new StudioAssetRef(
+                    SkillWorkspaceService.NormalizeAssetNamespace(
+                        NamespaceFromAlias(match.Groups["alias"].Value)
+                    ),
+                    id
+                )
+            );
+        }
+
+        bool explicitMode = explicitCandidates.Count > 0;
+        var candidates = explicitCandidates.Distinct().ToList();
+        if (candidates.Count == 0)
+        {
+            foreach (
+                Match match in BareAssetRegex().Matches(userMessage)
+                    .Where(
+                        match =>
+                            !parameterContext
+                            || !IsInsideSquareBrackets(
+                                userMessage,
+                                match.Index
+                            )
+                    )
+            )
+            {
+                if (!int.TryParse(match.Groups["id"].Value, out int id))
+                {
+                    continue;
+                }
+
+                foreach (string candidateNamespace in BareCandidateNamespaces)
+                {
+                    candidates.Add(
+                        new StudioAssetRef(candidateNamespace, id)
+                    );
+                }
+            }
         }
 
         candidates = candidates.Distinct().ToList();
         if (candidates.Count == 0)
         {
-            return selectedSkillId is null
-                ? new SkillResolution(null, [], [], false)
-                : new SkillResolution(
-                    selectedSkillId,
-                    [],
-                    [],
-                    false
-                );
+            return selectedAsset is null
+                ? new AssetResolution(null, [], [], false)
+                : new AssetResolution(selectedAsset, [], [], false);
         }
 
-        var validCandidates = new List<int>();
-        var invalidCandidates = new List<int>();
-        foreach (int candidate in candidates)
+        var validCandidates = new List<StudioAssetRef>();
+        var invalidCandidates = new List<StudioAssetRef>();
+        foreach (StudioAssetRef candidate in candidates)
         {
             try
             {
-                await workspace.GetSkillChainAsync(
+                await workspace.GetAssetChainAsync(
                     candidate,
                     depth: 1,
                     cancellationToken
@@ -277,16 +346,52 @@ public sealed partial class SkillAgentContextBuilder(
             {
                 invalidCandidates.Add(candidate);
             }
+            catch (ArgumentException)
+            {
+                invalidCandidates.Add(candidate);
+            }
         }
 
         validCandidates = validCandidates.Distinct().ToList();
         invalidCandidates = invalidCandidates.Distinct().ToList();
+        if (!explicitMode)
+        {
+            if (selectedAsset is not null)
+            {
+                StudioAssetRef? contextualCandidate =
+                    validCandidates.FirstOrDefault(
+                        candidate =>
+                            string.Equals(
+                                candidate.Namespace,
+                                selectedAsset.Namespace,
+                                StringComparison.OrdinalIgnoreCase
+                            )
+                    );
+                if (contextualCandidate is not null)
+                {
+                    return new AssetResolution(
+                        contextualCandidate,
+                        [],
+                        [],
+                        false
+                    );
+                }
+            }
+
+            return new AssetResolution(
+                null,
+                validCandidates,
+                invalidCandidates,
+                validCandidates.Count > 0 || invalidCandidates.Count > 0
+            );
+        }
+
         if (
             validCandidates.Count > 1
-            || invalidCandidates.Count > 0
+            || (explicitMode && invalidCandidates.Count > 0)
         )
         {
-            return new SkillResolution(
+            return new AssetResolution(
                 null,
                 validCandidates,
                 invalidCandidates,
@@ -296,7 +401,7 @@ public sealed partial class SkillAgentContextBuilder(
 
         if (validCandidates.Count == 1)
         {
-            return new SkillResolution(
+            return new AssetResolution(
                 validCandidates[0],
                 [],
                 [],
@@ -304,47 +409,26 @@ public sealed partial class SkillAgentContextBuilder(
             );
         }
 
-        return selectedSkillId is null
-            ? new SkillResolution(null, [], invalidCandidates, false)
-            : new SkillResolution(
-                selectedSkillId,
+        return selectedAsset is null
+            ? new AssetResolution(null, [], invalidCandidates, false)
+            : new AssetResolution(
+                selectedAsset,
                 [],
                 invalidCandidates,
                 false
             );
     }
 
-    private static IEnumerable<int> ToCandidates(
-        IEnumerable<Match> matches
-    )
-    {
-        foreach (Match match in matches)
-        {
-            string value = match.Groups["id"].Value;
-            if (int.TryParse(value, out int candidate))
-            {
-                yield return candidate;
-            }
-        }
-    }
-
-    private static bool IsInsideSquareBrackets(string text, int index)
-    {
-        int open = text.LastIndexOf('[', index);
-        int close = text.LastIndexOf(']', index);
-        return open > close;
-    }
-
     private async Task AppendCandidateSummariesAsync(
         StringBuilder builder,
-        IReadOnlyList<int> candidates,
+        IReadOnlyList<StudioAssetRef> candidates,
         CancellationToken cancellationToken
     )
     {
-        builder.AppendLine("候选技能摘要:");
-        foreach (int candidate in candidates)
+        builder.AppendLine("候选资产摘要:");
+        foreach (StudioAssetRef candidate in candidates)
         {
-            SkillChainSnapshot chain = await workspace.GetSkillChainAsync(
+            SkillChainSnapshot chain = await workspace.GetAssetChainAsync(
                 candidate,
                 depth: 1,
                 cancellationToken
@@ -352,12 +436,36 @@ public sealed partial class SkillAgentContextBuilder(
             SkillChainNode? focus = chain.Nodes.FirstOrDefault(
                 node => node.IsFocus
             );
-            builder.AppendLine($"- TbSkill:{candidate}");
+            builder.AppendLine($"- {FormatAsset(candidate)}");
             if (focus is not null)
             {
                 AppendFields(builder, focus.Fields, "    ");
             }
         }
+    }
+
+    private static string NamespaceFromAlias(string alias)
+    {
+        return alias.Trim().ToLowerInvariant() switch
+        {
+            "skill" or "技能" => "TbSkill",
+            "item" or "道具" or "物品" => "TbItem",
+            "effect" or "效果" => "TbEffect",
+            "effectgroup" or "效果组" => "EffectGroup",
+            "buff" => "TbBuff",
+            "bullet" or "子弹" => "TbBullet",
+            "search" or "搜索" => "TbSearch",
+            "trap" or "机关" => "TbTrap",
+            "equipment" or "装备" => "TbEquipment",
+            _ => alias
+        };
+    }
+
+    private static bool IsInsideSquareBrackets(string text, int index)
+    {
+        int open = text.LastIndexOf('[', index);
+        int close = text.LastIndexOf(']', index);
+        return open > close;
     }
 
     private static void AppendFields(
@@ -391,13 +499,33 @@ public sealed partial class SkillAgentContextBuilder(
         }
     }
 
+    private static void AppendSkillSemantics(StringBuilder builder)
+    {
+        builder.AppendLine("Skill 字段语义:");
+        builder.AppendLine("- first_cd_time、cd_time、duration_pre、duration、duration_after、trigger_array 的单位为毫秒。");
+        builder.AppendLine("- duration 表示 Skill 自身持续时间；trigger_array 的元素表示主要效果组的触发时点。");
+        builder.AppendLine("- probability 表示技能触发概率，10000 = 100%；它不是命中率。");
+        builder.AppendLine("- search_real_time 是布尔字段：0 = 非实时搜索，1 = 实时搜索。");
+        builder.AppendLine("- skill_type 的值来自 ESkillType，必须按该枚举解释。");
+    }
+
+    private static string FormatAsset(StudioAssetRef? asset)
+    {
+        return asset is null ? "<none>" : $"{asset.Namespace}:{asset.Id}";
+    }
+
     [GeneratedRegex(
-        @"(?i)(?:TbSkill\s*[:：]\s*|技能(?:ID|id|编号)?\s*[:：]?\s*)\[?\s*(?<id>\d{1,8})\s*\]?"
+        @"(?i)(?:(?<namespace>Tb[A-Za-z]+|EffectGroup|ConditionGroup)\s*[:：]\s*|(?<alias>技能|道具|物品|效果组|机关|装备|子弹|搜索|Buff|Effect|Item|Skill|Equipment|Trap)\s*(?:ID|id|编号)?\s*[:：]?\s*)\[?\s*(?<id>\d{1,8})\s*\]?"
     )]
-    private static partial Regex ExplicitSkillIdRegex();
+    private static partial Regex ExplicitAssetRegex();
+
+    [GeneratedRegex(
+        @"(?i)(?<id>\d{1,8})\s*(?:这个|该|此)?\s*(?<alias>技能|道具|物品|效果组|机关|装备|子弹|搜索|Buff|Effect|Item|Skill|Equipment|Trap)"
+    )]
+    private static partial Regex SuffixAssetRegex();
 
     [GeneratedRegex(@"(?<!\d)(?<id>\d{5,8})(?!\d)")]
-    private static partial Regex BareSkillIdRegex();
+    private static partial Regex BareAssetRegex();
 
     [GeneratedRegex(@"(?i)(?:action_param|param|参数|参数槽)")]
     private static partial Regex ParameterContextRegex();
@@ -405,15 +533,15 @@ public sealed partial class SkillAgentContextBuilder(
 
 public sealed record AgentWorkspaceContext(
     string Text,
-    int? SkillId,
-    IReadOnlyList<int> ValidCandidates,
-    IReadOnlyList<int> InvalidCandidates,
+    StudioAssetRef? Asset,
+    IReadOnlyList<StudioAssetRef> ValidCandidates,
+    IReadOnlyList<StudioAssetRef> InvalidCandidates,
     bool RequiresClarification
 );
 
-internal sealed record SkillResolution(
-    int? SkillId,
-    IReadOnlyList<int> ValidCandidates,
-    IReadOnlyList<int> InvalidCandidates,
+internal sealed record AssetResolution(
+    StudioAssetRef? Asset,
+    IReadOnlyList<StudioAssetRef> ValidCandidates,
+    IReadOnlyList<StudioAssetRef> InvalidCandidates,
     bool RequiresClarification
 );

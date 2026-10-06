@@ -176,7 +176,30 @@ button {
 .conversation-list {
   min-height: 0;
   overflow: auto;
-  padding-right: 2px;
+  padding-right: 6px;
+  color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(224, 231, 235, 0.28) transparent;
+}
+
+.conversation-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.conversation-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.conversation-list::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(224, 231, 235, 0.24);
+  background-clip: padding-box;
+}
+
+.conversation-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(224, 231, 235, 0.38);
+  background-clip: padding-box;
 }
 
 .conversation-item-row {

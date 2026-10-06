@@ -611,6 +611,7 @@ function renderInspector() {
       visibleChains,
       planJson,
       planErrors,
+      planDisposition,
       lastError,
     );
     renderIcons();
@@ -648,7 +649,13 @@ function renderInspector() {
       : chainInspectorHtml(visibleChains[0]);
 }
 
-function evidenceInspectorHtml(chains, planJson, planErrors, lastError) {
+function evidenceInspectorHtml(
+  chains,
+  planJson,
+  planErrors,
+  planDisposition,
+  lastError,
+) {
   if (chains.length === 0 && !planJson && !lastError) {
     return `
       <div class="inspector-empty">

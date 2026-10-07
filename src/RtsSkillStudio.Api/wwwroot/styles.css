@@ -839,34 +839,35 @@ body.is-resizing {
   display: grid;
   min-height: 0;
   min-width: 0;
-  grid-template-rows: 64px minmax(0, 1fr);
+  grid-template-rows: 84px minmax(0, 1fr);
   background: #f8f9fa;
   border-left: 1px solid var(--border);
 }
 
 .inspector-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 0 18px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 10px 18px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
 
-.inspector-heading {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
-}
-
-.inspector-header h2 {
+.inspector-title {
   margin: 0;
   font-size: 14px;
 }
 
-.inspector-heading span {
+.inspector-toolbar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inspector-toolbar > span {
+  min-width: 0;
   color: var(--text-muted);
   font-size: 11px;
   overflow: hidden;

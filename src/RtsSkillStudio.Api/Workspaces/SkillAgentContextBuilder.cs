@@ -152,7 +152,7 @@ public sealed partial class SkillAgentContextBuilder(
                 );
             }
 
-            SkillChainSnapshot chain = await workspace.GetAssetChainAsync(
+            SkillChainSnapshot chain = await workspace.GetExecutionChainAsync(
                 asset,
                 depth: 32,
                 cancellationToken

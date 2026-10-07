@@ -12,6 +12,8 @@ an external source of schemas and semantic evidence.
 P0 establishes contracts, not a writable product agent:
 
 - capability registry generated from the current hero-authoring semantic schema;
+- execution projection metadata that distinguishes continuation, terminal, and
+  non-execution references without table-specific UI rules;
 - `SkillConfigPlan` and `AuthoringPatch` JSON Schemas;
 - versioned default-value and default-mechanism contracts;
 - 30 representative golden cases;

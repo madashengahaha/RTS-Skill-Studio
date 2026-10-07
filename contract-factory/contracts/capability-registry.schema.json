@@ -12,6 +12,9 @@
     "planOperations",
     "readOnlyTools",
     "readOnlyToolContracts",
+    "executionProjection",
+    "nestedTypes",
+    "fieldSemantics",
     "valueSources",
     "similarityScoring",
     "skillGraphSchema",
@@ -73,6 +76,21 @@
     },
     "readOnlyToolContracts": {
       "type": "object"
+    },
+    "executionProjection": {
+      "$ref": "#/$defs/ExecutionProjection"
+    },
+    "nestedTypes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/NestedType"
+      }
+    },
+    "fieldSemantics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FieldSemantics"
+      }
     },
     "valueSources": {
       "type": "array",
@@ -287,7 +305,216 @@
           "type": "boolean",
           "default": false
         },
+        "executionProjection": {
+          "enum": ["Subtree", "Node", "Hidden"]
+        },
         "defaultValue": true
+      }
+    },
+    "ExecutionProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "defaultParameterProjection",
+        "defaultEdgeProjection",
+        "parameterRules",
+        "edgeRules"
+      ],
+      "properties": {
+        "defaultParameterProjection": {
+          "enum": ["Subtree", "Node", "Hidden"]
+        },
+        "defaultEdgeProjection": {
+          "enum": ["Subtree", "Node", "Hidden"]
+        },
+        "parameterRules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExecutionRule"
+          }
+        },
+        "edgeRules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExecutionRule"
+          }
+        }
+      }
+    },
+    "ExecutionRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection"],
+      "properties": {
+        "category": {
+          "enum": ["effect", "condition"]
+        },
+        "actionKey": {
+          "type": "string"
+        },
+        "parameterKey": {
+          "type": "string"
+        },
+        "referenceTarget": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "sourceField": {
+          "type": "string"
+        },
+        "projection": {
+          "enum": ["Subtree", "Node", "Hidden"]
+        }
+      }
+    },
+    "NestedType": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "label",
+        "description",
+        "encoding",
+        "resolution",
+        "fields"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "encoding": {
+          "$ref": "#/$defs/NestedTypeEncoding"
+        },
+        "resolution": {
+          "$ref": "#/$defs/NestedTypeResolution"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NestedTypeField"
+          }
+        }
+      }
+    },
+    "NestedTypeResolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expression", "propIdZero", "propIdNonZero"],
+      "properties": {
+        "expression": {
+          "type": "string",
+          "minLength": 1
+        },
+        "propIdZero": {
+          "type": "string",
+          "minLength": 1
+        },
+        "propIdNonZero": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "NestedTypeEncoding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "separator", "fields"],
+      "properties": {
+        "kind": {
+          "enum": ["Delimited"]
+        },
+        "separator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "NestedTypeField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "kind"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "enumName": {
+          "type": ["string", "null"]
+        },
+        "scale": {
+          "type": ["integer", "null"]
+        },
+        "description": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "FieldSemantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "description", "indexRoles"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "elementType": {
+          "type": ["string", "null"]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "indexRoles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FieldIndexRole"
+          }
+        }
+      }
+    },
+    "FieldIndexRole": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "role", "description"],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "Semantic": {

@@ -204,6 +204,29 @@ public static partial class AgentIntentRouter
         return Route(message).ExpectsPlan;
     }
 
+    public static bool IsCapabilityQuestion(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return false;
+        }
+
+        string normalized = message.Trim();
+        if (
+            ExplicitAssetIdRegex().IsMatch(normalized)
+            || AssignmentRegex().IsMatch(normalized)
+            || StrongMutationPhrases.Any(
+                phrase => normalized.Contains(phrase, StringComparison.Ordinal)
+            )
+        )
+        {
+            return false;
+        }
+
+        return CapabilitySubjectRegex().IsMatch(normalized)
+            && CapabilityQuestionRegex().IsMatch(normalized);
+    }
+
     private static Regex AssignmentRegex() => AssignmentRegexHolder.Value;
 
     private static readonly Lazy<Regex> AssignmentRegexHolder = new(
@@ -247,7 +270,37 @@ public static partial class AgentIntentRouter
 
     private static readonly Lazy<Regex> ParameterQuestionRegexHolder = new(
         () => new Regex(
-            @"(?i)(?:action_param|参数|param).{0,40}(?:代表什么|什么意思|什么含义|含义是什么|定义是什么|清楚吗|是什么意思)|(?:代表什么|什么意思|什么含义|你清楚吗|清楚吗|难道不是)",
+            @"(?i)(?:action_param|\bparameters?\b|\bparams?\b|参数(?:槽|索引)?).{0,40}(?:代表什么|什么意思|什么含义|含义是什么|定义是什么|清楚吗|是什么意思)|(?:代表什么|什么意思|什么含义|你清楚吗|清楚吗|难道不是)",
+            RegexOptions.Compiled
+        )
+    );
+
+    private static Regex ExplicitAssetIdRegex() =>
+        ExplicitAssetIdRegexHolder.Value;
+
+    private static readonly Lazy<Regex> ExplicitAssetIdRegexHolder = new(
+        () => new Regex(
+            @"(?i)\b(?:Tb[A-Za-z]+|EffectGroup|ConditionGroup|SkillConditionGate)\s*:\s*\d+\b",
+            RegexOptions.Compiled
+        )
+    );
+
+    private static Regex CapabilitySubjectRegex() =>
+        CapabilitySubjectRegexHolder.Value;
+
+    private static readonly Lazy<Regex> CapabilitySubjectRegexHolder = new(
+        () => new Regex(
+            @"(?i)(?:[A-Za-z_][A-Za-z0-9_]{3,}|搜索|索敌|配表|配置表|表结构|字段|枚举|动作|参数|机制)",
+            RegexOptions.Compiled
+        )
+    );
+
+    private static Regex CapabilityQuestionRegex() =>
+        CapabilityQuestionRegexHolder.Value;
+
+    private static readonly Lazy<Regex> CapabilityQuestionRegexHolder = new(
+        () => new Regex(
+            @"(?i)(?:怎么|如何|定义|含义|什么|什么意思|是什么意思|代表什么|有什么作用|有什么用|有哪些|范围|规则|区别|介绍|解释|学习|字段有哪些)",
             RegexOptions.Compiled
         )
     );

@@ -60,6 +60,8 @@
                 "intents": {"type": "array"},
                 "effects": {"type": "array"},
                 "conditions": {"type": "array"},
+                "tableFields": {"type": "array"},
+                "nestedTypes": {"type": "array"},
                 "enums": {"type": "array"},
                 "counts": {"type": "object"},
                 "truncated": {"type": "boolean"}

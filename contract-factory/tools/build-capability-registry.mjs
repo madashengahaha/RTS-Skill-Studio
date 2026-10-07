@@ -27,6 +27,9 @@ const overlay = await readJson("config/semantic-overlay.v0.json");
 const runtimeActionOverrides = await readJson(
   "config/runtime-action-overrides.v0.json"
 );
+const executionProjection = await readJson(
+  "config/execution-projection.v0.json"
+);
 const defaultValueContract = await readJson("config/default-value-contract.v0.json");
 const mechanismContract = await readJson("config/default-mechanism-contract.v0.json");
 const enumSnapshot = await readJson(
@@ -74,6 +77,18 @@ assert(
   "Runtime action overrides must contain patchConditions."
 );
 assert(
+  executionProjection.schemaVersion === foundation.schemaVersion,
+  "Execution projection schemaVersion must match the foundation schemaVersion."
+);
+assert(
+  Array.isArray(executionProjection.parameterRules),
+  "Execution projection must contain parameterRules."
+);
+assert(
+  Array.isArray(executionProjection.edgeRules),
+  "Execution projection must contain edgeRules."
+);
+assert(
   readOnlyToolContract.tools.map((tool) => tool.name).sort().join("|") ===
     [...foundation.readOnlyTools].sort().join("|"),
   "Read-only tool contract must match the foundation tool list."
@@ -98,6 +113,63 @@ assert(
   defaultValueFields.has("Skill.skill_type"),
   "Default value contract must define the Skill.skill_type default."
 );
+
+const executionProjectionValues = new Set(["Subtree", "Node", "Hidden"]);
+for (const [ruleSetName, rules] of [
+  ["parameterRules", executionProjection.parameterRules],
+  ["edgeRules", executionProjection.edgeRules]
+]) {
+  for (const rule of rules) {
+    assert(
+      typeof rule === "object" && rule !== null && !Array.isArray(rule),
+      `Execution projection ${ruleSetName} entries must be objects.`
+    );
+    assert(
+      executionProjectionValues.has(rule.projection),
+      `Execution projection ${ruleSetName} contains invalid projection ${rule.projection}.`
+    );
+    const selectors =
+      ruleSetName === "parameterRules"
+        ? [
+            rule.category,
+            rule.actionKey,
+            rule.parameterKey,
+            rule.referenceTarget
+          ]
+        : [rule.role, rule.sourceField];
+    assert(
+      selectors.some((value) => typeof value === "string" && value.length > 0),
+      `Execution projection ${ruleSetName} entries must define a selector.`
+    );
+  }
+}
+assert(
+  executionProjectionValues.has(
+    executionProjection.defaultParameterProjection
+  ),
+  "Execution projection defaultParameterProjection is invalid."
+);
+assert(
+  executionProjectionValues.has(executionProjection.defaultEdgeProjection),
+  "Execution projection defaultEdgeProjection is invalid."
+);
+
+function matchesExecutionRule(rule, category, action, parameter) {
+  return (
+    (!rule.category || rule.category === category) &&
+    (!rule.actionKey || rule.actionKey === action.key) &&
+    (!rule.parameterKey || rule.parameterKey === parameter.key) &&
+    (!rule.referenceTarget ||
+      rule.referenceTarget === parameter.referenceTarget)
+  );
+}
+
+function parameterExecutionProjection(category, action, parameter) {
+  const rule = executionProjection.parameterRules.find((candidate) =>
+    matchesExecutionRule(candidate, category, action, parameter)
+  );
+  return rule?.projection ?? executionProjection.defaultParameterProjection;
+}
 
 function decorateActions(actions, annotations, category) {
   const actionKeys = actions.map((action) => action.key);
@@ -158,6 +230,15 @@ function decorateActions(actions, annotations, category) {
           repeatStep:
             parameter.repeatStep ?? (parameter.repeating ? 1 : 0),
           allowsMultipleEnumValues: parameter.allowsMultipleEnumValues ?? false,
+          ...(parameter.kind === "Reference"
+            ? {
+                executionProjection: parameterExecutionProjection(
+                  category,
+                  action,
+                  parameter
+                )
+              }
+            : {}),
           ...(parameter.defaultValue !== undefined
             ? { defaultValue: parameter.defaultValue }
             : {})
@@ -224,13 +305,37 @@ const runtimeConditions = applyRuntimePatches(
 const effects = decorateActions(
   runtimeEffects,
   overlay.effects,
-  "effects"
+  "effect"
 );
 const conditions = decorateActions(
   runtimeConditions,
   overlay.conditions,
-  "conditions"
+  "condition"
 );
+
+for (const rule of executionProjection.parameterRules) {
+  const candidates =
+    rule.category === "condition"
+      ? conditions
+      : rule.category === "effect"
+        ? effects
+        : [...effects, ...conditions];
+  const matches = candidates.some(
+    (action) =>
+      (!rule.actionKey || rule.actionKey === action.key) &&
+      action.parameters.some(
+        (parameter) =>
+          (!rule.parameterKey || rule.parameterKey === parameter.key) &&
+          (!rule.referenceTarget ||
+            rule.referenceTarget === parameter.referenceTarget)
+      )
+  );
+  assert(
+    matches,
+    `Execution projection parameter rule does not match an action parameter: ${JSON.stringify(rule)}`
+  );
+}
+
 const enumReferences = sorted(
   new Set([
     ...[...effects, ...conditions]
@@ -314,6 +419,15 @@ const registry = {
   planOperations: foundation.planOperations,
   readOnlyTools: foundation.readOnlyTools,
   readOnlyToolContracts: readOnlyToolContract,
+  executionProjection: {
+    defaultParameterProjection:
+      executionProjection.defaultParameterProjection,
+    defaultEdgeProjection: executionProjection.defaultEdgeProjection,
+    parameterRules: executionProjection.parameterRules,
+    edgeRules: executionProjection.edgeRules
+  },
+  nestedTypes: foundation.nestedTypes,
+  fieldSemantics: foundation.fieldSemantics,
   valueSources: foundation.valueSources,
   similarityScoring: foundation.similarityScoring,
   skillGraphSchema,

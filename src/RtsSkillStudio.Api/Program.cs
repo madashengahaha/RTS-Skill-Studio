@@ -10,6 +10,14 @@ var llmOptions = builder.Configuration.GetSection("Llm").Get<LlmOptions>()
     ?? new LlmOptions();
 var workspaceOptions = builder.Configuration.GetSection("Workspace").Get<SkillWorkspaceOptions>()
     ?? new SkillWorkspaceOptions();
+string contractRoot = Path.GetFullPath(
+    Path.Combine(
+        builder.Environment.ContentRootPath,
+        "..",
+        "..",
+        StudioInfo.ContractRoot
+    )
+);
 
 builder.Services.AddSingleton(llmOptions);
 builder.Services.AddSingleton(workspaceOptions);
@@ -21,14 +29,14 @@ builder.Services.AddSingleton<SkillWorkspaceService>();
 builder.Services.AddSingleton<SkillAgentContextBuilder>();
 builder.Services.AddSingleton<StudioConversationStore>();
 builder.Services.AddSingleton(
-    new SkillConfigPlanValidator(
-        Path.GetFullPath(
-            Path.Combine(
-                builder.Environment.ContentRootPath,
-                "..",
-                "..",
-                StudioInfo.ContractRoot
-            )
+    new SkillConfigPlanValidator(contractRoot)
+);
+builder.Services.AddSingleton(
+    new ExecutionChainProjectionPolicy(
+        Path.Combine(
+            contractRoot,
+            "config",
+            "capability-registry.v0.json"
         )
     )
 );
@@ -488,7 +496,7 @@ app.MapPost(
                 IReadOnlyList<StudioAssetRef> candidates =
                     workspaceContext.ValidCandidates;
                 IReadOnlyList<StudioAssetRef> pendingCandidates =
-                    candidates.Take(5).ToArray();
+                    candidates.ToArray();
                 await conversations.SetPendingAssetClarificationAsync(
                     conversationId,
                     effectiveMessage,
@@ -723,18 +731,30 @@ app.MapGet(
     async (
         int skillId,
         int? depth,
+        string? view,
         SkillWorkspaceService workspace,
         CancellationToken cancellationToken
     ) =>
     {
         try
         {
+            StudioAssetRef root = new("TbSkill", skillId);
             return Results.Ok(
-                await workspace.GetSkillChainAsync(
-                    skillId,
-                    depth ?? 12,
-                    cancellationToken
+                string.Equals(
+                    view,
+                    "execution",
+                    StringComparison.OrdinalIgnoreCase
                 )
+                    ? await workspace.GetExecutionChainAsync(
+                        root,
+                        depth ?? 12,
+                        cancellationToken
+                    )
+                    : await workspace.GetAssetChainAsync(
+                        root,
+                        depth ?? 12,
+                        cancellationToken
+                    )
             );
         }
         catch (KeyNotFoundException exception)
@@ -795,6 +815,7 @@ app.MapGet(
         int? id,
         int? depth,
         string? direction,
+        string? view,
         SkillWorkspaceService workspace,
         CancellationToken cancellationToken
     ) =>
@@ -814,16 +835,41 @@ app.MapGet(
                 new { error = "direction must be out, in, or both." }
             );
         }
+        if (
+            !string.IsNullOrWhiteSpace(view)
+            && !string.Equals(
+                view,
+                "execution",
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
+        {
+            return Results.BadRequest(
+                new { error = "view must be execution." }
+            );
+        }
 
         try
         {
+            var root = new StudioAssetRef(@namespace, id.Value);
             return Results.Ok(
-                await workspace.GetAssetChainAsync(
-                    new StudioAssetRef(@namespace, id.Value),
-                    depth ?? 6,
-                    direction ?? "out",
-                    cancellationToken
+                string.Equals(
+                    view,
+                    "execution",
+                    StringComparison.OrdinalIgnoreCase
                 )
+                    ? await workspace.GetExecutionChainAsync(
+                        root,
+                        depth ?? 6,
+                        direction ?? "out",
+                        cancellationToken
+                    )
+                    : await workspace.GetAssetChainAsync(
+                        root,
+                        depth ?? 6,
+                        direction ?? "out",
+                        cancellationToken
+                    )
             );
         }
         catch (KeyNotFoundException exception)

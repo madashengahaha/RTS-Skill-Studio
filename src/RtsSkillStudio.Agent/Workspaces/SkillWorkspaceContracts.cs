@@ -36,6 +36,28 @@ public sealed record AssetSearchResult(
     int SourceRow
 );
 
+public sealed record AssetTableFieldSummary(
+    string EntityKey,
+    string Namespace,
+    string TableKey,
+    string Key,
+    string Label,
+    string Path,
+    string Kind,
+    string RawType,
+    bool Required,
+    string? ReferenceTarget,
+    string? EnumName,
+    IReadOnlyList<AssetTableFieldOption> Options
+);
+
+public sealed record AssetTableFieldOption(
+    string Value,
+    string Label,
+    string? Code,
+    int? LegacyValue
+);
+
 public sealed record SkillChainSnapshot(
     string Revision,
     string RootKey,

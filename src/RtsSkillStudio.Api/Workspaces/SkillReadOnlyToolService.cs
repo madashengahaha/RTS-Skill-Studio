@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using RtsSkillStudio.Agent;
 using RtsSkillStudio.Agent.Llm;
 using RtsSkillStudio.Agent.Workspaces;
@@ -11,6 +12,11 @@ public sealed class SkillReadOnlyToolService(
     IHostEnvironment environment
 ) : IAgentReadOnlyToolService
 {
+    private static readonly Regex QueryIdentifierRegex = new(
+        @"[A-Za-z_][A-Za-z0-9_]*",
+        RegexOptions.Compiled
+    );
+
     private readonly Lazy<Task<JsonObject>> _registry = new(
         () => LoadRegistryAsync(environment)
     );
@@ -21,7 +27,7 @@ public sealed class SkillReadOnlyToolService(
         )
         {
             ["get_capability_context"] =
-                "查询动作、条件、意图、实体字段和枚举的只读能力切片。",
+                "查询动作、条件、意图、实体字段、配表字段和枚举的只读能力切片。",
             ["resolve_asset"] =
                 "按 namespace + id 校验资产，或按名称返回全部候选，不自动选择同名项。",
             ["get_graph"] =
@@ -277,7 +283,7 @@ public sealed class SkillReadOnlyToolService(
         JsonObject args = RequireObject(arguments);
         StudioAssetRef root = ParseAssetRef(RequireString(args, "skill"));
         int limit = Clamp(OptionalInt(args, "limit") ?? 200, 1, 500);
-        SkillChainSnapshot chain = await workspace.GetAssetChainAsync(
+        SkillChainSnapshot chain = await workspace.GetExecutionChainAsync(
             root,
             depth: 32,
             cancellationToken
@@ -547,16 +553,56 @@ public sealed class SkillReadOnlyToolService(
                 query,
                 ["key", "namespace", "role"]
             );
+        IReadOnlyList<AssetTableFieldSummary> allTableFields =
+            actionScoped
+                ? []
+                : await workspace.GetTableFieldsAsync(
+                    EntityNamespaceMap(entities),
+                    cancellationToken
+                );
+        selectedEntities = MergeEntities(
+            selectedEntities,
+            entities,
+            allTableFields
+                .Where(field => TableFieldMatches(field, query))
+                .Select(field => field.EntityKey)
+        );
         JsonArray selectedFields = actionScoped
             ? []
-            : FilterByText(
+            : MergeEntityFields(
+                FilterByText(
+                    entityFields,
+                    query,
+                    ["path", "enumName"]
+                ),
                 entityFields,
-                query,
-                ["path", "enumName"]
+                selectedEntities
             );
+        IReadOnlyList<AssetTableFieldSummary> tableFieldDefinitions =
+            actionScoped
+                ? []
+                : allTableFields
+                    .Where(
+                        field => selectedEntities
+                            .OfType<JsonObject>()
+                            .Any(
+                                entity => string.Equals(
+                                    entity["key"]?.GetValue<string>(),
+                                    field.EntityKey,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            )
+                    )
+                    .ToArray();
+        JsonArray nestedTypes = SelectNestedTypes(
+            registry["nestedTypes"]?.AsArray() ?? [],
+            tableFieldDefinitions
+        );
         JsonArray referencedEnumNames = ReferencedEnumNames(
             selectedEffects,
-            selectedConditions
+            selectedConditions,
+            selectedFields,
+            nestedTypes
         );
         JsonArray selectedEnums;
         if (!string.IsNullOrWhiteSpace(enumName))
@@ -583,6 +629,82 @@ public sealed class SkillReadOnlyToolService(
             );
         }
         selectedEnums = LimitEnumValues(selectedEnums, enumValueLimit);
+        Dictionary<string, string> enumNamesByPath = entityFields
+            .OfType<JsonObject>()
+            .Select(
+                field => new
+                {
+                    Path = field["path"]?.GetValue<string>() ?? "",
+                    EnumName = field["enumName"]?.GetValue<string>()
+                }
+            )
+            .Where(
+                field =>
+                    field.Path.Length > 0
+                    && !string.IsNullOrWhiteSpace(field.EnumName)
+            )
+            .GroupBy(field => field.Path, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => group.First().EnumName!,
+                StringComparer.OrdinalIgnoreCase
+            );
+        Dictionary<string, JsonObject> fieldSemanticsByPath =
+            (registry["fieldSemantics"]?.AsArray() ?? [])
+            .OfType<JsonObject>()
+            .Select(
+                semantics => new
+                {
+                    Path = semantics["path"]?.GetValue<string>() ?? "",
+                    Semantics = semantics
+                }
+            )
+            .Where(item => item.Path.Length > 0)
+            .ToDictionary(
+                item => item.Path,
+                item => item.Semantics,
+                StringComparer.OrdinalIgnoreCase
+            );
+        JsonArray tableFields = new(
+            tableFieldDefinitions
+                .Select(
+                    field =>
+                    {
+                        fieldSemanticsByPath.TryGetValue(
+                            field.Path,
+                            out JsonObject? semantics
+                        );
+                        return (JsonNode?)new JsonObject
+                        {
+                            ["entityKey"] = field.EntityKey,
+                            ["namespace"] = field.Namespace,
+                            ["tableKey"] = field.TableKey,
+                            ["key"] = field.Key,
+                            ["label"] = field.Label,
+                            ["path"] = field.Path,
+                            ["kind"] = field.Kind,
+                            ["rawType"] = field.RawType,
+                            ["required"] = field.Required,
+                            ["referenceTarget"] = field.ReferenceTarget,
+                            ["enumName"] =
+                                enumNamesByPath.GetValueOrDefault(
+                                    field.Path
+                                ),
+                            ["elementType"] =
+                                semantics?["elementType"]?.GetValue<string>(),
+                            ["description"] =
+                                semantics?["description"]?.GetValue<string>(),
+                            ["indexRoles"] =
+                                semantics?["indexRoles"]?.DeepClone()
+                                ?? new JsonArray(),
+                            ["options"] = JsonSerializer.SerializeToNode(
+                                field.Options.Take(enumValueLimit).ToArray()
+                            )
+                        };
+                    }
+                )
+                .ToArray()
+        );
 
         return new JsonObject
         {
@@ -611,6 +733,11 @@ public sealed class SkillReadOnlyToolService(
                     selectedFields.Count,
                     limit
                 ),
+                ["tableFields"] = Counts(
+                    tableFieldDefinitions.Count,
+                    tableFields.Count,
+                    limit
+                ),
                 ["enums"] = Counts(enums.Count, selectedEnums.Count, limit)
             },
             ["effects"] = Take(selectedEffects, limit),
@@ -618,6 +745,8 @@ public sealed class SkillReadOnlyToolService(
             ["intents"] = Take(selectedIntents, limit),
             ["entities"] = Take(selectedEntities, limit),
             ["entityFields"] = Take(selectedFields, limit),
+            ["tableFields"] = Take(tableFields, limit),
+            ["nestedTypes"] = Take(nestedTypes, limit),
             ["enums"] = Take(selectedEnums, limit)
         };
     }
@@ -705,14 +834,176 @@ public sealed class SkillReadOnlyToolService(
                 .Where(
                     item => properties.Any(
                         property => item[property]
-                            ?.GetValue<string>()
-                            ?.Contains(
-                                query,
-                                StringComparison.OrdinalIgnoreCase
-                            ) == true
+                            ?.GetValue<string>() is { } value
+                            && TextMatches(value, query)
                     )
                 )
                 .Select(item => item.DeepClone())
+                .ToArray()
+        );
+    }
+
+    private static JsonArray MergeEntityFields(
+        JsonArray matchedFields,
+        JsonArray allFields,
+        JsonArray selectedEntities
+    )
+    {
+        string[] entityKeys = selectedEntities
+            .OfType<JsonObject>()
+            .Select(entity => entity["key"]?.GetValue<string>() ?? "")
+            .Where(key => key.Length > 0)
+            .ToArray();
+        var matchedPaths = matchedFields
+            .OfType<JsonObject>()
+            .Select(field => field["path"]?.GetValue<string>() ?? "")
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return new JsonArray(
+            allFields
+                .OfType<JsonObject>()
+                .Where(
+                    field =>
+                    {
+                        string path = field["path"]?.GetValue<string>() ?? "";
+                        return matchedPaths.Contains(path)
+                            || entityKeys.Any(
+                                key => path.StartsWith(
+                                    $"{key}.",
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            );
+                    }
+                )
+                .GroupBy(
+                    field => field["path"]?.GetValue<string>() ?? "",
+                    StringComparer.OrdinalIgnoreCase
+                )
+                .Select(group => group.First().DeepClone())
+                .ToArray()
+        );
+    }
+
+    private static IReadOnlyDictionary<string, string> EntityNamespaceMap(
+        JsonArray entities
+    )
+    {
+        return entities
+            .OfType<JsonObject>()
+            .Select(
+                entity => new
+                {
+                    Key = entity["key"]?.GetValue<string>() ?? "",
+                    Namespace =
+                        entity["namespace"]?.GetValue<string>() ?? ""
+                }
+            )
+            .Where(
+                entity =>
+                    entity.Key.Length > 0 && entity.Namespace.Length > 0
+            )
+            .GroupBy(entity => entity.Key, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => group.First().Namespace,
+                StringComparer.OrdinalIgnoreCase
+            );
+    }
+
+    private static JsonArray MergeEntities(
+        JsonArray matchedEntities,
+        JsonArray allEntities,
+        IEnumerable<string> additionalKeys
+    )
+    {
+        var keys = additionalKeys.ToHashSet(
+            StringComparer.OrdinalIgnoreCase
+        );
+        return new JsonArray(
+            allEntities
+                .OfType<JsonObject>()
+                .Where(
+                    entity =>
+                        keys.Contains(
+                            entity["key"]?.GetValue<string>() ?? ""
+                        )
+                        || matchedEntities
+                            .OfType<JsonObject>()
+                            .Any(
+                                matched => string.Equals(
+                                    matched["key"]?.GetValue<string>(),
+                                    entity["key"]?.GetValue<string>(),
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            )
+                )
+                .Select(entity => entity.DeepClone())
+                .ToArray()
+        );
+    }
+
+    private static bool TableFieldMatches(
+        AssetTableFieldSummary field,
+        string? query
+    )
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return false;
+        }
+
+        return new[] { field.Key, field.Label, field.Path }.Any(
+            value => TextMatches(value, query)
+        );
+    }
+
+    private static bool TextMatches(string value, string query)
+    {
+        if (
+            value.Contains(query, StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return true;
+        }
+
+        return QueryIdentifierRegex
+            .Matches(query)
+            .Select(match => match.Value)
+            .Any(
+                token => value.Contains(
+                    token,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
+    }
+
+    private static JsonArray SelectNestedTypes(
+        JsonArray definitions,
+        IReadOnlyList<AssetTableFieldSummary> tableFields
+    )
+    {
+        string[] rawTypes = tableFields
+            .Select(field => field.RawType)
+            .Where(rawType => !string.IsNullOrWhiteSpace(rawType))
+            .ToArray();
+        return new JsonArray(
+            definitions
+                .OfType<JsonObject>()
+                .Where(
+                    definition =>
+                    {
+                        string key =
+                            definition["key"]?.GetValue<string>() ?? "";
+                        return key.Length > 0
+                            && rawTypes.Any(
+                                rawType => rawType.Contains(
+                                    key,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            );
+                    }
+                )
+                .Select(definition => definition.DeepClone())
                 .ToArray()
         );
     }
@@ -727,14 +1018,34 @@ public sealed class SkillReadOnlyToolService(
                 .SelectMany(action => action.OfType<JsonObject>())
         )
         {
+            string? directEnumName = action["enumName"]?.GetValue<string>();
+            if (!string.IsNullOrWhiteSpace(directEnumName))
+            {
+                names.Add(directEnumName);
+            }
+
             if (action["parameters"] is not JsonArray parameters)
             {
-                continue;
+                parameters = [];
             }
 
             foreach (JsonObject? parameter in parameters.OfType<JsonObject>())
             {
                 string? name = parameter["enumName"]?.GetValue<string>();
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    names.Add(name);
+                }
+            }
+
+            if (action["fields"] is not JsonArray fields)
+            {
+                continue;
+            }
+
+            foreach (JsonObject? field in fields.OfType<JsonObject>())
+            {
+                string? name = field["enumName"]?.GetValue<string>();
                 if (!string.IsNullOrWhiteSpace(name))
                 {
                     names.Add(name);

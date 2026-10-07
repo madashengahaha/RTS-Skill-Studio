@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "config/capability-registry.v0.json",
-      "sha256": "84514955c787339cfbdfdf20feaeb84f999a681cb37eaf5dba30c0198a8686a2"
+      "sha256": "27e017caff2bcb39ad259b2b8fc7506cd56a54768bd6df0a34588da69b4a719d"
     },
     {
       "path": "config/default-mechanism-contract.v0.json",
@@ -27,7 +27,7 @@
     },
     {
       "path": "config/registry-foundation.v0.json",
-      "sha256": "f235ffffe1b92203c59f90f0635a0eee6b8edc1d603e43204057fe4b8e20c0bf"
+      "sha256": "d5f1ea47986f93466e0d93c346b8a4135ba525038169e0ebc9be41fa7137c052"
     },
     {
       "path": "config/semantic-overlay.v0.json",
@@ -39,11 +39,11 @@
     },
     {
       "path": "contracts/capability-registry.schema.json",
-      "sha256": "3e5756f67b9f4594bc906b40950e6ccffe16ab04bf0a4d0090a591671649ff3d"
+      "sha256": "bbac40dd503df47eac76d304e18d3fdfb2ea635281418c97e2136b6e884fe63a"
     },
     {
       "path": "contracts/read-only-results.schema.json",
-      "sha256": "3535cbc0aba71f3aae6b826042c7d21e0764b4c02eddddff35dad3da0e730635"
+      "sha256": "154c07d9cc7adef9234eaa38f14ef1bbcb4c46c252c2cfd62db11bc50bc57338"
     },
     {
       "path": "contracts/skill-config-plan.schema.json",
@@ -78,5 +78,5 @@
       "sha256": "404d3989cf8344c6178599c28d62c991ac7229c9df5470f47e3101c702cd3f6a"
     }
   ],
-  "combinedSha256": "e8ce4825652322f669eaca298316a2ccb688757d495083dc8477c652863f5ac6"
+  "combinedSha256": "1f2b9bea2230925f9828ae57d0dc017bcad19cdc71814c768457bd0d85128344"
 }

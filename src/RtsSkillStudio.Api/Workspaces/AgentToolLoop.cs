@@ -14,7 +14,7 @@ public sealed class AgentToolLoop(
 {
     private const int MaxRounds = 4;
     private static readonly Regex ParameterSemanticsRegex = new(
-        @"(?i)(?:action_param|参数|param).{0,40}(?:代表什么|什么意思|什么含义|含义是什么|定义是什么|清楚吗|是什么意思)|(?:代表什么|什么意思|什么含义|你清楚吗|清楚吗|难道不是)",
+        @"(?i)(?:action_param|\bparameters?\b|\bparams?\b|参数(?:槽|索引)?).{0,40}(?:代表什么|什么意思|什么含义|含义是什么|定义是什么|清楚吗|是什么意思)|(?:代表什么|什么意思|什么含义|你清楚吗|清楚吗|难道不是)",
         RegexOptions.Compiled
     );
 
@@ -32,9 +32,9 @@ public sealed class AgentToolLoop(
     )
     {
         ILlmProvider provider = providers.GetProvider(providerName);
-        bool parameterSemanticsQuestion = ParameterSemanticsRegex.IsMatch(
-            message
-        );
+        bool parameterSemanticsQuestion =
+            ParameterSemanticsRegex.IsMatch(message)
+            && !AgentIntentRouter.IsCapabilityQuestion(message);
         var baseHistory = history.ToList();
         if (
             baseHistory.Count > 0
@@ -58,6 +58,33 @@ public sealed class AgentToolLoop(
         LlmCompletionResult? finalResult = null;
         bool userRecorded = false;
         AgentAssetIdentity? authoritativeIdentity = null;
+
+        if (
+            route.Kind == AgentIntentKind.Query
+            && AgentIntentRouter.IsCapabilityQuestion(message)
+        )
+        {
+            IReadOnlyList<AgentToolExecution> capabilityTools =
+                await tools.ExecuteAsync(
+                    [
+                        new AgentToolCall(
+                            "get_capability_context",
+                            new System.Text.Json.Nodes.JsonObject
+                            {
+                                ["query"] = message,
+                                ["limit"] = 20,
+                                ["enumValueLimit"] = 500
+                            }
+                        )
+                    ],
+                    cancellationToken
+                );
+            executions.AddRange(capabilityTools);
+            currentMessage =
+                message
+                + Environment.NewLine
+                + AgentToolProtocol.FormatToolResults(capabilityTools);
+        }
 
         if (selectedAsset is not null && route.Kind != AgentIntentKind.Unsupported)
         {
@@ -96,7 +123,7 @@ public sealed class AgentToolLoop(
                 + Environment.NewLine
                 + "【用户请求】"
                 + Environment.NewLine
-                + message
+                + currentMessage
                 + Environment.NewLine
                 + AgentToolProtocol.FormatToolResults(bootstrapTools);
 

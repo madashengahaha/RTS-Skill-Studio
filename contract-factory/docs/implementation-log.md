@@ -1,5 +1,26 @@
 # Implementation Log
 
+## 2026-10-07 - Generic Capability Learning Questions
+
+### Scope
+
+Allowed designers and other agents to ask how a configuration table, field,
+enum, action, or mechanism works without first binding a concrete skill.
+
+### Decisions
+
+- Capability-learning questions are detected separately from asset-specific
+  queries and automatically receive `get_capability_context` evidence.
+- Capability lookup supports matching a natural-language question against entity
+  and field names without maintaining a list of supported question phrasings.
+- The .NET capability context now includes `tableFields` sourced from the live
+  workbook schema, so table-learning answers can cite raw field names, types,
+  references, and options.
+- Entity-field enum references are merged into table-field results without
+  weakening the existing enum contract.
+- Agent instructions explicitly forbid requiring a selected skill for generic
+  schema, field, table, enum, action, or mechanism learning questions.
+
 ## 2026-10-07 - Stage A Agent Loop Closure
 
 ### Scope

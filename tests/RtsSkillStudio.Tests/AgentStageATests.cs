@@ -50,6 +50,36 @@ public sealed class AgentStageATests
     }
 
     [Fact]
+    public void CapabilityQuestionsDoNotRequireASelectedAsset()
+    {
+        Assert.True(
+            AgentIntentRouter.IsCapabilityQuestion(
+                "search 是怎么定义搜索范围的"
+            )
+        );
+        Assert.True(
+            AgentIntentRouter.IsCapabilityQuestion(
+                "Search 配表有哪些字段"
+            )
+        );
+        Assert.True(
+            AgentIntentRouter.IsCapabilityQuestion(
+                "shape_param 是什么"
+            )
+        );
+        Assert.False(
+            AgentIntentRouter.IsCapabilityQuestion(
+                "TbSkill:100101 的 search 是怎么定义的"
+            )
+        );
+        Assert.False(
+            AgentIntentRouter.IsCapabilityQuestion(
+                "把 search 范围改成 500"
+            )
+        );
+    }
+
+    [Fact]
     public void ToolProtocolParsesAndRemovesItsEnvelope()
     {
         const string response = """

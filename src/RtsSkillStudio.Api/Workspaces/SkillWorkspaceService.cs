@@ -10,6 +10,7 @@ namespace RtsSkillStudio.Api.Workspaces;
 public sealed class SkillWorkspaceService(
     SkillWorkspaceOptions options,
     IHostEnvironment environment,
+    ExecutionChainProjectionPolicy executionProjectionPolicy,
     ILogger<SkillWorkspaceService> logger
 )
 {
@@ -256,6 +257,90 @@ public sealed class SkillWorkspaceService(
             .ToArray();
     }
 
+    public async Task<IReadOnlyList<AssetTableFieldSummary>> GetTableFieldsAsync(
+        IReadOnlyDictionary<string, string> entityNamespaces,
+        CancellationToken cancellationToken
+    )
+    {
+        var snapshot = await LoadAsync(cancellationToken);
+        var fields = new List<AssetTableFieldSummary>();
+        foreach (
+            KeyValuePair<string, string> entity in entityNamespaces.OrderBy(
+                item => item.Key,
+                StringComparer.Ordinal
+            )
+        )
+        {
+            string normalizedNamespace = NormalizeAssetNamespace(
+                entity.Value
+            );
+            if (
+                !HeroAuthoringGraphProjector.TryGetTableKey(
+                    normalizedNamespace,
+                    out string tableKey
+                )
+            )
+            {
+                continue;
+            }
+
+            GameDataTable? table = snapshot.Catalog.Tables.FirstOrDefault(
+                candidate => string.Equals(
+                    candidate.Key,
+                    tableKey,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
+            if (table is null)
+            {
+                continue;
+            }
+
+            foreach (GameDataFieldDefinition field in table.Fields)
+            {
+                string? referenceTarget = null;
+                if (!string.IsNullOrWhiteSpace(field.ReferenceTable))
+                {
+                    referenceTarget =
+                        HeroAuthoringGraphProjector.TryGetNamespace(
+                            field.ReferenceTable,
+                            out string targetNamespace
+                        )
+                            ? targetNamespace
+                            : field.ReferenceTable;
+                }
+
+                fields.Add(
+                    new AssetTableFieldSummary(
+                        entity.Key,
+                        normalizedNamespace,
+                        table.Key,
+                        field.Key,
+                        field.Label,
+                        $"{entity.Key}.{field.Key}",
+                        field.Kind.ToString(),
+                        field.RawType,
+                        field.Required,
+                        referenceTarget,
+                        null,
+                        field.Options
+                            .Select(
+                                option => new AssetTableFieldOption(
+                                    option.Value,
+                                    option.Label,
+                                    option.Code,
+                                    option.LegacyValue
+                                )
+                            )
+                            .ToArray()
+                    )
+                );
+            }
+        }
+
+        return fields;
+    }
+
     public async Task<IReadOnlyList<AssetSearchResult>> FindAssetsByMentionAsync(
         string message,
         int limit,
@@ -500,6 +585,36 @@ public sealed class SkillWorkspaceService(
             "out",
             cancellationToken
         );
+    }
+
+    public async Task<SkillChainSnapshot> GetExecutionChainAsync(
+        StudioAssetRef root,
+        int depth,
+        CancellationToken cancellationToken
+    )
+    {
+        return await GetExecutionChainAsync(
+            root,
+            depth,
+            "out",
+            cancellationToken
+        );
+    }
+
+    public async Task<SkillChainSnapshot> GetExecutionChainAsync(
+        StudioAssetRef root,
+        int depth,
+        string direction,
+        CancellationToken cancellationToken
+    )
+    {
+        SkillChainSnapshot chain = await GetAssetChainAsync(
+            root,
+            depth,
+            direction,
+            cancellationToken
+        );
+        return executionProjectionPolicy.Project(chain);
     }
 
     public async Task<SkillChainSnapshot> GetAssetChainAsync(

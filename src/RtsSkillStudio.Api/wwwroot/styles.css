@@ -1,5 +1,7 @@
 :root {
   color-scheme: light;
+  --sidebar-width: 264px;
+  --inspector-width: 520px;
   --bg: #eef1f3;
   --surface: #ffffff;
   --surface-muted: #f7f8f9;
@@ -45,10 +47,47 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 264px minmax(500px, 1fr) minmax(420px, 520px);
+  grid-template-columns:
+    var(--sidebar-width) 6px minmax(420px, 1fr) 6px
+    var(--inspector-width);
   grid-template-rows: minmax(0, 1fr);
   width: 100%;
   height: 100%;
+}
+
+.pane-resizer {
+  position: relative;
+  z-index: 4;
+  min-width: 0;
+  cursor: col-resize;
+  touch-action: none;
+  background: var(--bg);
+}
+
+.pane-resizer::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+  background: transparent;
+  content: "";
+  transition: background 120ms ease;
+}
+
+.pane-resizer:hover::after,
+.pane-resizer:focus-visible::after,
+body.is-resizing .pane-resizer::after {
+  background: var(--accent);
+}
+
+.pane-resizer:focus-visible {
+  outline: 0;
+}
+
+body.is-resizing {
+  cursor: col-resize;
+  user-select: none;
 }
 
 .sidebar {
@@ -1318,10 +1357,11 @@ details[open] > summary .tree-toggle::before {
 
 @media (max-width: 1120px) {
   .app-shell {
-    grid-template-columns: 220px minmax(460px, 1fr);
+    grid-template-columns: var(--sidebar-width) 6px minmax(420px, 1fr);
   }
 
-  .inspector-pane {
+  .inspector-pane,
+  .pane-resizer-inspector {
     display: none;
   }
 }
@@ -1332,6 +1372,10 @@ details[open] > summary .tree-toggle::before {
   }
 
   .sidebar {
+    display: none;
+  }
+
+  .pane-resizer {
     display: none;
   }
 

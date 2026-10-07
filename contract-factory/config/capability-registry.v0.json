@@ -459,6 +459,175 @@
       }
     ]
   },
+  "executionProjection": {
+    "defaultParameterProjection": "Node",
+    "defaultEdgeProjection": "Node",
+    "parameterRules": [
+      {
+        "parameterKey": "effectGroupId",
+        "projection": "Subtree"
+      },
+      {
+        "parameterKey": "successEffect",
+        "projection": "Subtree"
+      },
+      {
+        "parameterKey": "failureEffect",
+        "projection": "Subtree"
+      },
+      {
+        "category": "effect",
+        "parameterKey": "trapId",
+        "projection": "Subtree"
+      },
+      {
+        "category": "effect",
+        "parameterKey": "buffId",
+        "projection": "Subtree"
+      },
+      {
+        "parameterKey": "pipeline",
+        "projection": "Hidden"
+      },
+      {
+        "parameterKey": "searchId",
+        "projection": "Node"
+      },
+      {
+        "parameterKey": "skillId",
+        "projection": "Node"
+      }
+    ],
+    "edgeRules": [
+      {
+        "role": "orderedEffect",
+        "projection": "Subtree"
+      },
+      {
+        "role": "orderedCondition",
+        "projection": "Subtree"
+      },
+      {
+        "role": "releaseConditionGate",
+        "projection": "Subtree"
+      },
+      {
+        "sourceField": "pre_effect_group_id",
+        "projection": "Subtree"
+      },
+      {
+        "sourceField": "effect_group_id",
+        "projection": "Subtree"
+      },
+      {
+        "sourceField": "post_effect_group_id",
+        "projection": "Subtree"
+      },
+      {
+        "sourceField": "enter_effect",
+        "projection": "Subtree"
+      },
+      {
+        "sourceField": "interval_effect",
+        "projection": "Subtree"
+      },
+      {
+        "sourceField": "finish_effect",
+        "projection": "Subtree"
+      },
+      {
+        "sourceField": "finish_effect_id",
+        "projection": "Subtree"
+      },
+      {
+        "sourceField": "buffs",
+        "projection": "Subtree"
+      },
+      {
+        "sourceField": "targetSearch",
+        "projection": "Node"
+      },
+      {
+        "sourceField": "fx",
+        "projection": "Hidden"
+      },
+      {
+        "sourceField": "resource",
+        "projection": "Hidden"
+      },
+      {
+        "sourceField": "model",
+        "projection": "Hidden"
+      },
+      {
+        "sourceField": "viewfunction_component",
+        "projection": "Hidden"
+      }
+    ]
+  },
+  "nestedTypes": [
+    {
+      "key": "ValueSource",
+      "label": "数值来源",
+      "description": "逗号分隔的 PropId,Scale,Fix；结果=(Prop(PropId)×Scale+Fix)/10000。PropId 是 NumericType 属性编号，必须先按枚举值解析属性名和施法者属性值，不能把 PropId 本身当成结果。PropId=0 时只使用 Fix。",
+      "encoding": {
+        "kind": "Delimited",
+        "separator": ",",
+        "fields": [
+          "PropId",
+          "Scale",
+          "Fix"
+        ]
+      },
+      "resolution": {
+        "expression": "(owner.Property(PropId) × Scale + Fix) / 10000",
+        "propIdZero": "PropId=0 时只使用 Fix。",
+        "propIdNonZero": "PropId 是 NumericType 枚举编号，必须先解析对应施法者属性值；PropId 本身不是属性值。缺少运行实例时必须保留属性引用表达式，不能输出绝对数值。"
+      },
+      "fields": [
+        {
+          "key": "PropId",
+          "label": "属性",
+          "kind": "Enum",
+          "enumName": "NumericType",
+          "description": "NumericType 属性编号，0=None 表示只取固定值。"
+        },
+        {
+          "key": "Scale",
+          "label": "倍率",
+          "kind": "ScaledInteger",
+          "scale": 10000,
+          "description": "按 10000 为 1.0 的万分比倍率。"
+        },
+        {
+          "key": "Fix",
+          "label": "固定值",
+          "kind": "ScaledInteger",
+          "scale": 10000,
+          "description": "按 10000 为 1.0 的万分比固定值。"
+        }
+      ]
+    }
+  ],
+  "fieldSemantics": [
+    {
+      "path": "Search.shape_param",
+      "elementType": "ValueSource",
+      "description": "按 shape 解释的数值来源列表。第 1 项是主范围或长度；第 2 项在扇形中为完整夹角，在矩形、十字、直线中为半宽，在环形中为厚度。",
+      "indexRoles": [
+        {
+          "index": 0,
+          "role": "rangeOrLength",
+          "description": "主范围或长度；圆形、扇形、环形作为范围，矩形、十字、直线作为长度。该范围求值后会附加施法者 Radius。"
+        },
+        {
+          "index": 1,
+          "role": "shapeSecondary",
+          "description": "扇形为完整夹角，运行时取该值的一半作为 HalfAngle；矩形、十字、直线为半宽；环形为厚度。"
+        }
+      ]
+    }
+  ],
   "valueSources": [
     "ModelProposed",
     "UserEdited",
@@ -979,7 +1148,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Hidden"
         },
         {
           "index": 1,
@@ -1059,7 +1229,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Subtree"
         },
         {
           "index": 1,
@@ -1110,7 +1281,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Subtree"
         },
         {
           "index": 1,
@@ -1344,7 +1516,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 2,
@@ -1400,7 +1573,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         }
       ],
       "semantic": {
@@ -1435,7 +1609,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -1548,7 +1723,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -1562,7 +1738,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Subtree"
         }
       ],
       "semantic": {
@@ -1599,7 +1776,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -1613,7 +1791,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Subtree"
         },
         {
           "index": 2,
@@ -1627,7 +1806,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Subtree"
         }
       ],
       "semantic": {
@@ -1662,7 +1842,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -1690,7 +1871,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Subtree"
         },
         {
           "index": 3,
@@ -1704,7 +1886,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Subtree"
         }
       ],
       "semantic": {
@@ -1739,7 +1922,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -1816,7 +2000,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -1893,7 +2078,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -1963,7 +2149,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         }
       ],
       "semantic": {
@@ -1999,7 +2186,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -2105,7 +2293,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Subtree"
         },
         {
           "index": 1,
@@ -2155,7 +2344,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -2276,7 +2466,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Subtree"
         },
         {
           "index": 1,
@@ -2355,7 +2546,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -2425,7 +2617,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Subtree"
         },
         {
           "index": 6,
@@ -2439,7 +2632,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         }
       ],
       "semantic": {
@@ -2505,6 +2699,7 @@
           "repeating": false,
           "repeatStep": 0,
           "allowsMultipleEnumValues": false,
+          "executionProjection": "Subtree",
           "defaultValue": 0
         }
       ],
@@ -2542,7 +2737,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -2762,7 +2958,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 2,
@@ -2776,7 +2973,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         }
       ],
       "semantic": {
@@ -2991,7 +3189,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -3054,7 +3253,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -3117,7 +3317,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Hidden"
         },
         {
           "index": 1,
@@ -3222,7 +3423,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Hidden"
         },
         {
           "index": 1,
@@ -3285,7 +3487,8 @@
           "scale": null,
           "repeating": true,
           "repeatStep": 1,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         }
       ],
       "semantic": {
@@ -3586,7 +3789,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         },
         {
           "index": 1,
@@ -3937,7 +4141,8 @@
           "scale": null,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "executionProjection": "Node"
         }
       ],
       "semantic": {

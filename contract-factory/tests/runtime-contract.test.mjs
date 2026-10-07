@@ -78,6 +78,82 @@ test("runtime-backed parameter contracts are exposed to the agent", async () => 
   );
 });
 
+test("execution projection distinguishes continuation from configuration", async () => {
+  const registry = await readJson("config/capability-registry.v0.json");
+  const effects = new Map(
+    registry.effects.map((action) => [action.key, action])
+  );
+  const conditions = new Map(
+    registry.conditions.map((action) => [action.key, action])
+  );
+
+  assert.equal(
+    effects.get("Research").parameters.find(
+      (parameter) => parameter.key === "searchId"
+    ).executionProjection,
+    "Node"
+  );
+  assert.equal(
+    effects.get("Research").parameters.find(
+      (parameter) => parameter.key === "effectGroupId"
+    ).executionProjection,
+    "Subtree"
+  );
+  assert.equal(
+    effects.get("Damage").parameters.find(
+      (parameter) => parameter.key === "pipeline"
+    ).executionProjection,
+    "Hidden"
+  );
+  assert.equal(
+    effects.get("SummonAutoTrap").parameters.find(
+      (parameter) => parameter.key === "trapId"
+    ).executionProjection,
+    "Subtree"
+  );
+  assert.equal(
+    conditions.get("HasBuff").parameters.find(
+      (parameter) => parameter.key === "buffId"
+    ).executionProjection,
+    "Node"
+  );
+  assert.deepEqual(
+    registry.executionProjection.edgeRules.find(
+      (rule) => rule.sourceField === "fx"
+    ),
+    {
+      sourceField: "fx",
+      projection: "Hidden"
+    }
+  );
+});
+
+test("nested value-source contracts are exposed for table learning", async () => {
+  const registry = await readJson("config/capability-registry.v0.json");
+  const valueSource = registry.nestedTypes.find(
+    (item) => item.key === "ValueSource"
+  );
+  const shapeParameter = registry.fieldSemantics.find(
+    (item) => item.path === "Search.shape_param"
+  );
+
+  assert.equal(valueSource.encoding.separator, ",");
+  assert.deepEqual(valueSource.encoding.fields, [
+    "PropId",
+    "Scale",
+    "Fix"
+  ]);
+  assert.equal(
+    valueSource.fields.find((field) => field.key === "PropId").enumName,
+    "NumericType"
+  );
+  assert.equal(shapeParameter.elementType, "ValueSource");
+  assert.deepEqual(
+    shapeParameter.indexRoles.map((item) => item.role),
+    ["rangeOrLength", "shapeSecondary"]
+  );
+});
+
 test("runtime enums include values used by current workbooks", async () => {
   const enumSnapshot = await readJson("config/enum-values.v0.json");
   const byName = new Map(

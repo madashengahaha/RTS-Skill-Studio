@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 0,
+  "defaultParameterProjection": "Node",
+  "defaultEdgeProjection": "Node",
+  "parameterRules": [
+    {
+      "parameterKey": "effectGroupId",
+      "projection": "Subtree"
+    },
+    {
+      "parameterKey": "successEffect",
+      "projection": "Subtree"
+    },
+    {
+      "parameterKey": "failureEffect",
+      "projection": "Subtree"
+    },
+    {
+      "category": "effect",
+      "parameterKey": "trapId",
+      "projection": "Subtree"
+    },
+    {
+      "category": "effect",
+      "parameterKey": "buffId",
+      "projection": "Subtree"
+    },
+    {
+      "parameterKey": "pipeline",
+      "projection": "Hidden"
+    },
+    {
+      "parameterKey": "searchId",
+      "projection": "Node"
+    },
+    {
+      "parameterKey": "skillId",
+      "projection": "Node"
+    }
+  ],
+  "edgeRules": [
+    {
+      "role": "orderedEffect",
+      "projection": "Subtree"
+    },
+    {
+      "role": "orderedCondition",
+      "projection": "Subtree"
+    },
+    {
+      "role": "releaseConditionGate",
+      "projection": "Subtree"
+    },
+    {
+      "sourceField": "pre_effect_group_id",
+      "projection": "Subtree"
+    },
+    {
+      "sourceField": "effect_group_id",
+      "projection": "Subtree"
+    },
+    {
+      "sourceField": "post_effect_group_id",
+      "projection": "Subtree"
+    },
+    {
+      "sourceField": "enter_effect",
+      "projection": "Subtree"
+    },
+    {
+      "sourceField": "interval_effect",
+      "projection": "Subtree"
+    },
+    {
+      "sourceField": "finish_effect",
+      "projection": "Subtree"
+    },
+    {
+      "sourceField": "finish_effect_id",
+      "projection": "Subtree"
+    },
+    {
+      "sourceField": "buffs",
+      "projection": "Subtree"
+    },
+    {
+      "sourceField": "targetSearch",
+      "projection": "Node"
+    },
+    {
+      "sourceField": "fx",
+      "projection": "Hidden"
+    },
+    {
+      "sourceField": "resource",
+      "projection": "Hidden"
+    },
+    {
+      "sourceField": "model",
+      "projection": "Hidden"
+    },
+    {
+      "sourceField": "viewfunction_component",
+      "projection": "Hidden"
+    }
+  ]
+}

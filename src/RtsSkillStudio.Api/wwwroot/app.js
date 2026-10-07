@@ -23,7 +23,27 @@ const state = {
   sending: false,
 };
 
+const paneLayout = {
+  sidebar: {
+    cssVariable: "--sidebar-width",
+    storageKey: "studio.layout.sidebarWidth",
+    defaultValue: 264,
+    min: 200,
+    max: 420,
+  },
+  inspector: {
+    cssVariable: "--inspector-width",
+    storageKey: "studio.layout.inspectorWidth",
+    defaultValue: 520,
+    min: 360,
+    max: 1040,
+  },
+};
+
 const elements = {
+  appShell: document.querySelector(".app-shell"),
+  sidebar: document.querySelector(".sidebar"),
+  inspectorPane: document.querySelector(".inspector-pane"),
   providerSelect: document.querySelector("#providerSelect"),
   modelSelect: document.querySelector("#modelSelect"),
   reasoningSelect: document.querySelector("#reasoningSelect"),
@@ -61,6 +81,115 @@ function renderIcons() {
   if (window.lucide) {
     window.lucide.createIcons();
   }
+}
+
+function paneWidth(paneName) {
+  const config = paneLayout[paneName];
+  const value = Number.parseFloat(
+    getComputedStyle(document.documentElement).getPropertyValue(
+      config.cssVariable,
+    ),
+  );
+  return Number.isFinite(value) ? value : config.defaultValue;
+}
+
+function maxPaneWidth(paneName) {
+  const config = paneLayout[paneName];
+  const otherPaneName = paneName === "sidebar" ? "inspector" : "sidebar";
+  const otherWidth = paneWidth(otherPaneName);
+  const available =
+    elements.appShell.getBoundingClientRect().width -
+    otherWidth -
+    420 -
+    12;
+  return Math.max(config.min, Math.min(config.max, available));
+}
+
+function setPaneWidth(paneName, width, persist = true) {
+  const config = paneLayout[paneName];
+  const clamped = Math.round(
+    Math.max(config.min, Math.min(maxPaneWidth(paneName), width)),
+  );
+  document.documentElement.style.setProperty(
+    config.cssVariable,
+    `${clamped}px`,
+  );
+  if (persist) {
+    window.localStorage.setItem(config.storageKey, String(clamped));
+  }
+  return clamped;
+}
+
+function restorePaneWidths() {
+  for (const [paneName, config] of Object.entries(paneLayout)) {
+    const saved = Number.parseFloat(
+      window.localStorage.getItem(config.storageKey) || "",
+    );
+    setPaneWidth(
+      paneName,
+      Number.isFinite(saved) ? saved : config.defaultValue,
+      false,
+    );
+  }
+}
+
+function setupPaneResizer(element) {
+  const paneName = element.dataset.paneResizer;
+  const config = paneLayout[paneName];
+  if (!config) {
+    return;
+  }
+
+  function applyKeyboardResize(delta) {
+    const next = setPaneWidth(paneName, paneWidth(paneName) + delta);
+    element.setAttribute("aria-valuenow", String(next));
+  }
+
+  element.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const startX = event.clientX;
+    const startWidth = paneWidth(paneName);
+    element.setPointerCapture(event.pointerId);
+    document.body.classList.add("is-resizing");
+    event.preventDefault();
+
+    function move(pointerEvent) {
+      const rawDelta = pointerEvent.clientX - startX;
+      const delta = paneName === "inspector" ? -rawDelta : rawDelta;
+      const next = setPaneWidth(paneName, startWidth + delta, false);
+      element.setAttribute("aria-valuenow", String(next));
+    }
+
+    function end() {
+      setPaneWidth(paneName, paneWidth(paneName));
+      document.body.classList.remove("is-resizing");
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+    }
+
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+  });
+
+  element.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+      return;
+    }
+
+    event.preventDefault();
+    const delta = event.key === "ArrowLeft" ? -16 : 16;
+    applyKeyboardResize(paneName === "inspector" ? -delta : delta);
+  });
+
+  const width = paneWidth(paneName);
+  element.setAttribute("aria-valuemin", String(config.min));
+  element.setAttribute("aria-valuemax", String(maxPaneWidth(paneName)));
+  element.setAttribute("aria-valuenow", String(width));
 }
 
 function escapeHtml(value) {
@@ -985,7 +1114,7 @@ async function loadAssetChain(
     const response = await fetch(
       `/api/v1/assets/chain?namespace=${encodeURIComponent(
         assetNamespace,
-      )}&id=${assetId}&depth=6`,
+      )}&id=${assetId}&depth=32&view=execution`,
     );
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -1019,7 +1148,7 @@ async function loadAssetChains(assets, activateTab = true) {
     const response = await fetch(
       `/api/v1/assets/chain?namespace=${encodeURIComponent(
         asset.namespace,
-      )}&id=${asset.id}&depth=6`,
+      )}&id=${asset.id}&depth=32&view=execution`,
     );
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -1561,4 +1690,11 @@ document.querySelectorAll(".tab").forEach((tab) => {
 Promise.all([loadProviders(), loadWorkspace()])
   .then(loadConversations)
   .then(renderIcons);
+restorePaneWidths();
+document.querySelectorAll("[data-pane-resizer]").forEach(setupPaneResizer);
+window.addEventListener("resize", () => {
+  for (const paneName of Object.keys(paneLayout)) {
+    setPaneWidth(paneName, paneWidth(paneName), false);
+  }
+});
 renderIcons();

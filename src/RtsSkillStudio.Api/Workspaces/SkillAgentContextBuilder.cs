@@ -9,8 +9,8 @@ public sealed partial class SkillAgentContextBuilder(
     ILogger<SkillAgentContextBuilder> logger
 )
 {
-    private const int MaxHistoryNodes = 80;
-    private const int MaxHistoryEdges = 160;
+    private const int MaxHistoryNodes = 160;
+    private const int MaxHistoryEdges = 320;
     private const int MaxFieldValues = 8;
 
     private static readonly string[] BareCandidateNamespaces =
@@ -27,6 +27,35 @@ public sealed partial class SkillAgentContextBuilder(
     public async Task<AgentWorkspaceContext> BuildAsync(
         StudioAssetRef? selectedAsset,
         string userMessage,
+        CancellationToken cancellationToken
+    )
+    {
+        return await BuildAsync(
+            selectedAsset,
+            userMessage,
+            includeGraphContext: true,
+            cancellationToken
+        );
+    }
+
+    public async Task<AgentWorkspaceContext> BuildBootstrapAsync(
+        StudioAssetRef? selectedAsset,
+        string userMessage,
+        CancellationToken cancellationToken
+    )
+    {
+        return await BuildAsync(
+            selectedAsset,
+            userMessage,
+            includeGraphContext: false,
+            cancellationToken
+        );
+    }
+
+    private async Task<AgentWorkspaceContext> BuildAsync(
+        StudioAssetRef? selectedAsset,
+        string userMessage,
+        bool includeGraphContext,
         CancellationToken cancellationToken
     )
     {
@@ -111,6 +140,18 @@ public sealed partial class SkillAgentContextBuilder(
             }
 
             StudioAssetRef asset = resolution.Asset;
+            builder.AppendLine($"已绑定行为根: {FormatAsset(asset)}");
+            if (!includeGraphContext)
+            {
+                return new AgentWorkspaceContext(
+                    builder.ToString(),
+                    asset,
+                    [],
+                    [],
+                    false
+                );
+            }
+
             SkillChainSnapshot chain = await workspace.GetAssetChainAsync(
                 asset,
                 depth: 32,
@@ -295,6 +336,46 @@ public sealed partial class SkillAgentContextBuilder(
         var candidates = explicitCandidates.Distinct().ToList();
         if (candidates.Count == 0)
         {
+            if (ShouldResolveAssetMentions(userMessage))
+            {
+                IReadOnlyList<AssetSearchResult> namedMatches =
+                    await workspace.FindAssetsByMentionAsync(
+                        userMessage,
+                        8,
+                        cancellationToken
+                    );
+                IReadOnlyList<StudioAssetRef> namedCandidates = namedMatches
+                    .Select(match => match.Ref)
+                    .Distinct()
+                    .ToArray();
+                if (namedCandidates.Count > 0)
+                {
+                    if (
+                        selectedAsset is not null
+                        && namedCandidates.Contains(selectedAsset)
+                    )
+                    {
+                        return new AssetResolution(
+                            selectedAsset,
+                            [],
+                            [],
+                            false
+                        );
+                    }
+
+                    return new AssetResolution(
+                        null,
+                        namedCandidates,
+                        [],
+                        true
+                    );
+                }
+            }
+
+            HashSet<int> modificationValueIndexes = ModificationValueRegex()
+                .Matches(userMessage)
+                .Select(match => match.Groups["id"].Index)
+                .ToHashSet();
             foreach (
                 Match match in BareAssetRegex().Matches(userMessage)
                     .Where(
@@ -304,6 +385,10 @@ public sealed partial class SkillAgentContextBuilder(
                                 userMessage,
                                 match.Index
                             )
+                    )
+                    .Where(
+                        match =>
+                            !modificationValueIndexes.Contains(match.Index)
                     )
             )
             {
@@ -467,6 +552,31 @@ public sealed partial class SkillAgentContextBuilder(
         int close = text.LastIndexOf(']', index);
         return open > close;
     }
+
+    private static Regex ModificationValueRegex() =>
+        ModificationValueRegexHolder.Value;
+
+    private static bool ShouldResolveAssetMentions(string message)
+    {
+        return !SelfIntroductionRegex().IsMatch(message);
+    }
+
+    private static Regex SelfIntroductionRegex() =>
+        SelfIntroductionRegexHolder.Value;
+
+    private static readonly Lazy<Regex> SelfIntroductionRegexHolder = new(
+        () => new Regex(
+            @"(?i)(?:介绍|说说|说明|解释).{0,8}(?:你自己|你自己是谁|你自己做什么|你是什么|你能做什么|你的能力|系统能力|产品能力)",
+            RegexOptions.Compiled
+        )
+    );
+
+    private static readonly Lazy<Regex> ModificationValueRegexHolder = new(
+        () => new Regex(
+            @"(?i)(?:改成|改为|设为|设置成|调整到|调到|固定(?:为)?)\s*(?<id>\d{1,12})\s*(?:点|毫秒|秒|%|雷电|雷|火|冰|毒|暗|光|神圣|混乱|攻城)?",
+            RegexOptions.Compiled
+        )
+    );
 
     private static void AppendFields(
         StringBuilder builder,

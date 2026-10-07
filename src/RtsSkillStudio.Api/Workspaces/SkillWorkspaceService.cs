@@ -13,6 +13,27 @@ public sealed class SkillWorkspaceService(
     ILogger<SkillWorkspaceService> logger
 )
 {
+    private static readonly HashSet<string> GenericMentionTokens =
+    [
+        "自己",
+        "介绍",
+        "一下",
+        "这个",
+        "那个",
+        "技能",
+        "物品",
+        "道具",
+        "效果",
+        "伤害",
+        "条件",
+        "属性",
+        "目标",
+        "搜索",
+        "修改",
+        "调整",
+        "设置"
+    ];
+
     private static readonly (string TableKey, string Namespace)[] SearchRoots =
     [
         ("skill", "TbSkill"),
@@ -235,6 +256,155 @@ public sealed class SkillWorkspaceService(
             .ToArray();
     }
 
+    public async Task<IReadOnlyList<AssetSearchResult>> FindAssetsByMentionAsync(
+        string message,
+        int limit,
+        CancellationToken cancellationToken
+    )
+    {
+        if (string.IsNullOrWhiteSpace(message) || limit is < 1 or > 50)
+        {
+            return [];
+        }
+
+        var snapshot = await LoadAsync(cancellationToken);
+        var matches = new List<(AssetSearchResult Result, int Score)>();
+        foreach ((string tableKey, string nodeNamespace) in SearchRoots)
+        {
+            GameDataTable? table = snapshot.Catalog.Tables.FirstOrDefault(
+                candidate => string.Equals(
+                    candidate.Key,
+                    tableKey,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
+            if (table is null)
+            {
+                continue;
+            }
+
+            foreach (GameDataRecord record in table.Records)
+            {
+                string label = Title(table, record);
+                string summary = BuildAssetSearchSummary(table, record);
+                int score =
+                    MentionScore(message, label, nodeNamespace)
+                    + MentionScore(message, summary, nodeNamespace);
+                if (score <= 0)
+                {
+                    continue;
+                }
+
+                matches.Add(
+                    (
+                        new AssetSearchResult(
+                            new StudioAssetRef(nodeNamespace, record.Id),
+                            label,
+                            summary,
+                            table.DisplayName,
+                            record.SourceRow
+                        ),
+                        score
+                    )
+                );
+            }
+        }
+
+        return matches
+            .OrderByDescending(match => match.Score)
+            .ThenBy(
+                match => match.Result.Ref.Namespace == "TbSkill" ? 0 : 1
+            )
+            .ThenBy(match => match.Result.Ref.Id)
+            .Select(match => match.Result)
+            .DistinctBy(match => match.Ref)
+            .Take(limit)
+            .ToArray();
+    }
+
+    private static int MentionScore(
+        string message,
+        string label,
+        string nodeNamespace
+    )
+    {
+        if (
+            !string.IsNullOrWhiteSpace(label)
+            && message.Contains(label, StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return 1000
+                + label.Length
+                + NamespaceIntentScore(message, nodeNamespace);
+        }
+
+        int score = 0;
+        foreach (
+            string token in label.Split(
+                ['-', '_', '/', ' ', '·'],
+                StringSplitOptions.RemoveEmptyEntries
+                    | StringSplitOptions.TrimEntries
+            )
+        )
+        {
+            if (
+                token.Length >= 2
+                && !GenericMentionTokens.Contains(token)
+                && message.Contains(
+                    token,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            {
+                score = Math.Max(score, token.Length);
+            }
+        }
+
+        return score <= 0
+            ? 0
+            : score + NamespaceIntentScore(message, nodeNamespace);
+    }
+
+    private static int NamespaceIntentScore(
+        string message,
+        string nodeNamespace
+    )
+    {
+        if (
+            (
+                message.Contains("技能", StringComparison.Ordinal)
+                || message.Contains("伤害", StringComparison.Ordinal)
+                || message.Contains("效果", StringComparison.Ordinal)
+                || message.Contains("冷却", StringComparison.Ordinal)
+                || message.Contains("属性", StringComparison.Ordinal)
+                || message.Contains("skill", StringComparison.OrdinalIgnoreCase)
+            )
+            && string.Equals(
+                nodeNamespace,
+                "TbSkill",
+                StringComparison.Ordinal
+            )
+        )
+        {
+            return 100;
+        }
+
+        if (
+            (message.Contains("物品", StringComparison.Ordinal)
+                || message.Contains("道具", StringComparison.Ordinal))
+            && string.Equals(
+                nodeNamespace,
+                "TbItem",
+                StringComparison.Ordinal
+            )
+        )
+        {
+            return 50;
+        }
+
+        return 0;
+    }
+
     private static void AddEffectGroupSearchResults(
         GameDataCatalog catalog,
         string term,
@@ -324,40 +494,70 @@ public sealed class SkillWorkspaceService(
         CancellationToken cancellationToken
     )
     {
-        if (depth is < 1 or > 32)
+        return await GetAssetChainAsync(
+            root,
+            depth,
+            "out",
+            cancellationToken
+        );
+    }
+
+    public async Task<SkillChainSnapshot> GetAssetChainAsync(
+        StudioAssetRef root,
+        int depth,
+        string direction,
+        CancellationToken cancellationToken
+    )
+    {
+        if (depth is < 0 or > 32)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(depth),
-                "链路深度必须在 1 到 32 之间。"
+                "链路深度必须在 0 到 32 之间。"
             );
         }
 
         string rootNamespace = NormalizeAssetNamespace(root.Namespace);
+        string normalizedDirection = NormalizeDirection(direction);
         var snapshot = await LoadAsync(cancellationToken);
-        HeroAuthoringGraph graph = HeroAuthoringRootProfiles.TryNormalize(
-            rootNamespace,
-            out _
-        )
-            ? snapshot.Projector.ProjectBehavior(
-                snapshot.Catalog,
-                rootNamespace,
-                root.Id,
-                depth
-            )
-            : snapshot.Projector.Project(
-                snapshot.Catalog,
-                rootNamespace,
-                root.Id,
-                Math.Min(depth, 5)
-            );
-        if (
-            !HeroAuthoringRootProfiles.TryNormalize(
+        string rootKey = $"{rootNamespace}:{root.Id}";
+        HeroAuthoringGraph graph;
+        if (normalizedDirection == "out")
+        {
+            graph = HeroAuthoringRootProfiles.TryNormalize(
                 rootNamespace,
                 out _
             )
-        )
+                ? snapshot.Projector.ProjectBehavior(
+                    snapshot.Catalog,
+                    rootNamespace,
+                    root.Id,
+                    depth
+                )
+                : snapshot.Projector.Project(
+                    snapshot.Catalog,
+                    rootNamespace,
+                    root.Id,
+                    Math.Min(depth, 5)
+                );
+            if (
+                !HeroAuthoringRootProfiles.TryNormalize(
+                    rootNamespace,
+                    out _
+                )
+            )
+            {
+                graph = SelectDownstream(graph, graph.FocusKey);
+            }
+        }
+        else
         {
-            graph = SelectDownstream(graph, graph.FocusKey);
+            graph = SelectDirectional(
+                snapshot.Graph,
+                rootKey,
+                depth,
+                normalizedDirection
+            );
         }
         SkillInboundReferenceSet incoming =
             await GetIncomingReferencesAsync(
@@ -401,6 +601,129 @@ public sealed class SkillWorkspaceService(
             incoming.Truncated
         );
     }
+
+    private static string NormalizeDirection(string direction)
+    {
+        return direction.Trim().ToLowerInvariant() switch
+        {
+            "out" => "out",
+            "in" => "in",
+            "both" => "both",
+            _ => throw new ArgumentException(
+                "direction 只能是 out、in 或 both。",
+                nameof(direction)
+            )
+        };
+    }
+
+    private static HeroAuthoringGraph SelectDirectional(
+        HeroAuthoringGraph graph,
+        string focusKey,
+        int depth,
+        string direction
+    )
+    {
+        if (
+            !graph.Nodes.Any(
+                node => string.Equals(
+                    node.Key,
+                    focusKey,
+                    StringComparison.Ordinal
+                )
+            )
+        )
+        {
+            throw new KeyNotFoundException(
+                $"英雄配置图谱中不存在节点 {focusKey}。"
+            );
+        }
+
+        bool includeOutgoing =
+            direction is "out" or "both";
+        bool includeIncoming =
+            direction is "in" or "both";
+        var included = new HashSet<string>(
+            StringComparer.Ordinal
+        )
+        {
+            focusKey
+        };
+        var frontier = new HashSet<string>(
+            StringComparer.Ordinal
+        )
+        {
+            focusKey
+        };
+
+        for (int level = 0; level < depth; level++)
+        {
+            var next = new HashSet<string>(StringComparer.Ordinal);
+            foreach (HeroAuthoringGraphEdge edge in graph.Edges)
+            {
+                if (
+                    includeOutgoing
+                    && frontier.Contains(edge.Source)
+                    && !IsCodeTerminal(edge.Source)
+                    && included.Add(edge.Target)
+                )
+                {
+                    next.Add(edge.Target);
+                }
+
+                if (
+                    includeIncoming
+                    && frontier.Contains(edge.Target)
+                    && !IsCodeTerminal(edge.Target)
+                    && included.Add(edge.Source)
+                )
+                {
+                    next.Add(edge.Source);
+                }
+            }
+
+            frontier = next;
+            if (frontier.Count == 0)
+            {
+                break;
+            }
+        }
+
+        HeroAuthoringGraphNode[] nodes = graph
+            .Nodes.Where(node => included.Contains(node.Key))
+            .Select(
+                node => node with
+                {
+                    IsFocus = string.Equals(
+                        node.Key,
+                        focusKey,
+                        StringComparison.Ordinal
+                    )
+                }
+            )
+            .OrderByDescending(node => node.IsFocus)
+            .ThenBy(node => node.Namespace, StringComparer.Ordinal)
+            .ThenBy(node => node.LegacyId)
+            .ToArray();
+        HeroAuthoringGraphEdge[] edges = graph
+            .Edges.Where(
+                edge =>
+                    included.Contains(edge.Source)
+                    && included.Contains(edge.Target)
+            )
+            .DistinctBy(edge => edge.Id, StringComparer.Ordinal)
+            .ToArray();
+        return new HeroAuthoringGraph(focusKey, nodes, edges);
+    }
+
+    private static bool IsCodeTerminal(string key) =>
+        key.StartsWith(
+            "CodeEffectExecutor:",
+            StringComparison.Ordinal
+        )
+        || key.StartsWith(
+            "CodeConditionHandler:",
+            StringComparison.Ordinal
+        );
 
     public async Task<SkillInboundReferenceSet> GetIncomingReferencesAsync(
         int skillId,

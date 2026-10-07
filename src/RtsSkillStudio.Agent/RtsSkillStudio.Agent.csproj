@@ -6,6 +6,10 @@
     <ProjectReference Include="..\..\vendor\TianshuDM\TianshuDM.Application\TianshuDM.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NJsonSchema" Version="11.0.2" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

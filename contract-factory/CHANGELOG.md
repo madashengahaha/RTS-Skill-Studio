@@ -20,8 +20,14 @@
   SHA-256 tracking and bidirectional validation.
 - Effect parameters now expose runtime defaults in the same raw representation as
   `action_param`.
+- `SkillConfigPlan` now exposes `ModifyAsset` for direct non-Skill behavior asset
+  changes.
 - Made `EffectActionType` and `EConditionType` registry coverage fail validation
   when they drift from the generated enum snapshot.
+- Aligned read-only graph depth and direction behavior across the Node contract
+  library and the .NET Agent tool host.
+- Removed duplicated .NET tool input schemas; the Agent host now loads the
+  generated read-only tool contract directly.
 
 ### Verification
 

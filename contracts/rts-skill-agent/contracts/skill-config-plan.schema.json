@@ -383,6 +383,9 @@
           "$ref": "#/$defs/ModifySkillOperation"
         },
         {
+          "$ref": "#/$defs/ModifyAssetOperation"
+        },
+        {
           "$ref": "#/$defs/AddEffectIntentOperation"
         },
         {
@@ -474,6 +477,43 @@
               "type": "string"
             },
             "skill": {
+              "$ref": "#/$defs/AssetRef"
+            },
+            "fields": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/Value"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ModifyAssetOperation": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/OperationBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operationId",
+            "kind",
+            "asset",
+            "fields"
+          ],
+          "properties": {
+            "operationId": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "ModifyAsset"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "asset": {
               "$ref": "#/$defs/AssetRef"
             },
             "fields": {
@@ -905,4 +945,3 @@
     }
   }
 }
-

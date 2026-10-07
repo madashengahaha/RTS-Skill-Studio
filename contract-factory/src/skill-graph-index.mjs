@@ -1,6 +1,6 @@
 const MAX_LIMIT = 500;
 const DEFAULT_DEPTH = 1;
-const MAX_DEPTH = 5;
+const MAX_DEPTH = 32;
 const DIRECTIONS = new Set(["out", "in", "both"]);
 const EVIDENCE_KINDS = new Set([
   "Excel",

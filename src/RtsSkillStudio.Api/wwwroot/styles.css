@@ -1034,6 +1034,11 @@ button {
   height: 12px;
 }
 
+.tree-legend-hint {
+  margin-left: auto;
+  color: #9aa4ac;
+}
+
 .chain-tree {
   padding-top: 4px;
 }

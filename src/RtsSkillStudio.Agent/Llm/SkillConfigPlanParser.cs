@@ -10,6 +10,7 @@ public static partial class SkillConfigPlanParser
         {
             "CreateSkill",
             "ModifySkill",
+            "ModifyAsset",
             "AddEffectIntent",
             "ModifyEffectIntent",
             "DeleteEffectIntent",
@@ -23,33 +24,65 @@ public static partial class SkillConfigPlanParser
 
     public static SkillConfigPlanExtraction Extract(string text)
     {
-        Match? match = JsonFenceRegex().Matches(text).LastOrDefault();
-        if (match is null || !match.Success)
+        foreach (Match match in JsonFenceRegex().Matches(text).Reverse())
         {
-            return new SkillConfigPlanExtraction(null, []);
+            string json = match.Groups["json"].Value.Trim();
+            var errors = new List<string>();
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(json);
+                if (!IsPlanCandidate(document.RootElement))
+                {
+                    continue;
+                }
+
+                ValidateRoot(document.RootElement, errors);
+                return new SkillConfigPlanExtraction(
+                    document.RootElement.GetRawText(),
+                    errors
+                );
+            }
+            catch (JsonException exception)
+            {
+                errors.Add($"Plan JSON 无法解析：{exception.Message}");
+                continue;
+            }
         }
 
-        string json = match.Groups["json"].Value.Trim();
-        var errors = new List<string>();
-        try
-        {
-            using JsonDocument document = JsonDocument.Parse(json);
-            ValidateRoot(document.RootElement, errors);
-            return new SkillConfigPlanExtraction(
-                document.RootElement.GetRawText(),
-                errors
-            );
-        }
-        catch (JsonException exception)
-        {
-            errors.Add($"Plan JSON 无法解析：{exception.Message}");
-            return new SkillConfigPlanExtraction(json, errors);
-        }
+        return new SkillConfigPlanExtraction(null, []);
     }
 
     public static string RemovePlanBlock(string text)
     {
-        return JsonFenceRegex().Replace(text, "").Trim();
+        return JsonFenceRegex().Replace(
+            text,
+            match =>
+            {
+                try
+                {
+                    using JsonDocument document = JsonDocument.Parse(
+                        match.Groups["json"].Value
+                    );
+                    return IsPlanCandidate(document.RootElement)
+                        ? ""
+                        : match.Value;
+                }
+                catch (JsonException)
+                {
+                    return match.Value;
+                }
+            }
+        ).Trim();
+    }
+
+    private static bool IsPlanCandidate(JsonElement root)
+    {
+        return root.ValueKind == JsonValueKind.Object
+            && (
+                root.TryGetProperty("schemaVersion", out _)
+                || root.TryGetProperty("planId", out _)
+                || root.TryGetProperty("operations", out _)
+            );
     }
 
     private static void ValidateRoot(JsonElement root, ICollection<string> errors)
@@ -183,6 +216,10 @@ public static partial class SkillConfigPlanParser
         {
             case "ModifySkill":
                 RequireObject(operation, "skill", errors, prefix);
+                RequireObject(operation, "fields", errors, prefix);
+                break;
+            case "ModifyAsset":
+                RequireObject(operation, "asset", errors, prefix);
                 RequireObject(operation, "fields", errors, prefix);
                 break;
             case "CreateSkill":

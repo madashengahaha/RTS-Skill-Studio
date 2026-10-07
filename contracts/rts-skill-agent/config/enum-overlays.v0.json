@@ -164,6 +164,21 @@
         {"name": "Auxiliary", "value": 14, "alias": "辅助", "comment": null},
         {"name": "Tank", "value": 15, "alias": "坦克", "comment": null}
       ]
+    },
+    {
+      "name": "NumericType",
+      "flags": false,
+      "comment": "属性类型；为元素伤害补充中文别名。",
+      "values": [
+        {"name": "FrostDamage", "value": 1017, "alias": "冰", "comment": null},
+        {"name": "PoisonDamage", "value": 1018, "alias": "毒", "comment": null},
+        {"name": "FireDamage", "value": 1019, "alias": "火", "comment": null},
+        {"name": "LightningDamage", "value": 1020, "alias": "雷电", "comment": null},
+        {"name": "DarkDamage", "value": 1021, "alias": "暗", "comment": null},
+        {"name": "HolyDamage", "value": 1022, "alias": "光", "comment": null},
+        {"name": "ChaosDamage", "value": 1023, "alias": "混乱", "comment": null},
+        {"name": "SiegeDamage", "value": 1024, "alias": "攻城", "comment": null}
+      ]
     }
   ]
 }

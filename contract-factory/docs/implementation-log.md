@@ -1,5 +1,88 @@
 # Implementation Log
 
+## 2026-10-07 - Stage A Agent Loop Closure
+
+### Scope
+
+Closed the remaining Stage A gaps between intent routing, read-only tools, Plan
+validation, and the API/UI result surface.
+
+### Decisions
+
+- Read-only graph projection now supports `depth` 0-32 consistently in the Node
+  contract library and the .NET workspace service.
+- `get_graph.direction` is implemented for `out`, `in`, and `both`; the public
+  read-only chain endpoint accepts the same direction values.
+- The .NET Agent tool definitions are loaded from the generated
+  `config/read-only-tools.v0.json` contract instead of duplicating input schemas.
+- `get_graph` results now enforce closed node/edge limits and expose
+  `maxNodes`/`maxEdges` plus `truncated`.
+- `explain_execution_chain` uses the published `skill` input name.
+- Execution-chain results now expose bounded evidence-bearing steps and a summary
+  instead of returning an unlabeled edge list.
+- The Plan parser only extracts a JSON object that is actually Plan-shaped, so
+  ordinary explanatory JSON cannot become an unexpected proposal.
+- Non-configuration routes suppress model-produced Plans before persistence and
+  remove Plan blocks from assistant display text.
+- Negated safety language such as "不要直接写 Excel" does not make a valid
+  configuration request unsupported.
+- Bare mutation requests such as "修改" and "改一下" route to structured
+  clarification instead of producing a missing-plan proposal.
+- The Agent now extracts the focused asset identity from `get_graph` results
+  case-insensitively and treats the evidence label/name as authoritative.
+- Query responses get a deterministic name guard: title, name fields, and
+  asset-key mentions are normalized back to the evidence value, and JSON
+  `\uXXXX` escapes from smaller models are decoded before display.
+- Parameter-semantics questions are routed as queries and the graph bootstrap
+  now extracts action keys from `__executor`, then automatically loads the
+  matching `get_capability_context` parameter contracts.
+- If no parameter contract was returned, the Agent emits a deterministic
+  clarification instead of letting the model guess `action_param` meaning.
+- Explicit UI asset bindings now take precedence over message-based asset
+  resolution, so numeric parameter lists cannot unbind the selected Skill.
+- Capability context now includes only enums referenced by the selected action
+  and requests enough enum values to resolve named values such as
+  `NumericType.LightningDamage`.
+- Configuration answers are required to start with an Excel field-level change
+  table and to avoid undocumented assumptions when a concrete value is given.
+- Added a deterministic damage-change summarizer for explicit requests such as
+  "fixed 27500 lightning damage". It resolves the target Effect from the graph,
+  reads `Damage.fixedDamage` scale and `NumericType` values from capability
+  contracts, and bypasses long model reasoning with a concise Excel change table.
+- Asset resolution now supports display-name mentions before asking for IDs,
+  ranks `TbSkill` first for skill behavior requests, and ignores modification
+  operands such as `固定27500` during asset ID scanning.
+- Pending asset confirmations are persisted per conversation. A follow-up
+  "1" or "是" binds the candidate, resumes the original request, and then runs
+  the deterministic change summary without requiring the user to repeat context.
+- Display-name resolution is suppressed for self-introduction and other
+  non-asset chat, and generic tokens such as "自己" are excluded from mention
+  matching.
+- ScaledInteger parameter explanations now follow the declared contract scale
+  exactly. With `scale=10000`, raw `2000` is documented as `0.2` (20% for
+  percentage fields), not `2000%` or an unspecified precision assumption.
+- Added a global numeric-precision policy: every value must identify its evidence
+  field, raw Excel value, scale, logical value, unit, and formula. Missing
+  scale, unit, default, range, or rounding rules require clarification instead
+  of a numeric proposal.
+- Tool protocol now recognizes DeepSeek DSML tool-call envelopes emitted by
+  CC Switch models, converts them to bounded read-only tool calls, and strips
+  the DSML markers from user-visible assistant text.
+- Agent bootstrap context is budgeted more tightly: graph depth 8, 64 nodes,
+  128 edges, and action-scoped capability queries omit unrelated entity and
+  field registries. This keeps local Ollama requests under its 32k context.
+- Assistant text is normalized against every referenced graph node identity, so
+  any `Namespace:id` mention is paired with the evidence label instead of an
+  invented name. Tests use synthetic entity IDs and names.
+
+### Verified
+
+```text
+npm run validate
+npm test
+dotnet test RtsSkillStudio.sln --artifacts-path <temporary-path>
+```
+
 ## 2026-10-06 - Runtime Contract Alignment and Full Chain Traversal
 
 ### Scope
@@ -42,6 +125,10 @@ executor code as the authority.
   enums, and `EGroupCompletedType`.
 - Added effect-side `defaultValue` metadata for buff targets, `ClearHitMarks`, and
   `Knockback`.
+- Promoted `Effect`, `Item`, `Buff`, `Bullet`, and `Trap` to direct behavior roots
+  alongside `Skill`, `EffectGroup`, and `ConditionGroup`.
+- Added the generic `ModifyAsset` Plan operation so Item, Buff, Bullet, Trap, and
+  other assets do not require Skill-only mutation contracts.
 
 ### Verified
 

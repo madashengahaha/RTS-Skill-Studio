@@ -5,7 +5,7 @@
     "fileName": "builtin.xml",
     "sha256": "b7f344ad3fc9d677ea5857c621de0ccd7ed07b56f3cbc74bbcb01c98dfe66c5a",
     "overlayFileName": "enum-overlays.v0.json",
-    "overlaySha256": "7532e44a275adbf926bb806c267b94d18d3add246cb43e3786882cedb4c52247",
+    "overlaySha256": "185873b78dda6cabd1a495c486a11636dd1889f0604e93cbf15830cc156d33ab",
     "unityGenerated": {
       "declaredRuntimeEnum": "Unity/Assets/Scripts/Model/Generate/Client/Config/EffectActionType.cs",
       "files": [
@@ -1703,7 +1703,7 @@
     {
       "name": "NumericType",
       "flags": false,
-      "comment": "属性类型",
+      "comment": "属性类型；为元素伤害补充中文别名。",
       "sourceKind": "UnityGeneratedEnum",
       "values": [
         {
@@ -2393,7 +2393,7 @@
         {
           "name": "FrostDamage",
           "value": 1017,
-          "alias": "",
+          "alias": "冰",
           "comment": null
         },
         {
@@ -2465,7 +2465,7 @@
         {
           "name": "PoisonDamage",
           "value": 1018,
-          "alias": "",
+          "alias": "毒",
           "comment": null
         },
         {
@@ -2537,7 +2537,7 @@
         {
           "name": "FireDamage",
           "value": 1019,
-          "alias": "",
+          "alias": "火",
           "comment": null
         },
         {
@@ -2609,7 +2609,7 @@
         {
           "name": "LightningDamage",
           "value": 1020,
-          "alias": "",
+          "alias": "雷电",
           "comment": null
         },
         {
@@ -2681,7 +2681,7 @@
         {
           "name": "DarkDamage",
           "value": 1021,
-          "alias": "",
+          "alias": "暗",
           "comment": null
         },
         {
@@ -2753,7 +2753,7 @@
         {
           "name": "HolyDamage",
           "value": 1022,
-          "alias": "",
+          "alias": "光",
           "comment": null
         },
         {
@@ -2825,7 +2825,7 @@
         {
           "name": "ChaosDamage",
           "value": 1023,
-          "alias": "",
+          "alias": "混乱",
           "comment": null
         },
         {
@@ -2897,7 +2897,7 @@
         {
           "name": "SiegeDamage",
           "value": 1024,
-          "alias": "",
+          "alias": "攻城",
           "comment": null
         },
         {

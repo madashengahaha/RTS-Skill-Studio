@@ -15,6 +15,9 @@ const state = {
     planJson: null,
     planErrors: [],
     planDisposition: "None",
+    clarifications: [],
+    unsupported: [],
+    toolExecutions: [],
     lastError: null,
   },
   sending: false,
@@ -370,6 +373,9 @@ function chainInspectorHtml(chain) {
     const toggle = renderChildren
       ? '<span class="tree-toggle" aria-hidden="true"></span>'
       : "";
+    const rowTitle = renderChildren
+      ? `${escapeHtml(node.key)} · Shift+点击折叠/展开整棵子树`
+      : escapeHtml(node.key);
     const summary = `
       <div class="tree-summary">
         ${toggle}
@@ -396,12 +402,12 @@ function chainInspectorHtml(chain) {
     `;
 
     if (!renderChildren) {
-      return `<div class="${className}" title="${escapeHtml(node.key)}">${summary}</div>`;
+      return `<div class="${className}" title="${rowTitle}">${summary}</div>`;
     }
 
     return `
       <details class="${className}" open>
-        <summary title="${escapeHtml(node.key)}">${summary}</summary>
+        <summary title="${rowTitle}">${summary}</summary>
         <div class="tree-children">
           ${children
             .map((childEdge) =>
@@ -484,6 +490,7 @@ function chainInspectorHtml(chain) {
       <span>${icon("git-branch")} 分支</span>
       <span>${icon("circle")} 叶节点</span>
       <span>${icon("copy")} 共享</span>
+      <span class="tree-legend-hint">Shift+点击 整棵子树折叠/展开</span>
     </div>
     <div class="chain-tree">
       ${incomingHtml}
@@ -544,6 +551,9 @@ function renderInspector() {
     planJson,
     planErrors,
     planDisposition,
+    clarifications,
+    unsupported,
+    toolExecutions,
     lastError,
   } = state.inspector;
   const visibleChains = chains?.length ? chains : chain ? [chain] : [];
@@ -553,10 +563,19 @@ function renderInspector() {
       ? planErrors.length > 0
         ? `${planErrors.length} 个校验问题`
         : "Plan 已生成"
-      : planErrors.length > 0
-        ? `${planErrors.length} 个计划问题`
-        : "等待提案";
-    if (!planJson && planErrors.length === 0) {
+      : clarifications.length > 0
+        ? `${clarifications.length} 个澄清问题`
+        : unsupported.length > 0
+          ? `${unsupported.length} 个不支持项`
+          : planErrors.length > 0
+            ? `${planErrors.length} 个计划问题`
+            : "等待提案";
+    if (
+      !planJson &&
+      planErrors.length === 0 &&
+      clarifications.length === 0 &&
+      unsupported.length === 0
+    ) {
       elements.inspectorContent.innerHTML = `
         <div class="inspector-empty">
           <i data-lucide="file-json-2"></i>
@@ -574,29 +593,64 @@ function renderInspector() {
     } catch {
       prettyPlan = planJson;
     }
+    const planStatusHtml =
+      planJson || planErrors.length > 0
+        ? `<div class="plan-validation ${
+            planErrors.length > 0 ? "is-error" : "is-valid"
+          }">
+            <strong>${
+              planDisposition === "UnexpectedProposal"
+                ? "模型主动提案（未保存）"
+                : planDisposition === "Missing"
+                  ? "配置请求未生成 Plan"
+                  : planErrors.length > 0
+                    ? "Schema 校验未通过"
+                    : "Schema 校验通过"
+            }</strong>
+            ${
+              planErrors.length > 0
+                ? `<ul>${planErrors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>`
+                : "<span>当前阶段只校验结构，不编译或执行。</span>"
+            }
+          </div>`
+        : "";
 
     elements.inspectorContent.innerHTML = `
-      <div class="plan-validation ${
-        planErrors.length > 0 ? "is-error" : "is-valid"
-      }">
-        <strong>${
-          planDisposition === "UnexpectedProposal"
-            ? "模型主动提案（未保存）"
-            : planDisposition === "Missing"
-              ? "配置请求未生成 Plan"
-              : planErrors.length > 0
-                ? "Schema 校验未通过"
-                : "Schema 校验通过"
-        }</strong>
-        ${
-          planErrors.length > 0
-            ? `<ul>${planErrors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>`
-            : "<span>当前阶段只校验结构，不编译或执行。</span>"
-        }
-      </div>
+      ${planStatusHtml}
       ${
         planJson
           ? `<pre class="inspector-text">${escapeHtml(prettyPlan)}</pre>`
+          : ""
+      }
+      ${
+        clarifications.length
+          ? `<div class="evidence-block">
+              <h3>需要澄清</h3>
+              ${clarifications
+                .map(
+                  (item) => `<div class="evidence-item">
+                    <strong>${escapeHtml(item.question)}</strong>
+                    <span>${escapeHtml(item.fieldPath)}</span>
+                  </div>`,
+                )
+                .join("")}
+            </div>`
+          : ""
+      }
+      ${
+        unsupported.length
+          ? `<div class="evidence-block is-error">
+              <h3>不支持项</h3>
+              ${unsupported
+                .map(
+                  (item) => `<div class="evidence-item">
+                    <strong>${escapeHtml(item.code)}</strong>
+                    <span>${escapeHtml(item.message)}</span>
+                    <span>${escapeHtml(item.manualPath)}</span>
+                  </div>`,
+                )
+                .join("")}
+            </div>`
           : ""
       }
     `;
@@ -612,6 +666,9 @@ function renderInspector() {
       planJson,
       planErrors,
       planDisposition,
+      clarifications,
+      unsupported,
+      toolExecutions,
       lastError,
     );
     renderIcons();
@@ -654,9 +711,19 @@ function evidenceInspectorHtml(
   planJson,
   planErrors,
   planDisposition,
+  clarifications,
+  unsupported,
+  toolExecutions,
   lastError,
 ) {
-  if (chains.length === 0 && !planJson && !lastError) {
+  if (
+    chains.length === 0 &&
+    !planJson &&
+    !lastError &&
+    clarifications.length === 0 &&
+    unsupported.length === 0 &&
+    toolExecutions.length === 0
+  ) {
     return `
       <div class="inspector-empty">
         <i data-lucide="scan-search"></i>
@@ -678,6 +745,53 @@ function evidenceInspectorHtml(
   const operations = plan?.operations || [];
 
   return `
+    ${
+      unsupported.length
+        ? `<section class="evidence-block is-error">
+            <h3>不支持项</h3>
+            ${unsupported
+              .map(
+                (item) => `<div class="evidence-item">
+                  <strong>${escapeHtml(item.code)}</strong>
+                  <span>${escapeHtml(item.message)}</span>
+                  <span>${escapeHtml(item.manualPath)}</span>
+                </div>`,
+              )
+              .join("")}
+          </section>`
+        : ""
+    }
+    ${
+      clarifications.length
+        ? `<section class="evidence-block">
+            <h3>澄清问题</h3>
+            ${clarifications
+              .map(
+                (item) => `<div class="evidence-item">
+                  <strong>${escapeHtml(item.question)}</strong>
+                  <span>${escapeHtml(item.fieldPath)}</span>
+                </div>`,
+              )
+              .join("")}
+          </section>`
+        : ""
+    }
+    ${
+      toolExecutions.length
+        ? `<section class="evidence-block">
+            <h3>只读工具调用</h3>
+            ${toolExecutions
+              .map(
+                (execution) => `<div class="evidence-item">
+                  <strong>${escapeHtml(execution.name)}</strong>
+                  <code>${escapeHtml(execution.argumentsJson)}</code>
+                  <span>${execution.isError ? "执行失败" : "执行完成"}</span>
+                </div>`,
+              )
+              .join("")}
+          </section>`
+        : ""
+    }
     ${
       lastError
         ? `<section class="evidence-block is-error">
@@ -1036,6 +1150,9 @@ function activateConversation(conversation) {
   state.inspector.planDisposition =
     conversation.planDisposition ||
     (conversation.planJson ? "Expected" : "None");
+  state.inspector.clarifications = [];
+  state.inspector.unsupported = [];
+  state.inspector.toolExecutions = [];
   state.inspector.chain = null;
   state.inspector.chains = [];
   state.inspector.lastError = null;
@@ -1213,6 +1330,9 @@ async function sendMessage(message) {
     state.inspector.planJson = payload.planJson || null;
     state.inspector.planErrors = payload.planErrors || [];
     state.inspector.planDisposition = payload.planDisposition || "None";
+    state.inspector.clarifications = payload.clarifications || [];
+    state.inspector.unsupported = payload.unsupported || [];
+    state.inspector.toolExecutions = payload.toolExecutions || [];
     if (
       !payload.selectedAsset &&
       Array.isArray(payload.mentionedAssets) &&
@@ -1257,6 +1377,32 @@ async function sendMessage(message) {
     elements.messageInput.focus();
   }
 }
+
+function setTreeSubtreeOpen(details, open) {
+  details.open = open;
+  details.querySelectorAll("details").forEach((item) => {
+    item.open = open;
+  });
+}
+
+elements.inspectorContent.addEventListener("click", (event) => {
+  if (!event.shiftKey) {
+    return;
+  }
+  const summary = event.target.closest("summary");
+  if (!summary) {
+    return;
+  }
+  const details = summary.parentElement;
+  if (!details || details.tagName !== "DETAILS") {
+    return;
+  }
+  if (!details.closest(".chain-tree")) {
+    return;
+  }
+  event.preventDefault();
+  setTreeSubtreeOpen(details, !details.open);
+});
 
 elements.providerSelect.addEventListener("change", (event) => {
   selectProvider(event.target.value);

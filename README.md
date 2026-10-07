@@ -83,7 +83,7 @@ controlled writes are temporarily unavailable.
 ## Current Status
 
 Progress is tracked against the product baseline in the Obsidian document
-`技能自然语言配置方案.md`. Last verified: 2026-10-06.
+`技能自然语言配置方案.md`. Last verified: 2026-10-07.
 
 ### Completed
 
@@ -101,8 +101,15 @@ Progress is tracked against the product baseline in the Obsidian document
 - Cloud model routing verified through CC Switch's active Codex provider.
 - Backend-owned Agent policy shared by every provider, including the final product
   goal, current phase, domain terms, evidence rules, and permanent write boundary.
-- Bounded real-workspace context for the selected skill, including its main row fields,
-  downstream nodes, and evidence-bearing graph edges.
+- Intent routing for query, configuration, creation, clarification, and unsupported
+  requests.
+- A bounded, provider-independent read-only tool loop with five tools:
+  capability context, asset resolution, graph projection, similar-skill search, and
+  execution-chain explanation.
+- Full generated `SkillConfigPlan` JSON Schema validation, plus structured
+  clarifications and unsupported results.
+- Bounded real-workspace graph context for Skill, Item, Effect, Buff, Bullet, Trap,
+  EffectGroup, and ConditionGroup behavior roots.
 - Persistent SQLite conversation sessions with create, list, switch, selected-skill
   binding, and multi-turn history.
 - Model enumeration and selection for Ollama and CC Switch, plus configurable
@@ -135,10 +142,7 @@ Progress is tracked against the product baseline in the Obsidian document
 
 ### In Progress
 
-- Replace context preloading with an explicit bounded read-only tool loop.
-- Add richer intent routing, clarification handling, and unsupported-result handling.
-- Replace the lightweight Plan validator with full schema validation against the
-  generated contract-factory schema.
+- Implement the deterministic `SkillConfigPlan` compiler.
 
 ### Next
 
@@ -157,14 +161,8 @@ skill:
 ### Current Limits
 
 - Conversation rename and delete are not implemented.
-- The Agent currently receives a bounded context built from the selected skill; it
-  does not yet choose and invoke read-only tools dynamically.
-- Plan validation covers the core structural requirements in C#, but is not yet a full
-  JSON Schema validator.
 - The UI can inspect real skill chains, but Plan and evidence tabs are not yet
   backed by a compiled editing workflow.
-- The model can explain a request, but it is not yet given bounded graph tools
-  or forced to submit `SkillConfigPlan`.
 - No `WorkbookPatch` compiler or validator is implemented yet.
 - Only a temporary-copy write smoke test exists. Source workbook writes,
   diff confirmation, backup, rollback, and undo are not implemented yet.

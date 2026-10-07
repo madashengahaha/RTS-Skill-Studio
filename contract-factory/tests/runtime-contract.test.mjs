@@ -133,3 +133,45 @@ test("enum snapshot is generated from the source XML and Unity generated code", 
     "UnityGeneratedEnum"
   );
 });
+
+test("plan contract exposes generic non-skill asset modification", async () => {
+  const schema = await readJson("contracts/skill-config-plan.schema.json");
+  const foundation = await readJson("config/registry-foundation.v0.json");
+
+  assert.ok(
+    schema.$defs.Operation.oneOf.some(
+      (item) => item.$ref === "#/$defs/ModifyAssetOperation"
+    )
+  );
+  assert.deepEqual(
+    schema.$defs.ModifyAssetOperation.allOf[1].required,
+    ["operationId", "kind", "asset", "fields"]
+  );
+  assert.equal(
+    schema.$defs.ModifyAssetOperation.allOf[1].properties.kind.const,
+    "ModifyAsset"
+  );
+  assert.ok(foundation.planOperations.includes("ModifyAsset"));
+});
+
+test("read-only tool input boundaries match the runtime contract", async () => {
+  const contract = await readJson("config/read-only-tools.v0.json");
+  const tools = new Map(
+    contract.tools.map((tool) => [tool.name, tool])
+  );
+  const graph = tools.get("get_graph");
+  const similar = tools.get("search_similar_skills");
+  const chain = tools.get("explain_execution_chain");
+
+  assert.equal(graph.inputSchema.properties.depth.minimum, 0);
+  assert.equal(graph.inputSchema.properties.depth.maximum, 32);
+  assert.deepEqual(
+    graph.inputSchema.properties.direction.enum,
+    ["out", "in", "both"]
+  );
+  assert.equal(
+    similar.inputSchema.properties.limit.maximum,
+    500
+  );
+  assert.deepEqual(chain.inputSchema.required, ["skill"]);
+});

@@ -3,6 +3,7 @@ using RtsSkillStudio.Agent;
 using RtsSkillStudio.Agent.Llm;
 using RtsSkillStudio.Agent.Workspaces;
 using RtsSkillStudio.Api.Workspaces;
+using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
 var llmOptions = builder.Configuration.GetSection("Llm").Get<LlmOptions>()
@@ -19,6 +20,23 @@ builder.Services.AddSingleton<LlmProviderFactory>();
 builder.Services.AddSingleton<SkillWorkspaceService>();
 builder.Services.AddSingleton<SkillAgentContextBuilder>();
 builder.Services.AddSingleton<StudioConversationStore>();
+builder.Services.AddSingleton(
+    new SkillConfigPlanValidator(
+        Path.GetFullPath(
+            Path.Combine(
+                builder.Environment.ContentRootPath,
+                "..",
+                "..",
+                StudioInfo.ContractRoot
+            )
+        )
+    )
+);
+builder.Services.AddSingleton<SkillReadOnlyToolService>();
+builder.Services.AddSingleton<IAgentReadOnlyToolService>(
+    services => services.GetRequiredService<SkillReadOnlyToolService>()
+);
+builder.Services.AddSingleton<AgentToolLoop>();
 
 var app = builder.Build();
 
@@ -319,7 +337,7 @@ app.MapPost(
         ConversationChatRequest request,
         StudioConversationStore conversations,
         SkillAgentContextBuilder contextBuilder,
-        LlmProviderFactory providerFactory,
+        AgentToolLoop toolLoop,
         CancellationToken cancellationToken
     ) =>
     {
@@ -339,6 +357,99 @@ app.MapPost(
 
         StudioAssetRef? requestAsset =
             ResolveConversationRequestAsset(request);
+        string effectiveMessage = request.Message;
+        if (
+            requestAsset is null
+            && conversation.PendingRequest is not null
+            && conversation.PendingAssets.Count > 0
+        )
+        {
+            StudioAssetRef? pendingSelection = ResolvePendingAssetSelection(
+                request.Message,
+                conversation.PendingAssets
+            );
+            if (pendingSelection is not null)
+            {
+                requestAsset = pendingSelection;
+                effectiveMessage = conversation.PendingRequest;
+                await conversations.ClearPendingAssetClarificationAsync(
+                    conversationId,
+                    cancellationToken
+                );
+            }
+            else if (
+                IsGenericConfirmation(request.Message)
+                && conversation.PendingAssets.Count > 1
+            )
+            {
+                await conversations.AppendMessageAsync(
+                    conversationId,
+                    "user",
+                    request.Message,
+                    null,
+                    null,
+                    null,
+                    cancellationToken
+                );
+                string clarification = BuildAssetClarificationText(
+                    conversation.PendingAssets
+                );
+                await conversations.AppendMessageAsync(
+                    conversationId,
+                    "assistant",
+                    clarification,
+                    "studio",
+                    "asset-resolver",
+                    0,
+                    cancellationToken
+                );
+                return Results.Ok(
+                    new ConversationChatResponse(
+                        conversationId,
+                        null,
+                        null,
+                        "studio",
+                        "asset-resolver",
+                        clarification,
+                        0,
+                        null,
+                        [],
+                        false,
+                        "NeedsClarification",
+                        conversation.PendingAssets,
+                        AgentIntentKind.Configuration.ToString(),
+                        "NeedsClarification",
+                        [
+                            new SkillPlanClarification(
+                                "asset-selection",
+                                clarification,
+                                "request.focus"
+                            )
+                        ],
+                        [],
+                        []
+                    )
+                );
+            }
+            else
+            {
+                await conversations.ClearPendingAssetClarificationAsync(
+                    conversationId,
+                    cancellationToken
+                );
+            }
+        }
+        else if (
+            requestAsset is not null
+            && conversation.PendingRequest is not null
+        )
+        {
+            await conversations.ClearPendingAssetClarificationAsync(
+                conversationId,
+                cancellationToken
+            );
+        }
+
         StudioAssetRef? selectedAsset = requestAsset
             ?? conversation.SelectedAsset;
         if (requestAsset is not null)
@@ -352,15 +463,92 @@ app.MapPost(
 
         try
         {
-            AgentWorkspaceContext workspaceContext = await contextBuilder.BuildAsync(
-                selectedAsset,
-                request.Message,
-                cancellationToken
-            );
+            AgentRoute route = AgentIntentRouter.Route(effectiveMessage);
+            AgentWorkspaceContext workspaceContext =
+                await contextBuilder.BuildBootstrapAsync(
+                    selectedAsset,
+                    effectiveMessage,
+                    cancellationToken
+                );
+            StudioAssetRef? boundAsset =
+                requestAsset
+                ?? workspaceContext.Asset
+                ?? conversation.SelectedAsset;
             IReadOnlyList<StudioAssetRef> mentionedAssets =
-                workspaceContext.Asset is not null
-                    ? [workspaceContext.Asset]
+                boundAsset is not null
+                    ? [boundAsset]
                     : workspaceContext.ValidCandidates;
+            if (
+                workspaceContext.Asset is null
+                && workspaceContext.RequiresClarification
+                && workspaceContext.ValidCandidates.Count > 0
+                && requestAsset is null
+            )
+            {
+                IReadOnlyList<StudioAssetRef> candidates =
+                    workspaceContext.ValidCandidates;
+                IReadOnlyList<StudioAssetRef> pendingCandidates =
+                    candidates.Take(5).ToArray();
+                await conversations.SetPendingAssetClarificationAsync(
+                    conversationId,
+                    effectiveMessage,
+                    pendingCandidates,
+                    cancellationToken
+                );
+                await conversations.UpdateMentionedAssetsAsync(
+                    conversationId,
+                    pendingCandidates,
+                    cancellationToken
+                );
+                await conversations.AppendMessageAsync(
+                    conversationId,
+                    "user",
+                    request.Message,
+                    null,
+                    null,
+                    null,
+                    cancellationToken
+                );
+                string clarification = BuildAssetClarificationText(
+                    pendingCandidates
+                );
+                await conversations.AppendMessageAsync(
+                    conversationId,
+                    "assistant",
+                    clarification,
+                    "studio",
+                    "asset-resolver",
+                    0,
+                    cancellationToken
+                );
+                return Results.Ok(
+                    new ConversationChatResponse(
+                        conversationId,
+                        null,
+                        null,
+                        "studio",
+                        "asset-resolver",
+                        clarification,
+                        0,
+                        null,
+                        [],
+                        false,
+                        "NeedsClarification",
+                        pendingCandidates,
+                        route.Kind.ToString(),
+                        "NeedsClarification",
+                        [
+                            new SkillPlanClarification(
+                                "asset-selection",
+                                clarification,
+                                "request.focus"
+                            )
+                        ],
+                        [],
+                        []
+                    )
+                );
+            }
             await conversations.UpdateMentionedAssetsAsync(
                 conversationId,
                 mentionedAssets,
@@ -368,6 +556,7 @@ app.MapPost(
             );
             if (
                 workspaceContext.RequiresClarification
+                && requestAsset is null
                 && conversation.SelectedAsset is not null
             )
             {
@@ -378,7 +567,8 @@ app.MapPost(
                 );
             }
             else if (
-                workspaceContext.Asset is not null
+                requestAsset is null
+                && workspaceContext.Asset is not null
                 && workspaceContext.Asset != conversation.SelectedAsset
             )
             {
@@ -407,83 +597,37 @@ app.MapPost(
                     )
                 )
                 .ToArray();
-            LlmCompletionResult result = await providerFactory
-                .GetProvider(request.Provider)
-                .CompleteAsync(
-                    new LlmCompletionRequest(
-                        request.Message,
-                        SkillAgentInstructions.Build(
-                            null,
-                            workspaceContext.Text
-                        ),
-                        request.Model,
-                        history,
-                        request.ReasoningEffort
-                    ),
-                    cancellationToken
-                );
-            string displayText = SkillConfigPlanParser.RemovePlanBlock(
-                result.Text
+            AgentTurnOutcome turn = await toolLoop.RunAsync(
+                request.Provider,
+                request.Model,
+                request.ReasoningEffort,
+                effectiveMessage,
+                history,
+                workspaceContext.Text,
+                route,
+                boundAsset,
+                mentionedAssets,
+                cancellationToken
             );
 
             await conversations.AppendMessageAsync(
                 conversationId,
                 "assistant",
-                displayText,
-                result.Provider,
-                result.Model,
-                result.LatencyMs,
+                turn.Text,
+                turn.Provider,
+                turn.Model,
+                turn.LatencyMs,
                 cancellationToken
             );
 
-            AgentIntentKind intent = AgentIntentDetector.Classify(
-                request.Message
-            );
-            bool expectsPlan = intent == AgentIntentKind.Configuration;
-            SkillConfigPlanExtraction plan = SkillConfigPlanParser.Extract(
-                result.Text
-            );
-            string planDisposition = "None";
-            if (expectsPlan && string.IsNullOrWhiteSpace(plan.PlanJson))
-            {
-                plan = new SkillConfigPlanExtraction(
-                    null,
-                    ["配置请求未生成可提取的 SkillConfigPlan。"]
-                );
-                planDisposition = "Missing";
-            }
-            else if (expectsPlan)
-            {
-                planDisposition = "Expected";
-            }
-            else if (!string.IsNullOrWhiteSpace(plan.PlanJson))
-            {
-                planDisposition = "UnexpectedProposal";
-                plan = plan with
-                {
-                    Errors =
-                    [
-                        .. plan.Errors,
-                        "本轮未识别为配置请求，Plan 未作为当前配置计划保存，仅保留供人工检查。"
-                    ]
-                };
-            }
-            else if (intent == AgentIntentKind.Ambiguous)
-            {
-                planDisposition = "NeedsClarification";
-                plan = new SkillConfigPlanExtraction(
-                    null,
-                    ["请求缺少明确的技能目标和字段，需要用户补充后再生成 Plan。"]
-                );
-            }
-            if (!string.IsNullOrWhiteSpace(plan.PlanJson))
+            if (!string.IsNullOrWhiteSpace(turn.PlanJson))
             {
                 await conversations.SavePlanAsync(
                     conversationId,
-                    plan.PlanJson,
-                    plan.Errors,
-                    expectsPlan,
-                    planDisposition,
+                    turn.PlanJson,
+                    turn.PlanErrors,
+                    turn.ExpectsPlan,
+                    turn.PlanDisposition,
                     cancellationToken
                 );
             }
@@ -491,19 +635,24 @@ app.MapPost(
             return Results.Ok(
                 new ConversationChatResponse(
                     conversationId,
-                    workspaceContext.Asset?.Namespace == "TbSkill"
-                        ? workspaceContext.Asset.Id
+                    boundAsset?.Namespace == "TbSkill"
+                        ? boundAsset.Id
                         : null,
-                    workspaceContext.Asset,
-                    result.Provider,
-                    result.Model,
-                    displayText,
-                    result.LatencyMs,
-                    plan.PlanJson,
-                    plan.Errors,
-                    expectsPlan,
-                    planDisposition,
-                    mentionedAssets
+                    boundAsset,
+                    turn.Provider,
+                    turn.Model,
+                    turn.Text,
+                    turn.LatencyMs,
+                    turn.PlanJson,
+                    turn.PlanErrors,
+                    turn.ExpectsPlan,
+                    turn.PlanDisposition,
+                    mentionedAssets,
+                    turn.Intent.ToString(),
+                    turn.Status,
+                    turn.Clarifications,
+                    turn.Unsupported,
+                    turn.ToolExecutions
                 )
             );
         }
@@ -645,6 +794,7 @@ app.MapGet(
         string? @namespace,
         int? id,
         int? depth,
+        string? direction,
         SkillWorkspaceService workspace,
         CancellationToken cancellationToken
     ) =>
@@ -655,6 +805,15 @@ app.MapGet(
                 new { error = "namespace and id are required." }
             );
         }
+        if (
+            !string.IsNullOrWhiteSpace(direction)
+            && direction is not ("out" or "in" or "both")
+        )
+        {
+            return Results.BadRequest(
+                new { error = "direction must be out, in, or both." }
+            );
+        }
 
         try
         {
@@ -662,6 +821,7 @@ app.MapGet(
                 await workspace.GetAssetChainAsync(
                     new StudioAssetRef(@namespace, id.Value),
                     depth ?? 6,
+                    direction ?? "out",
                     cancellationToken
                 )
             );
@@ -748,6 +908,107 @@ static StudioAssetRef? ResolveAsset(
     return skillId is null
         ? null
         : new StudioAssetRef("TbSkill", skillId.Value);
+}
+
+static StudioAssetRef? ResolvePendingAssetSelection(
+    string message,
+    IReadOnlyList<StudioAssetRef> candidates
+)
+{
+    string text = message.Trim();
+    Match keyMatch = Regex.Match(
+        text,
+        @"(?i)\b(?<namespace>Tb[A-Za-z]+|EffectGroup|ConditionGroup):(?<id>\d+)\b"
+    );
+    if (keyMatch.Success && int.TryParse(keyMatch.Groups["id"].Value, out int keyId))
+    {
+        StudioAssetRef? keyed = candidates.FirstOrDefault(
+            candidate =>
+                string.Equals(
+                    candidate.Namespace,
+                    keyMatch.Groups["namespace"].Value,
+                    StringComparison.OrdinalIgnoreCase
+                )
+                && candidate.Id == keyId
+        );
+        if (keyed is not null)
+        {
+            return keyed;
+        }
+    }
+
+    Match indexMatch = Regex.Match(text, @"^\s*(?<index>\d{1,2})\s*$");
+    if (
+        indexMatch.Success
+        && int.TryParse(indexMatch.Groups["index"].Value, out int index)
+        && index >= 1
+        && index <= candidates.Count
+    )
+    {
+        return candidates[index - 1];
+    }
+
+    if (
+        candidates.Count == 1
+        && Regex.IsMatch(
+            text,
+            @"^(?:是|是的|对|对的|确认|没错|可以|好|就这个|这个|yes|y)$",
+            RegexOptions.IgnoreCase
+        )
+    )
+    {
+        return candidates[0];
+    }
+
+    foreach (StudioAssetRef candidate in candidates)
+    {
+        if (
+            text.Contains(
+                $"{candidate.Namespace}:{candidate.Id}",
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
+        {
+            return candidate;
+        }
+    }
+
+    return null;
+}
+
+static bool IsGenericConfirmation(string message)
+{
+    return Regex.IsMatch(
+        message.Trim(),
+        @"^(?:是|是的|对|对的|确认|没错|可以|好|就这个|这个|yes|y)$",
+        RegexOptions.IgnoreCase
+    );
+}
+
+static string BuildAssetClarificationText(
+    IReadOnlyList<StudioAssetRef> candidates
+)
+{
+    var builder = new System.Text.StringBuilder();
+    builder.AppendLine(
+        candidates.Count == 1
+            ? "我找到一个可能的资产，请确认是不是它："
+            : "我找到多个可能的资产，请选择："
+    );
+    builder.AppendLine();
+    for (int index = 0; index < candidates.Count; index++)
+    {
+        builder.AppendLine(
+            $"{index + 1}. `{candidates[index].Namespace}:{candidates[index].Id}`"
+        );
+    }
+    builder.AppendLine();
+    builder.AppendLine(
+        candidates.Count == 1
+            ? "如果正确，回复“是”或“1”；如果不是，请给出正确名称或 `Namespace:id`。"
+            : "请回复对应编号或 `Namespace:id`。"
+    );
+    return builder.ToString().Trim();
 }
 
 app.Run();

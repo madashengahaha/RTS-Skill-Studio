@@ -8,6 +8,71 @@ namespace RtsSkillStudio.Tests;
 public sealed class HeroAuthoringGraphProjectorTests
 {
     [Fact]
+    public void DirectBehaviorAssetsAreAvailableAsRoots()
+    {
+        foreach (string rootNamespace in new[]
+                 {
+                     "TbSkill",
+                     "TbEffect",
+                     "TbItem",
+                     "TbBuff",
+                     "TbBullet",
+                     "TbTrap",
+                     "EffectGroup",
+                     "ConditionGroup"
+                 })
+        {
+            Assert.True(
+                HeroAuthoringRootProfiles.TryNormalize(
+                    rootNamespace,
+                    out _
+                )
+            );
+        }
+    }
+
+    [Fact]
+    public void ItemCanProjectDirectlyIntoAnEffectGroup()
+    {
+        GameDataCatalog catalog = Catalog(
+            Table(
+                "item",
+                "Item",
+                [Field("Id"), Field("effect_group_id")],
+                Record(5, ("effect_group_id", ["100"]))
+            ),
+            Table(
+                "effect",
+                "Effect",
+                [
+                    Field("Id"),
+                    Field("group_id"),
+                    EnumField("action_type", ("伤害", "Damage", 4)),
+                    Field("action_param")
+                ],
+                Record(
+                    10,
+                    ("group_id", ["100"]),
+                    ("action_type", ["伤害"]),
+                    ("action_param", ["1", "0", "0", "0"])
+                )
+            )
+        );
+
+        HeroAuthoringGraph graph = new HeroAuthoringGraphProjector(
+            new FakeSchemaSource(Schema())
+        ).ProjectBehavior(catalog, "TbItem", 5, 8);
+
+        Assert.Contains(graph.Nodes, node => node.Key == "EffectGroup:100");
+        Assert.Contains(graph.Nodes, node => node.Key == "TbEffect:10");
+        Assert.Contains(
+            graph.Edges,
+            edge => edge.Source == "TbItem:5" &&
+                edge.Target == "EffectGroup:100"
+        );
+    }
+
+    [Fact]
     public void SummonUnitResolvesTheDynamicUnitTable()
     {
         HeroAuthoringSemanticSchema schema = Schema(

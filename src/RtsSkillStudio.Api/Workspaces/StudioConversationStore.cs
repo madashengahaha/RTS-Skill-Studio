@@ -63,6 +63,8 @@ public sealed class StudioConversationStore
                     selected_skill_id INTEGER NULL,
                     selected_asset_key TEXT NULL,
                     mentioned_assets_json TEXT NULL,
+                    pending_request TEXT NULL,
+                    pending_assets_json TEXT NULL,
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 );
@@ -125,6 +127,20 @@ public sealed class StudioConversationStore
                 connection,
                 "conversations",
                 "mentioned_assets_json",
+                "TEXT NULL",
+                cancellationToken
+            );
+            await EnsureColumnAsync(
+                connection,
+                "conversations",
+                "pending_request",
+                "TEXT NULL",
+                cancellationToken
+            );
+            await EnsureColumnAsync(
+                connection,
+                "conversations",
+                "pending_assets_json",
                 "TEXT NULL",
                 cancellationToken
             );
@@ -291,6 +307,8 @@ public sealed class StudioConversationStore
             null,
             null,
             [],
+            null,
+            [],
             DateTimeOffset.Parse(now),
             DateTimeOffset.Parse(now),
             [],
@@ -317,6 +335,8 @@ public sealed class StudioConversationStore
                 selected_skill_id,
                 selected_asset_key,
                 mentioned_assets_json,
+                pending_request,
+                pending_assets_json,
                 created_at,
                 updated_at
             FROM conversations
@@ -328,6 +348,8 @@ public sealed class StudioConversationStore
         int? selectedSkillId;
         StudioAssetRef? selectedAsset;
         IReadOnlyList<StudioAssetRef> mentionedAssets;
+        string? pendingRequest;
+        IReadOnlyList<StudioAssetRef> pendingAssets;
         DateTimeOffset createdAt;
         DateTimeOffset updatedAt;
         await using (SqliteDataReader reader = await command.ExecuteReaderAsync(
@@ -351,8 +373,16 @@ public sealed class StudioConversationStore
                 : JsonSerializer.Deserialize<StudioAssetRef[]>(
                     reader.GetString(4)
                 ) ?? [];
-            createdAt = DateTimeOffset.Parse(reader.GetString(5));
-            updatedAt = DateTimeOffset.Parse(reader.GetString(6));
+            pendingRequest = reader.IsDBNull(5)
+                ? null
+                : reader.GetString(5);
+            pendingAssets = reader.IsDBNull(6)
+                ? []
+                : JsonSerializer.Deserialize<StudioAssetRef[]>(
+                    reader.GetString(6)
+                ) ?? [];
+            createdAt = DateTimeOffset.Parse(reader.GetString(7));
+            updatedAt = DateTimeOffset.Parse(reader.GetString(8));
         }
 
         var messages = new List<ConversationMessage>();
@@ -420,6 +450,8 @@ public sealed class StudioConversationStore
             selectedSkillId,
             selectedAsset,
             mentionedAssets,
+            pendingRequest,
+            pendingAssets,
             createdAt,
             updatedAt,
             messages,
@@ -505,6 +537,61 @@ public sealed class StudioConversationStore
             "$mentionedAssets",
             JsonSerializer.Serialize(assets)
         );
+        command.Parameters.AddWithValue(
+            "$updatedAt",
+            DateTimeOffset.UtcNow.ToString("O")
+        );
+        command.Parameters.AddWithValue("$id", conversationId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task SetPendingAssetClarificationAsync(
+        string conversationId,
+        string request,
+        IReadOnlyList<StudioAssetRef> candidates,
+        CancellationToken cancellationToken
+    )
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        await using SqliteConnection connection = CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE conversations
+            SET pending_request = $request,
+                pending_assets_json = $assets,
+                updated_at = $updatedAt
+            WHERE id = $id;
+            """;
+        command.Parameters.AddWithValue("$request", request);
+        command.Parameters.AddWithValue(
+            "$assets",
+            JsonSerializer.Serialize(candidates)
+        );
+        command.Parameters.AddWithValue(
+            "$updatedAt",
+            DateTimeOffset.UtcNow.ToString("O")
+        );
+        command.Parameters.AddWithValue("$id", conversationId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task ClearPendingAssetClarificationAsync(
+        string conversationId,
+        CancellationToken cancellationToken
+    )
+    {
+        await EnsureInitializedAsync(cancellationToken);
+        await using SqliteConnection connection = CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE conversations
+            SET pending_request = NULL,
+                pending_assets_json = NULL,
+                updated_at = $updatedAt
+            WHERE id = $id;
+            """;
         command.Parameters.AddWithValue(
             "$updatedAt",
             DateTimeOffset.UtcNow.ToString("O")
@@ -850,6 +937,8 @@ public sealed record ConversationDetail(
     int? SelectedSkillId,
     StudioAssetRef? SelectedAsset,
     IReadOnlyList<StudioAssetRef> MentionedAssets,
+    string? PendingRequest,
+    IReadOnlyList<StudioAssetRef> PendingAssets,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     IReadOnlyList<ConversationMessage> Messages,
@@ -901,7 +990,12 @@ public sealed record ConversationChatResponse(
     IReadOnlyList<string> PlanErrors,
     bool ExpectedPlan,
     string PlanDisposition,
-    IReadOnlyList<StudioAssetRef> MentionedAssets
+    IReadOnlyList<StudioAssetRef> MentionedAssets,
+    string Intent,
+    string TurnStatus,
+    IReadOnlyList<SkillPlanClarification> Clarifications,
+    IReadOnlyList<SkillPlanUnsupported> Unsupported,
+    IReadOnlyList<AgentToolExecution> ToolExecutions
 );
 
 public sealed record ConversationPlanRevision(

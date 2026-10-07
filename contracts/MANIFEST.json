@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "config/capability-registry.v0.json",
-      "sha256": "7a93247cff86fbbedaf2988ca56df26bc36fac4029b3283447db746841c26a4b"
+      "sha256": "84514955c787339cfbdfdf20feaeb84f999a681cb37eaf5dba30c0198a8686a2"
     },
     {
       "path": "config/default-mechanism-contract.v0.json",
@@ -15,19 +15,19 @@
     },
     {
       "path": "config/enum-overlays.v0.json",
-      "sha256": "1392ebd8b59145d1a66eae65d6759ab43c3eb625da76953f02be8e520c99f3b5"
+      "sha256": "0c1f958b794acc2eded90091fb9d6fa7c767169ae733184a825aeddf4a7c7dc4"
     },
     {
       "path": "config/enum-values.v0.json",
-      "sha256": "ca8c939f745ef4c8461eee8c4e86e1b1cb28cddb8dcab9f020a2c91a78e5c1fd"
+      "sha256": "62002db90bc846d3070b936dcfa0b58ce16bd9f8b5a1eb827a7567a0cd3e488c"
     },
     {
       "path": "config/read-only-tools.v0.json",
-      "sha256": "cd0db8190b10620982f7d81ae096a42a438a25e81decad1f9742ae3eb5479c0a"
+      "sha256": "6ab8f57fa0e3bd1932915c91f6a66c116f6dfb09c210333160fb9458c0b05a18"
     },
     {
       "path": "config/registry-foundation.v0.json",
-      "sha256": "db5eafecd59441b69b5860351e9df0cd6d34c2ecf72dbf5e1bdbc81fbe161098"
+      "sha256": "f235ffffe1b92203c59f90f0635a0eee6b8edc1d603e43204057fe4b8e20c0bf"
     },
     {
       "path": "config/semantic-overlay.v0.json",
@@ -47,7 +47,7 @@
     },
     {
       "path": "contracts/skill-config-plan.schema.json",
-      "sha256": "1e4f863b0ed99aa92935bdc3aa29e62800f6110206ff4837835378e2c26b6ef7"
+      "sha256": "2edbd9d0fe506d0becaee9570b4ff912da443effdb66f0d2249e664917d4ccc1"
     },
     {
       "path": "contracts/skill-graph.schema.json",
@@ -78,5 +78,5 @@
       "sha256": "404d3989cf8344c6178599c28d62c991ac7229c9df5470f47e3101c702cd3f6a"
     }
   ],
-  "combinedSha256": "9a9a0bd04f6c369422074aeafc776c97ee72270af4237301a0d9d3b81701114e"
+  "combinedSha256": "e8ce4825652322f669eaca298316a2ccb688757d495083dc8477c652863f5ac6"
 }

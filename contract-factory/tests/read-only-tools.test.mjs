@@ -322,6 +322,17 @@ test("non-skill focus and independent graph limits are structured", async () => 
   assert.ok(limited.edges.length <= 1);
 });
 
+test("graph projection honors the published depth range", async () => {
+  const { index } = await createIndex();
+  const result = index.getGraph({
+    root: "TbSkill:100101",
+    depth: 32
+  });
+
+  assert.notEqual(result.status, "InvalidRequest");
+  assert.equal(result.depth, 32);
+});
+
 test("read-only operations do not mutate the source snapshot", async () => {
   const { graph, index } = await createIndex();
   const before = JSON.stringify(graph);

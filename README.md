@@ -10,7 +10,7 @@ natural language
   -> SkillConfigPlan
   -> deterministic compiler
   -> WorkbookPatch
-  -> schema/reference/semantic validation
+  -> WorkbookPatchValidationReport
   -> Excel-level diff
   -> user confirmation
   -> atomic write to an Excel or SVN working copy
@@ -85,6 +85,9 @@ controlled writes are temporarily unavailable.
 Progress is tracked against the product baseline in the Obsidian document
 `技能自然语言配置方案.md`. Last verified: 2026-10-07.
 
+The next executable phase is defined in
+[docs/phase-b-modify-skill-vertical-slice.md](docs/phase-b-modify-skill-vertical-slice.md).
+
 ### Completed
 
 - Independent .NET 8 Studio solution with vendored TianshuDM Contract, Domain,
@@ -92,6 +95,9 @@ Progress is tracked against the product baseline in the Obsidian document
 - P0/P1 contract factory with capability registry, typed plan/patch schemas,
   30 golden cases, read-only tools, semantic assertions, and deterministic
   evaluation.
+- Immutable `WorkbookPatch` and `WorkbookPatchValidationReport` contracts with
+  workspace/source identity, semantic field metadata, and required validation
+  checks.
 - Unified model provider layer:
   - OpenAI Responses API.
   - OpenAI-compatible Chat Completions.
@@ -139,33 +145,33 @@ Progress is tracked against the product baseline in the Obsidian document
   - Re-reads and compares configured fields.
   - Verified 54/54 records with matching fields.
   - Never writes the selected source workbook.
+- Phase B deterministic editing vertical slice:
+  - Validates `SkillConfigPlan`, compiles it into immutable `WorkbookPatch`.
+  - Validates patch identity, base revision, source hash, target, field type,
+    enum, range, reference, and scale/unit provenance.
+  - Projects an Excel field-level diff into the Studio inspector.
+  - Applies validated patches only to a temporary `.studio-work` copy and
+    re-reads the result.
+  - Verified `cooldown = 8s -> cd_time = 8000` against the real workspace with
+    the source-root hash unchanged.
 
 ### In Progress
 
-- Implement the deterministic `SkillConfigPlan` compiler.
+- Prepare the next phase: controlled source working-copy confirmation, atomic
+  apply, backup, rollback, and undo.
 
 ### Next
 
-The next milestone is the first end-to-end vertical slice for modifying an existing
-skill:
-
-1. Supply bounded real graph and capability context to the Agent.
-2. Force a typed `SkillConfigPlan` for configuration requests.
-3. Support an initial `ModifySkill` subset such as cooldown and duration.
-4. Compile the plan into a deterministic `WorkbookPatch`.
-5. Validate fields, enums, references, and revision.
-6. Render an Excel table and field diff.
-7. Apply the patch to a temporary workbook copy and re-read it for verification.
-8. Keep the source workbook untouched until controlled apply is implemented.
+Extend modification support beyond the scalar-field vertical slice, then add
+Plan recompilation and controlled source working-copy apply.
 
 ### Current Limits
 
 - Conversation rename and delete are not implemented.
-- The UI can inspect real skill chains, but Plan and evidence tabs are not yet
-  backed by a compiled editing workflow.
-- No `WorkbookPatch` compiler or validator is implemented yet.
-- Only a temporary-copy write smoke test exists. Source workbook writes,
-  diff confirmation, backup, rollback, and undo are not implemented yet.
+- Phase B supports one `ModifySkill` operation and scalar fields; Effect,
+  Condition, Buff, Bullet, and Search restructuring are not implemented.
+- Source workbook writes, source confirmation, backup, rollback, and undo are
+  not implemented yet.
 - Direct OpenAI access is configured but has not been live-tested because no
   API key/model was provided. CC Switch cloud routing has been tested.
 
@@ -187,6 +193,7 @@ web/                        Legacy frontend placeholder; active UI is under
 dotnet build RtsSkillStudio.sln
 dotnet run --project src/RtsSkillStudio.Api --urls http://127.0.0.1:5257
 node scripts/sync-contracts.mjs
+cd contract-factory; npm run validate; npm test; npm run eval:modify
 ```
 
 ## Local LLM
@@ -222,6 +229,8 @@ POST /api/v1/llm/chat
 GET  /api/v1/workspace/status
 GET  /api/v1/skills
 GET  /api/v1/skills/{skillId}/chain
+POST /api/v1/workbook-patches/compile
+POST /api/v1/workbook-patches/apply-temporary
 POST /api/v1/workspace/write-smoke-test
 ```
 

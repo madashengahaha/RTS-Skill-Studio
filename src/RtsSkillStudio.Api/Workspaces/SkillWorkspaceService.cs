@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+using RtsSkillStudio.Agent.Patch;
 using RtsSkillStudio.Agent.Workspaces;
 using TianshuDM.Application.HeroAuthoring;
 using TianshuDM.Domain.GameData;
@@ -71,10 +74,12 @@ public sealed class SkillWorkspaceService(
         {
             return new SkillWorkspaceStatus(
                 false,
+                options.WorkspaceId,
                 options.ExcelDataRoot,
                 options.HeroAuthoringSchemaPath,
                 rootExists,
                 schemaExists,
+                null,
                 null,
                 0,
                 0,
@@ -89,11 +94,13 @@ public sealed class SkillWorkspaceService(
             var snapshot = await LoadAsync(cancellationToken);
             return new SkillWorkspaceStatus(
                 true,
+                options.WorkspaceId,
                 options.ExcelDataRoot,
                 options.HeroAuthoringSchemaPath,
                 true,
                 true,
                 snapshot.Revision,
+                snapshot.SourceHash,
                 snapshot.Catalog.Tables.Count,
                 snapshot.Graph.Nodes.Count,
                 snapshot.Graph.Edges.Count,
@@ -106,10 +113,12 @@ public sealed class SkillWorkspaceService(
             logger.LogError(exception, "Failed to load skill workspace.");
             return new SkillWorkspaceStatus(
                 false,
+                options.WorkspaceId,
                 options.ExcelDataRoot,
                 options.HeroAuthoringSchemaPath,
                 true,
                 true,
+                null,
                 null,
                 0,
                 0,
@@ -1012,7 +1021,7 @@ public sealed class SkillWorkspaceService(
             "Datas"
         );
 
-        return await Task.Run(
+        WriteSmokeTestResult result = await Task.Run(
             () =>
             {
                 Directory.CreateDirectory(outputDataRoot);
@@ -1056,6 +1065,21 @@ public sealed class SkillWorkspaceService(
                 );
             },
             cancellationToken
+        );
+        PruneWriteTestRuns(Path.GetDirectoryName(outputRoot)!);
+        return result;
+    }
+
+    public async Task<WorkbookPatchWorkspaceSnapshot> GetPatchWorkspaceSnapshotAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        WorkspaceSnapshot snapshot = await LoadAsync(cancellationToken);
+        return new WorkbookPatchWorkspaceSnapshot(
+            options.WorkspaceId,
+            snapshot.Revision,
+            snapshot.SourceHash,
+            snapshot.Catalog
         );
     }
 
@@ -1127,6 +1151,7 @@ public sealed class SkillWorkspaceService(
         string snapshotConfigRoot = Path.Combine(snapshotAssetsRoot, "Config");
         string snapshotExcelRoot = Path.Combine(snapshotConfigRoot, "Excel");
         string snapshotDataRoot = Path.Combine(snapshotExcelRoot, "Datas");
+        string sourceHash = ComputeSourceTreeHash(sourceDataRoot);
 
         try
         {
@@ -1173,7 +1198,13 @@ public sealed class SkillWorkspaceService(
             var projector = new HeroAuthoringGraphProjector(schemaSource);
             HeroAuthoringGraph graph = projector.ProjectCatalog(catalog);
             string revision = HeroAuthoringCatalogRevision.Compute(catalog);
-            return new WorkspaceSnapshot(catalog, revision, projector, graph);
+            return new WorkspaceSnapshot(
+                catalog,
+                revision,
+                projector,
+                graph,
+                sourceHash
+            );
         }
         finally
         {
@@ -1181,7 +1212,7 @@ public sealed class SkillWorkspaceService(
         }
     }
 
-    private static void CopyTree(string sourceRoot, string destinationRoot)
+    internal static void CopyTree(string sourceRoot, string destinationRoot)
     {
         Directory.CreateDirectory(destinationRoot);
         foreach (string sourcePath in Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories))
@@ -1210,7 +1241,99 @@ public sealed class SkillWorkspaceService(
         }
     }
 
-    private static void DeleteTemporaryDirectory(string path)
+    public static string ComputeSourceTreeHash(string sourceRoot)
+    {
+        using IncrementalHash hash = IncrementalHash.CreateHash(
+            HashAlgorithmName.SHA256
+        );
+        foreach (
+            string sourcePath in Directory
+                .EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories)
+                .OrderBy(
+                    path => Path.GetRelativePath(sourceRoot, path),
+                    StringComparer.Ordinal
+                )
+        )
+        {
+            string relativePath = Path.GetRelativePath(
+                    sourceRoot,
+                    sourcePath
+                )
+                .Replace('\\', '/');
+            using FileStream stream = File.Open(
+                sourcePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete
+            );
+            hash.AppendData(
+                Encoding.UTF8.GetBytes(
+                    $"{relativePath.Length}:{relativePath}\n{stream.Length}\n"
+                )
+            );
+            byte[] buffer = new byte[81920];
+            int read;
+            while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                hash.AppendData(buffer.AsSpan(0, read));
+            }
+        }
+
+        return Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant();
+    }
+
+    private void PruneWriteTestRuns(string writeTestRoot)
+    {
+        if (options.WriteTestRetentionCount <= 0)
+        {
+            return;
+        }
+
+        string root = Path.GetFullPath(writeTestRoot);
+        if (!Directory.Exists(root))
+        {
+            return;
+        }
+
+        string rootPrefix =
+            root.EndsWith(Path.DirectorySeparatorChar)
+                ? root
+                : root + Path.DirectorySeparatorChar;
+        foreach (
+            string directory in Directory
+                .EnumerateDirectories(root, "write-smoke-*")
+                .OrderByDescending(path => path, StringComparer.Ordinal)
+                .Skip(options.WriteTestRetentionCount)
+        )
+        {
+            string fullPath = Path.GetFullPath(directory);
+            if (
+                !fullPath.StartsWith(
+                    rootPrefix,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            {
+                continue;
+            }
+
+            try
+            {
+                Directory.Delete(fullPath, true);
+            }
+            catch (Exception exception)
+                when (exception is IOException or UnauthorizedAccessException)
+            {
+                logger.LogWarning(
+                    exception,
+                    "Failed to prune old write smoke directory {Directory}.",
+                    fullPath
+                );
+            }
+        }
+    }
+
+    internal static void DeleteTemporaryDirectory(string path)
     {
         string fullPath = Path.GetFullPath(path);
         string tempRoot = Path.GetFullPath(Path.GetTempPath());
@@ -1367,6 +1490,7 @@ public sealed class SkillWorkspaceService(
         GameDataCatalog Catalog,
         string Revision,
         HeroAuthoringGraphProjector Projector,
-        HeroAuthoringGraph Graph
+        HeroAuthoringGraph Graph,
+        string SourceHash
     );
 }

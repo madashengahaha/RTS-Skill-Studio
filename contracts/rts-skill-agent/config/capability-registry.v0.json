@@ -842,10 +842,51 @@
   "entityFields": [
     {
       "path": "Skill.skill_type",
+      "semanticName": "skill_type",
+      "kind": "Enum",
+      "rawType": "ESkillType",
+      "required": true,
       "enumName": "ESkillType"
     },
     {
+      "path": "Skill.cd_time",
+      "semanticName": "cooldown",
+      "kind": "Integer",
+      "rawType": "int",
+      "required": false,
+      "scale": 1,
+      "unit": "ms",
+      "minimum": 0,
+      "aliases": [
+        "cd",
+        "cd_time",
+        "cooldown_ms",
+        "冷却",
+        "冷却时间"
+      ],
+      "description": "技能冷却时间，Plan uses semantic seconds or milliseconds with an explicit unit and the compiler writes milliseconds."
+    },
+    {
+      "path": "Skill.duration",
+      "semanticName": "duration",
+      "kind": "Integer",
+      "rawType": "int",
+      "required": false,
+      "scale": 1,
+      "unit": "ms",
+      "minimum": 0,
+      "aliases": [
+        "持续时间",
+        "duration_ms"
+      ],
+      "description": "技能持续时间，Plan uses semantic seconds or milliseconds with an explicit unit and the compiler writes milliseconds."
+    },
+    {
       "path": "Skill.consume_type",
+      "semanticName": "consume_type",
+      "kind": "Enum",
+      "rawType": "EConsumeType",
+      "required": false,
       "enumName": "EConsumeType"
     },
     {

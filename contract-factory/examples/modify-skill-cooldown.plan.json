@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 0,
+  "planId": "p0-012-cooldown",
+  "base": {
+    "workspaceId": "studio-workspace",
+    "revision": "runtime",
+    "sourceHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "capabilityRegistryVersion": "0.1.0",
+    "defaultValueContractVersion": "0.1.0",
+    "defaultMechanismContractVersion": "0.1.0"
+  },
+  "request": {
+    "text": "把冷却改成8秒"
+  },
+  "status": "Ready",
+  "summary": "修改技能冷却",
+  "assumptions": [],
+  "clarifications": [],
+  "unsupported": [],
+  "operations": [
+    {
+      "operationId": "op-1",
+      "kind": "ModifySkill",
+      "reason": "用户明确要求修改冷却时间",
+      "skill": {
+        "binding": "Existing",
+        "namespace": "TbSkill",
+        "id": 101201
+      },
+      "fields": {
+        "cooldown": {
+          "value": 8,
+          "unit": "s",
+          "source": "ModelProposed",
+          "evidence": []
+        }
+      }
+    }
+  ]
+}

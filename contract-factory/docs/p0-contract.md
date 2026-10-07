@@ -9,7 +9,7 @@ validatable contract before a model or product UI is connected.
 
 1. Capability registry v0 with structural and semantic layers.
 2. `SkillConfigPlan` JSON Schema.
-3. `AuthoringPatch` JSON Schema.
+3. Immutable `WorkbookPatch` JSON Schema and separate validation report schema.
 4. Versioned default-value contract.
 5. Versioned default-mechanism contract.
 6. Thirty golden cases.

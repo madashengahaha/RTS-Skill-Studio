@@ -10,7 +10,8 @@ import {
 
 const requiredFiles = [
   "contracts/skill-config-plan.schema.json",
-  "contracts/authoring-patch.schema.json",
+  "contracts/workbook-patch.schema.json",
+  "contracts/workbook-patch-validation.schema.json",
   "contracts/capability-registry.schema.json",
   "contracts/skill-graph.schema.json",
   "config/capability-registry.v0.json",
@@ -19,6 +20,7 @@ const requiredFiles = [
   "config/default-value-contract.v0.json",
   "config/default-mechanism-contract.v0.json",
   "config/read-only-tools.v0.json",
+  "config/workbook-patch-errors.v0.json",
   "evals/golden-cases.schema.json",
   "evals/golden-cases.v0.json",
   "evals/equivalence-rules.v0.json"
@@ -34,8 +36,11 @@ const defaults = loaded["config/default-value-contract.v0.json"];
 const mechanisms = loaded["config/default-mechanism-contract.v0.json"];
 const goldenCases = loaded["evals/golden-cases.v0.json"];
 const equivalenceRules = loaded["evals/equivalence-rules.v0.json"];
+const patchErrors = loaded["config/workbook-patch-errors.v0.json"];
 const planSchema = loaded["contracts/skill-config-plan.schema.json"];
-const patchSchema = loaded["contracts/authoring-patch.schema.json"];
+const patchSchema = loaded["contracts/workbook-patch.schema.json"];
+const patchValidationSchema =
+  loaded["contracts/workbook-patch-validation.schema.json"];
 
 assert(registry.schemaVersion === 0, "Registry schemaVersion must be 0.");
 assert(
@@ -105,9 +110,47 @@ for (const enumName of registry.enumReferences) {
 }
 
 for (const field of registry.entityFields) {
+  if (field.enumName) {
+    assert(
+      registryEnumNames.has(field.enumName),
+      `Entity field ${field.path} references missing enum ${field.enumName}.`
+    );
+  }
+  if (field.scale !== undefined) {
+    assert(
+      Number.isInteger(field.scale) && field.scale > 0,
+      `Entity field ${field.path} scale must be a positive integer.`
+    );
+  }
+}
+
+for (const rule of defaults.conversionRules) {
   assert(
-    registryEnumNames.has(field.enumName),
-    `Entity field ${field.path} references missing enum ${field.enumName}.`
+    Array.isArray(rule.inputAliases) && rule.inputAliases.length > 0,
+    `Conversion rule ${rule.key} must declare input aliases.`
+  );
+  assert(
+    Array.isArray(rule.outputAliases) && rule.outputAliases.length > 0,
+    `Conversion rule ${rule.key} must declare output aliases.`
+  );
+}
+const semanticFieldNames = new Map();
+for (const field of registry.entityFields.filter((item) => item.semanticName)) {
+  const entity = field.path.split(".")[0];
+  const key = `${entity}.${field.semanticName}`;
+  assert(
+    !semanticFieldNames.has(key),
+    `Entity field semantic name is duplicated: ${key}.`
+  );
+  semanticFieldNames.set(key, field.path);
+}
+for (const expected of [
+  ["Skill.cooldown", "Skill.cd_time"],
+  ["Skill.duration", "Skill.duration"]
+]) {
+  assert(
+    semanticFieldNames.get(expected[0]) === expected[1],
+    `Registry must resolve ${expected[0]} to ${expected[1]}.`
   );
 }
 
@@ -208,7 +251,11 @@ for (const testCase of goldenCases.cases) {
   );
 }
 
-for (const schema of [planSchema, patchSchema]) {
+for (const schema of [
+  planSchema,
+  patchSchema,
+  patchValidationSchema
+]) {
   assert(
     schema.$schema === "https://json-schema.org/draft/2020-12/schema",
     `${schema.title} must use JSON Schema draft 2020-12.`
@@ -216,6 +263,50 @@ for (const schema of [planSchema, patchSchema]) {
   assert(
     schema.type === "object",
     `${schema.title} must describe an object.`
+  );
+}
+
+assert(
+  !Object.prototype.hasOwnProperty.call(
+    patchSchema.properties,
+    "validation"
+  ),
+  "WorkbookPatch must not embed mutable validation results."
+);
+assert(
+  patchSchema.properties.base.required.includes("workspaceId") &&
+    patchSchema.properties.base.required.includes("sourceHash"),
+  "WorkbookPatch base must include workspaceId and sourceHash."
+);
+assert(
+  planSchema.$defs.Base.required.includes("sourceHash"),
+  "SkillConfigPlan base must include sourceHash."
+);
+assert(
+  patchValidationSchema.$defs.Check.required.includes("required") &&
+    patchValidationSchema.$defs.Check.required.includes("severity"),
+  "Patch validation checks must declare required and severity."
+);
+
+const patchErrorCodes = [
+  ...patchErrors.compile,
+  ...patchErrors.validation
+].map((item) => item.code);
+assert(
+  patchErrorCodes.length > 0 &&
+    new Set(patchErrorCodes).size === patchErrorCodes.length,
+  "WorkbookPatch error codes must be non-empty and unique."
+);
+for (const item of patchErrors.compile) {
+  assert(
+    item.code.startsWith("compiler."),
+    `Compile error code must start with compiler.: ${item.code}`
+  );
+}
+for (const item of patchErrors.validation) {
+  assert(
+    item.code.startsWith("validation."),
+    `Validation error code must start with validation.: ${item.code}`
   );
 }
 

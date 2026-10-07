@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Studio/contracts/workbook-patch-validation.schema.json",
+  "title": "WorkbookPatchValidationReport",
+  "description": "Immutable validation result for one WorkbookPatch. Required checks that fail or are not run make the report Invalid.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "patchId",
+    "status",
+    "checks"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 0
+    },
+    "patchId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "status": {
+      "enum": ["Valid", "Invalid"]
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/Check"
+      }
+    }
+  },
+  "$defs": {
+    "Check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "status",
+        "severity",
+        "required",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": ["Passed", "Failed", "NotRun"]
+        },
+        "severity": {
+          "enum": ["Error", "Warning", "Info"]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    }
+  }
+}

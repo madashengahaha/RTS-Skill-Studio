@@ -19,8 +19,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\RtsSkillStudio.Agent\RtsSkillStudio.Agent.csproj" />
+    <ProjectReference Include="..\..\src\RtsSkillStudio.Api\RtsSkillStudio.Api.csproj" />
     <ProjectReference Include="..\..\vendor\TianshuDM\TianshuDM.Application\TianshuDM.Application.csproj" />
     <ProjectReference Include="..\..\vendor\TianshuDM\TianshuDM.Domain\TianshuDM.Domain.csproj" />
+    <ProjectReference Include="..\..\vendor\TianshuDM\TianshuDM.Infrastructure.Excel\TianshuDM.Infrastructure.Excel.csproj" />
   </ItemGroup>
 
 </Project>

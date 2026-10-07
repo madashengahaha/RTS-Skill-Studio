@@ -1,11 +1,13 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using RtsSkillStudio.Agent.Patch;
 using RtsSkillStudio.Agent.Workspaces;
 
 namespace RtsSkillStudio.Api.Workspaces;
 
 public sealed partial class SkillAgentContextBuilder(
     SkillWorkspaceService workspace,
+    WorkbookPatchRegistry patchRegistry,
     ILogger<SkillAgentContextBuilder> logger
 )
 {
@@ -66,6 +68,10 @@ public sealed partial class SkillAgentContextBuilder(
             );
             var builder = new StringBuilder();
             builder.AppendLine($"工作区 revision: {status.Revision ?? "unknown"}");
+            builder.AppendLine($"工作区 ID: {status.WorkspaceId}");
+            builder.AppendLine(
+                $"源数据根 sourceHash: {status.SourceHash ?? "unknown"}"
+            );
             builder.AppendLine(
                 $"工作区规模: {status.TableCount} 张表, {status.NodeCount} 个节点, "
                     + $"{status.EdgeCount} 条边, {status.SkillCount} 个技能"
@@ -609,7 +615,7 @@ public sealed partial class SkillAgentContextBuilder(
         }
     }
 
-    private static void AppendSkillSemantics(StringBuilder builder)
+    private void AppendSkillSemantics(StringBuilder builder)
     {
         builder.AppendLine("Skill 字段语义:");
         builder.AppendLine("- first_cd_time、cd_time、duration_pre、duration、duration_after、trigger_array 的单位为毫秒。");
@@ -617,6 +623,40 @@ public sealed partial class SkillAgentContextBuilder(
         builder.AppendLine("- probability 表示技能触发概率，10000 = 100%；它不是命中率。");
         builder.AppendLine("- search_real_time 是布尔字段：0 = 非实时搜索，1 = 实时搜索。");
         builder.AppendLine("- skill_type 的值来自 ESkillType，必须按该枚举解释。");
+        builder.AppendLine("SkillConfigPlan 可用技能字段:");
+        foreach (
+            WorkbookPatchRegistryField field in patchRegistry.EntityFields
+                .Where(
+                    item =>
+                        item.SemanticName is { Length: > 0 }
+                        && item.Path.StartsWith(
+                            "Skill.",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                )
+                .OrderBy(item => item.Path, StringComparer.Ordinal)
+        )
+        {
+            builder.AppendLine(
+                $"- semanticName={field.SemanticName} | path={field.Path}"
+                    + $" | kind={field.Kind}"
+                    + (string.IsNullOrWhiteSpace(field.Unit)
+                        ? ""
+                        : $" | targetUnit={field.Unit}")
+                    + (field.Scale is null
+                        ? ""
+                        : $" | scale={field.Scale}")
+                    + (field.Aliases.Count == 0
+                        ? ""
+                        : $" | aliases={string.Join(",", field.Aliases)}")
+            );
+        }
+        builder.AppendLine(
+            "- ModifySkill.fields 的 key 必须使用上面的 semanticName；时间值必须显式填写 unit，由编译器转换为目标单位。"
+        );
+        builder.AppendLine(
+            "- ModifySkill 只修改 Skill 根表字段；不得把技能根字段需求改写成 Effect、DamagePipeline 或 action_param 修改，除非用户明确要求修改这些子节点。"
+        );
     }
 
     private static string FormatAsset(StudioAssetRef? asset)

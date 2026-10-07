@@ -2,11 +2,13 @@ namespace RtsSkillStudio.Agent.Workspaces;
 
 public sealed record SkillWorkspaceStatus(
     bool Configured,
+    string WorkspaceId,
     string ExcelDataRoot,
     string SchemaPath,
     bool ExcelRootExists,
     bool SchemaExists,
     string? Revision,
+    string? SourceHash,
     int TableCount,
     int NodeCount,
     int EdgeCount,

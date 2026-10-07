@@ -7,7 +7,9 @@
 - Treat Excel/Luban data as authoritative. This repository stores contracts, generated
   snapshots, and evaluation data only.
 - The model proposes `SkillConfigPlan`; deterministic code compiles and validates it.
-- `AuthoringPatch` is compiler output and must never be edited by a model or user.
+- `WorkbookPatch` is immutable compiler output and must never be edited by a model,
+  user, or validator.
+- Validation results are represented by a separate `WorkbookPatchValidationReport`.
 
 ## Boundaries
 

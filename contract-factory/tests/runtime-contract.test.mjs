@@ -230,6 +230,63 @@ test("plan contract exposes generic non-skill asset modification", async () => {
   assert.ok(foundation.planOperations.includes("ModifyAsset"));
 });
 
+test("skill field metadata resolves semantic Plan names and units", async () => {
+  const registry = await readJson("config/capability-registry.v0.json");
+  const fields = new Map(
+    registry.entityFields.map((field) => [field.path, field])
+  );
+
+  assert.deepEqual(
+    {
+      semanticName: fields.get("Skill.cd_time").semanticName,
+      kind: fields.get("Skill.cd_time").kind,
+      unit: fields.get("Skill.cd_time").unit,
+      scale: fields.get("Skill.cd_time").scale
+    },
+    {
+      semanticName: "cooldown",
+      kind: "Integer",
+      unit: "ms",
+      scale: 1
+    }
+  );
+  assert.equal(fields.get("Skill.duration").semanticName, "duration");
+  assert.equal(fields.get("Skill.duration").unit, "ms");
+});
+
+test("workbook patch is immutable and validation is a separate report", async () => {
+  const patch = await readJson("contracts/workbook-patch.schema.json");
+  const validation = await readJson(
+    "contracts/workbook-patch-validation.schema.json"
+  );
+  const errors = await readJson("config/workbook-patch-errors.v0.json");
+
+  assert.equal(patch.title, "WorkbookPatch");
+  assert.equal(
+    Object.hasOwn(patch.properties, "validation"),
+    false
+  );
+  assert.match(patch.properties.patchId.pattern, /\^\[a-f0-9\]/);
+  assert.ok(
+    patch.properties.base.required.includes("workspaceId")
+  );
+  assert.ok(
+    patch.properties.base.required.includes("sourceHash")
+  );
+  assert.deepEqual(
+    validation.$defs.Check.required,
+    ["code", "status", "severity", "required", "message"]
+  );
+  assert.ok(
+    errors.compile.some((item) => item.code === "compiler.no_change")
+  );
+  assert.ok(
+    errors.validation.some(
+      (item) => item.code === "validation.source_hash"
+    )
+  );
+});
+
 test("read-only tool input boundaries match the runtime contract", async () => {
   const contract = await readJson("config/read-only-tools.v0.json");
   const tools = new Map(

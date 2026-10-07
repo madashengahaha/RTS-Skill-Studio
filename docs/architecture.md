@@ -15,7 +15,7 @@ Natural-language request
   -> SkillConfigPlan
   -> deterministic compiler
   -> WorkbookPatch
-  -> schema/reference/semantic validation
+  -> WorkbookPatchValidationReport
   -> Excel-level diff
   -> user confirmation
   -> atomic Excel or SVN working-copy write
@@ -28,7 +28,7 @@ Natural-language request
 | Studio workspace | Selected Excel/SVN working copy and Studio SQLite drafts |
 | Studio Agent | Intent understanding, plan proposal, clarification, and explanation |
 | Studio compiler | IDs, nodes, groups, fields, references, and WorkbookPatch |
-| Studio validator | Schema, reference, parameter, semantic, revision, and sourceHash checks |
+| Studio validator | Separate WorkbookPatchValidationReport with schema, reference, parameter, semantic, revision, and sourceHash checks |
 | Studio UI | Plan editing, Excel diff, graph explanation, and confirmation |
 | Vendored TianshuDM code | Reusable graph, draft, Excel, and SQLite mechanics |
 

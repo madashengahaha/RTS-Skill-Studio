@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "config/capability-registry.v0.json",
-      "sha256": "27e017caff2bcb39ad259b2b8fc7506cd56a54768bd6df0a34588da69b4a719d"
+      "sha256": "fb135d0843e4da090c1e5fe2e6531232221720fdbda6cababfb58bd46403bfe2"
     },
     {
       "path": "config/default-mechanism-contract.v0.json",
@@ -11,7 +11,7 @@
     },
     {
       "path": "config/default-value-contract.v0.json",
-      "sha256": "7faa688ac58a8f9ae83c53e689e416dfc434f72e229c81c1627b1c44228de076"
+      "sha256": "5c232d0a6fc8a765c94c402b7459cd393c4d96d90fd4630f0624257eff09be0b"
     },
     {
       "path": "config/enum-overlays.v0.json",
@@ -27,19 +27,19 @@
     },
     {
       "path": "config/registry-foundation.v0.json",
-      "sha256": "d5f1ea47986f93466e0d93c346b8a4135ba525038169e0ebc9be41fa7137c052"
+      "sha256": "1b8c494dcac418381aff8889a8dc915562009063a5595430ad49da631bc725fb"
     },
     {
       "path": "config/semantic-overlay.v0.json",
       "sha256": "76dcfbb91c0c45e575a833f0a1ac838595428fa5d68904cab7ba02c523f25f29"
     },
     {
-      "path": "contracts/authoring-patch.schema.json",
-      "sha256": "e8c554b94ed2fae06c1065e715d45de1de82fa7d9ac159793803b33cf52d54ef"
+      "path": "config/workbook-patch-errors.v0.json",
+      "sha256": "57131ec25ac9a85f8fad162171f35dae0cb8a7622ea7ae3ec7ea38c4f66ced98"
     },
     {
       "path": "contracts/capability-registry.schema.json",
-      "sha256": "bbac40dd503df47eac76d304e18d3fdfb2ea635281418c97e2136b6e884fe63a"
+      "sha256": "71a79ae155b83f2ebf2230f16c76bb13450392ee7a3a2d13839d7d7d596d6c41"
     },
     {
       "path": "contracts/read-only-results.schema.json",
@@ -47,11 +47,19 @@
     },
     {
       "path": "contracts/skill-config-plan.schema.json",
-      "sha256": "2edbd9d0fe506d0becaee9570b4ff912da443effdb66f0d2249e664917d4ccc1"
+      "sha256": "1c45de38faa1e598cb08c5699db876fa200805227997b987f595ac7c06f1c396"
     },
     {
       "path": "contracts/skill-graph.schema.json",
       "sha256": "f4b371b41c7d59a76a27e6d518e553c933d6de13ae0433b68ee344a7d1cc3f7a"
+    },
+    {
+      "path": "contracts/workbook-patch-validation.schema.json",
+      "sha256": "4b370a0957133d2e8e3882c3367383d1ababa999cbb46409b2183ea03d02c8cd"
+    },
+    {
+      "path": "contracts/workbook-patch.schema.json",
+      "sha256": "3662b0150bc09a5442f6561dccd6fbafa7771e3b3614c49dcc332348076631b0"
     },
     {
       "path": "evals/equivalence-rules.v0.json",
@@ -63,7 +71,7 @@
     },
     {
       "path": "evals/golden-cases.v0.json",
-      "sha256": "a20a5cdc99cf0a0c84a944b6650a99d60cc774b045737a700a3a12d669053be2"
+      "sha256": "ff3d9f8353e9cb03fbc31a08f4380350b7c632b157b379e87faf2f545b825f78"
     },
     {
       "path": "evals/read-only-cases.v0.json",
@@ -78,5 +86,5 @@
       "sha256": "404d3989cf8344c6178599c28d62c991ac7229c9df5470f47e3101c702cd3f6a"
     }
   ],
-  "combinedSha256": "1f2b9bea2230925f9828ae57d0dc017bcad19cdc71814c768457bd0d85128344"
+  "combinedSha256": "4bc0e3c046c5ee642932dd8737403afba1b2f0263920f629b6292b862eb4f533"
 }

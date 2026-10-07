@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/madashengahaha/RTS-Skill-Studio/contracts/authoring-patch.schema.json",
-  "title": "AuthoringPatch",
-  "description": "Deterministic compiler output. Models and users may inspect this object but must not edit it.",
+  "$id": "https://github.com/madashengahaha/RTS-Skill-Studio/contracts/workbook-patch.schema.json",
+  "title": "WorkbookPatch",
+  "description": "Immutable deterministic compiler output. Models, users, and validators must not edit a compiled Patch in place.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -11,8 +11,7 @@
     "sourcePlanHash",
     "base",
     "commands",
-    "fieldChanges",
-    "validation"
+    "fieldChanges"
   ],
   "properties": {
     "schemaVersion": {
@@ -20,7 +19,8 @@
     },
     "patchId": {
       "type": "string",
-      "minLength": 1
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 of the canonical Patch JSON with patchId omitted."
     },
     "sourcePlanHash": {
       "type": "string",
@@ -29,13 +29,39 @@
     "base": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["revision", "capabilityRegistryVersion"],
+      "required": [
+        "workspaceId",
+        "revision",
+        "sourceHash",
+        "capabilityRegistryVersion",
+        "defaultValueContractVersion",
+        "defaultMechanismContractVersion"
+      ],
       "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
         "revision": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 of the deterministic source data root inventory and file bytes."
         },
         "capabilityRegistryVersion": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
+        },
+        "defaultValueContractVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "defaultMechanismContractVersion": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },
@@ -57,22 +83,6 @@
       "type": "array",
       "items": {
         "$ref": "#/$defs/FieldChange"
-      }
-    },
-    "validation": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["status", "checks"],
-      "properties": {
-        "status": {
-          "enum": ["Pending", "Valid", "Invalid"]
-        },
-        "checks": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/Check"
-          }
-        }
       }
     }
   },
@@ -170,9 +180,11 @@
       "additionalProperties": false,
       "required": [
         "operationId",
+        "logicalAddress",
         "namespace",
         "id",
         "field",
+        "semanticField",
         "before",
         "after",
         "source"
@@ -181,6 +193,9 @@
         "operationId": {
           "type": "string"
         },
+        "logicalAddress": {
+          "$ref": "#/$defs/LogicalAddress"
+        },
         "namespace": {
           "type": "string"
         },
@@ -188,6 +203,13 @@
           "type": "integer"
         },
         "field": {
+          "type": "string"
+        },
+        "semanticField": {
+          "type": "string"
+        },
+        "semanticValue": true,
+        "semanticUnit": {
           "type": "string"
         },
         "before": true,
@@ -204,25 +226,23 @@
         }
       }
     },
-    "Check": {
+    "LogicalAddress": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["code", "status", "message"],
+      "required": ["tableKey", "recordId", "field"],
       "properties": {
-        "code": {
-          "type": "string"
+        "tableKey": {
+          "type": "string",
+          "minLength": 1
         },
-        "status": {
-          "enum": ["Passed", "Failed", "NotRun"]
+        "recordId": {
+          "type": "integer"
         },
-        "message": {
-          "type": "string"
-        },
-        "subject": {
-          "type": "string"
+        "field": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }
   }
 }
-

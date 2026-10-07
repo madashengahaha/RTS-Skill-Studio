@@ -6,25 +6,33 @@
       "key": "SecondsToMilliseconds",
       "inputUnit": "second",
       "outputUnit": "millisecond",
-      "factor": 1000
+      "factor": 1000,
+      "inputAliases": ["s", "sec", "second", "seconds", "秒"],
+      "outputAliases": ["ms", "millisecond", "milliseconds", "毫秒"]
     },
     {
       "key": "PercentToBasisPoints",
       "inputUnit": "percent",
       "outputUnit": "basis-point",
-      "factor": 100
+      "factor": 100,
+      "inputAliases": ["pct", "percent", "%", "百分比"],
+      "outputAliases": ["bp", "basis-point", "basisPoints", "基点"]
     },
     {
       "key": "RatioToBasisPoints",
       "inputUnit": "ratio",
       "outputUnit": "basis-point",
-      "factor": 10000
+      "factor": 10000,
+      "inputAliases": ["ratio", "倍率"],
+      "outputAliases": ["bp", "basis-point", "basisPoints", "基点"]
     },
     {
       "key": "WorldUnitToFixed",
       "inputUnit": "world-unit",
       "outputUnit": "fixed",
-      "factor": 10000
+      "factor": 10000,
+      "inputAliases": ["world-unit", "worldUnit", "世界单位"],
+      "outputAliases": ["fixed", "定点"]
     }
   ],
   "fields": [
@@ -131,4 +139,3 @@
     }
   ]
 }
-

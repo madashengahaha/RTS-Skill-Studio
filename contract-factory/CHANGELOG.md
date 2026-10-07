@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Added the Phase B deterministic Plan compiler, fail-closed Patch validator,
+  Excel diff projection, and temporary workspace apply verification.
+- Added contract-declared conversion-unit aliases for Patch compilation.
+- Added `eval:modify` with an accepted `p0-012` Plan fixture proving
+  `ModifySkill.cooldown = 8s -> Skill.cd_time = 8000`.
+
+## 0.2.4 - 2026-10-07
+
+### Changed
+
+- Renamed `AuthoringPatch` to immutable `WorkbookPatch`.
+- Split Patch validation into a separate `WorkbookPatchValidationReport` with
+  required checks, severity, and `NotRun` semantics.
+- Added workspace, catalog revision, and source-root hash identity to Plan and
+  Patch bases.
+- Added semantic field metadata for `Skill.cd_time` and `Skill.duration`,
+  including Plan-facing names, units, scale, aliases, and ranges.
+- Plan field keys now use semantic names and values may declare a semantic unit.
+- `p0-012` now expects semantic `ModifySkill.cooldown = 8` seconds.
+- Added versioned compile and validation error codes.
+
+### Verification
+
+- `npm run build:registry`
+- `npm run validate`
+- `npm test`
+
 ## 0.2.3 - 2026-10-06
 
 ### Fixed
@@ -113,7 +144,8 @@
   registry generator.
 - Initial generated registry snapshot for 39 effect actions, 11 conditions,
   16 semantic intents, and 7 damage stages.
-- `SkillConfigPlan` and `AuthoringPatch` JSON Schemas.
+- `SkillConfigPlan` and the original Patch schema, later renamed to
+  `WorkbookPatch`.
 - Versioned default-value and default-mechanism contracts.
 - Thirty golden cases and semantic equivalence rules.
 - Semantic plan normalization and assertion evaluation.

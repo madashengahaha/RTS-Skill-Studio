@@ -1,9 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using RtsSkillStudio.Agent;
 using RtsSkillStudio.Agent.Llm;
+using RtsSkillStudio.Agent.Patch;
 using RtsSkillStudio.Agent.Workspaces;
 using RtsSkillStudio.Api.Workspaces;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using TianshuDM.Application.GameData;
+using TianshuDM.Infrastructure.Excel;
 
 var builder = WebApplication.CreateBuilder(args);
 var llmOptions = builder.Configuration.GetSection("Llm").Get<LlmOptions>()
@@ -31,6 +35,19 @@ builder.Services.AddSingleton<StudioConversationStore>();
 builder.Services.AddSingleton(
     new SkillConfigPlanValidator(contractRoot)
 );
+WorkbookPatchRegistry workbookPatchRegistry =
+    WorkbookPatchRegistryLoader.Load(contractRoot);
+builder.Services.AddSingleton(workbookPatchRegistry);
+builder.Services.AddSingleton<WorkbookPatchCompiler>();
+builder.Services.AddSingleton(
+    new WorkbookPatchValidator(contractRoot, workbookPatchRegistry)
+);
+builder.Services.AddSingleton<SkillConfigPlanNormalizer>();
+builder.Services.AddSingleton<IGameDataWorkbookReader, GameDataWorkbookReader>();
+builder.Services.AddSingleton<IGameDataCatalogReader, UnitGameDataCatalogReader>();
+builder.Services.AddSingleton<IGameDataWorkbookWriter, GameDataWorkbookWriter>();
+builder.Services.AddSingleton<TemporaryWorkbookPatchApplyService>();
+builder.Services.AddSingleton<WorkbookPatchWorkspaceService>();
 builder.Services.AddSingleton(
     new ExecutionChainProjectionPolicy(
         Path.Combine(
@@ -912,6 +929,80 @@ app.MapPost(
             return Results.Problem(
                 detail: exception.Message,
                 statusCode: StatusCodes.Status500InternalServerError
+            );
+        }
+    }
+);
+
+app.MapPost(
+    "/api/v1/workbook-patches/compile",
+    async (
+        WorkbookPatchCompileRequest request,
+        WorkbookPatchWorkspaceService patches,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        if (string.IsNullOrWhiteSpace(request.PlanJson))
+        {
+            return Results.BadRequest(new { error = "PlanJson is required." });
+        }
+
+        try
+        {
+            return Results.Ok(
+                await patches.CompileAsync(
+                    request.PlanJson,
+                    cancellationToken
+                )
+            );
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException
+                or FileNotFoundException
+                or IOException
+                or JsonException
+        )
+        {
+            return Results.Problem(
+                detail: exception.Message,
+                statusCode: StatusCodes.Status503ServiceUnavailable
+            );
+        }
+    }
+);
+
+app.MapPost(
+    "/api/v1/workbook-patches/apply-temporary",
+    async (
+        WorkbookPatchApplyTemporaryRequest request,
+        WorkbookPatchWorkspaceService patches,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        if (string.IsNullOrWhiteSpace(request.PatchJson))
+        {
+            return Results.BadRequest(new { error = "PatchJson is required." });
+        }
+
+        try
+        {
+            return Results.Ok(
+                await patches.ApplyTemporaryAsync(
+                    request.PatchJson,
+                    cancellationToken
+                )
+            );
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException
+                or FileNotFoundException
+                or IOException
+                or JsonException
+        )
+        {
+            return Results.Problem(
+                detail: exception.Message,
+                statusCode: StatusCodes.Status503ServiceUnavailable
             );
         }
     }

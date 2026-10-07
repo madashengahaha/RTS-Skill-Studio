@@ -161,14 +161,20 @@
 
       <aside class="inspector-pane">
         <header class="inspector-header">
-          <h2>检查器</h2>
-          <span id="inspectorMeta">等待提案</span>
+          <label class="inspector-view" for="inspectorTab">
+            <span>视图</span>
+            <select id="inspectorTab">
+              <option value="chain">执行链</option>
+              <option value="plan">Plan</option>
+              <option value="diff">Excel 差异</option>
+              <option value="evidence">证据</option>
+            </select>
+          </label>
+          <div class="inspector-heading">
+            <h2>检查器</h2>
+            <span id="inspectorMeta">等待提案</span>
+          </div>
         </header>
-        <div class="tabs" role="tablist">
-          <button class="tab is-active" type="button" data-tab="chain">执行链</button>
-          <button class="tab" type="button" data-tab="plan">Plan</button>
-          <button class="tab" type="button" data-tab="evidence">证据</button>
-        </div>
         <section id="inspectorContent" class="inspector-content">
           <div class="inspector-empty">
             <i data-lucide="scan-search"></i>

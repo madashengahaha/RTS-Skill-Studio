@@ -14,7 +14,8 @@ P0 establishes contracts, not a writable product agent:
 - capability registry generated from the current hero-authoring semantic schema;
 - execution projection metadata that distinguishes continuation, terminal, and
   non-execution references without table-specific UI rules;
-- `SkillConfigPlan` and `AuthoringPatch` JSON Schemas;
+- `SkillConfigPlan`, immutable `WorkbookPatch`, and
+  `WorkbookPatchValidationReport` JSON Schemas;
 - versioned default-value and default-mechanism contracts;
 - 30 representative golden cases;
 - semantic normalization and equivalence assertions;
@@ -56,6 +57,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release-level changes and
 npm run validate
 npm test
 npm run eval:readonly
+npm run eval:modify
 ```
 
 To refresh the generated capability registry from the external authoring schema:
@@ -91,6 +93,6 @@ npm run readonly -- get_graph --root TbSkill:100101 --depth 2
 
 - The registry and plans describe capabilities; they do not modify Excel.
 - Models may only propose a plan. They do not write fields or call mutation commands.
-- A plan must compile into an `AuthoringPatch` and pass deterministic validation before
+- A plan must compile into a `WorkbookPatch` and pass deterministic validation before
   any future apply step.
 - Unknown fields, actions, parameters, enum values, and references are rejected.

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 0,
+  "contractVersion": "0.1.0",
+  "compile": [
+    {
+      "code": "compiler.unsupported_operation",
+      "message": "The Plan contains an operation outside the Phase B allowlist."
+    },
+    {
+      "code": "compiler.invalid_plan",
+      "message": "The Plan cannot be parsed or does not contain the required ModifySkill structure."
+    },
+    {
+      "code": "compiler.status_not_ready",
+      "message": "Only a Ready Plan can be compiled into a WorkbookPatch."
+    },
+    {
+      "code": "compiler.multiple_operations",
+      "message": "Phase B accepts exactly one ModifySkill operation."
+    },
+    {
+      "code": "compiler.missing_target",
+      "message": "The target asset does not exist in the current workspace revision."
+    },
+    {
+      "code": "compiler.stale_base",
+      "message": "The Plan base does not match the current workspace or contract versions."
+    },
+    {
+      "code": "compiler.unknown_semantic_field",
+      "message": "The semantic field name is not declared by the capability registry."
+    },
+    {
+      "code": "compiler.unsupported_field",
+      "message": "The semantic field is not a scalar field supported by the Phase B compiler."
+    },
+    {
+      "code": "compiler.invalid_value_type",
+      "message": "The Plan value cannot be converted to the declared field type."
+    },
+    {
+      "code": "compiler.invalid_unit",
+      "message": "The Plan unit cannot be converted to the target field unit."
+    },
+    {
+      "code": "compiler.missing_scale",
+      "message": "The target field requires a scale that is not declared."
+    },
+    {
+      "code": "compiler.no_change",
+      "message": "The request produces no workbook field changes."
+    }
+  ],
+  "validation": [
+    {
+      "code": "validation.schema",
+      "message": "The WorkbookPatch does not conform to its JSON Schema."
+    },
+    {
+      "code": "validation.patch_id",
+      "message": "The WorkbookPatch patchId does not match its canonical JSON."
+    },
+    {
+      "code": "validation.workspace",
+      "message": "The WorkbookPatch targets a different workspace."
+    },
+    {
+      "code": "validation.contract_versions",
+      "message": "The WorkbookPatch contract versions do not match the active Studio contracts."
+    },
+    {
+      "code": "validation.operation",
+      "message": "The WorkbookPatch contains a command or change outside the Phase B operation allowlist."
+    },
+    {
+      "code": "validation.asset_not_found",
+      "message": "The target asset does not exist."
+    },
+    {
+      "code": "validation.asset_type",
+      "message": "The target asset kind does not match the operation."
+    },
+    {
+      "code": "validation.field_unknown",
+      "message": "The target workbook field does not exist."
+    },
+    {
+      "code": "validation.field_type",
+      "message": "The raw cell value has the wrong type."
+    },
+    {
+      "code": "validation.enum",
+      "message": "The raw enum value is not legal for the target field."
+    },
+    {
+      "code": "validation.value_range",
+      "message": "The raw cell value is outside the declared range."
+    },
+    {
+      "code": "validation.scale_unit",
+      "message": "The semantic value, unit, or declared scale does not produce the raw cell value."
+    },
+    {
+      "code": "validation.reference",
+      "message": "A referenced asset does not exist or has the wrong type."
+    },
+    {
+      "code": "validation.revision",
+      "message": "The workspace catalog revision has changed."
+    },
+    {
+      "code": "validation.source_hash",
+      "message": "The source data-root hash has changed."
+    },
+    {
+      "code": "validation.ownership",
+      "message": "The target asset ownership rules reject the change."
+    },
+    {
+      "code": "validation.edit_lock",
+      "message": "The target asset is locked by another editor."
+    }
+  ]
+}

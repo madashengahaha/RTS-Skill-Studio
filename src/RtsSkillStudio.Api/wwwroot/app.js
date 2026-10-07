@@ -15,6 +15,12 @@ const state = {
     planJson: null,
     planErrors: [],
     planDisposition: "None",
+    compileStatus: null,
+    compileErrors: [],
+    patchJson: null,
+    patchValidation: null,
+    patchDiff: [],
+    applyResult: null,
     clarifications: [],
     unsupported: [],
     toolExecutions: [],
@@ -58,6 +64,7 @@ const elements = {
   messageInput: document.querySelector("#messageInput"),
   sendButton: document.querySelector("#sendButton"),
   inspectorMeta: document.querySelector("#inspectorMeta"),
+  inspectorTab: document.querySelector("#inspectorTab"),
   inspectorContent: document.querySelector("#inspectorContent"),
   assetSearch: document.querySelector("#assetSearch"),
   workspaceState: document.querySelector("#workspaceState"),
@@ -666,9 +673,9 @@ function renderSkillChain(chain, activateTab = true) {
 
 function showInspectorTab(tabName) {
   state.inspector.tab = tabName;
-  document.querySelectorAll(".tab").forEach((item) => {
-    item.classList.toggle("is-active", item.dataset.tab === tabName);
-  });
+  if (elements.inspectorTab) {
+    elements.inspectorTab.value = tabName;
+  }
   renderInspector();
 }
 
@@ -680,6 +687,12 @@ function renderInspector() {
     planJson,
     planErrors,
     planDisposition,
+    compileStatus,
+    compileErrors,
+    patchJson,
+    patchValidation,
+    patchDiff,
+    applyResult,
     clarifications,
     unsupported,
     toolExecutions,
@@ -739,7 +752,7 @@ function renderInspector() {
             ${
               planErrors.length > 0
                 ? `<ul>${planErrors.map((error) => `<li>${escapeHtml(error)}</li>`).join("")}</ul>`
-                : "<span>当前阶段只校验结构，不编译或执行。</span>"
+                : "<span>Plan 通过后可编译为 WorkbookPatch，并投影 Excel 字段差异。</span>"
             }
           </div>`
         : "";
@@ -799,6 +812,30 @@ function renderInspector() {
       unsupported,
       toolExecutions,
       lastError,
+    );
+    renderIcons();
+    return;
+  }
+
+  if (tab === "diff") {
+    elements.inspectorMeta.textContent = patchJson
+      ? patchValidation?.status === "Valid"
+        ? `${patchDiff.length} 个字段变化`
+        : compileErrors.length
+          ? `${compileErrors.length} 个编译问题`
+          : "等待校验"
+      : compileStatus === "Compiling"
+        ? "编译中"
+        : compileStatus === "NoChange"
+          ? "没有字段变化"
+        : "等待 Patch";
+    elements.inspectorContent.innerHTML = diffInspectorHtml(
+      patchJson,
+      compileStatus,
+      compileErrors,
+      patchValidation,
+      patchDiff,
+      applyResult,
     );
     renderIcons();
     return;
@@ -872,6 +909,11 @@ function evidenceInspectorHtml(
   }
 
   const operations = plan?.operations || [];
+  const compileErrors = (state.inspector.compileErrors || []).filter(
+    (error) => error.code !== "compiler.no_change",
+  );
+  const patchValidation = state.inspector.patchValidation;
+  const patchDiff = state.inspector.patchDiff || [];
 
   return `
     ${
@@ -1069,6 +1111,241 @@ function evidenceInspectorHtml(
                   .join("");
               })
               .join("")}
+          </section>`
+        : ""
+    }
+    ${
+      compileErrors.length
+        ? `<section class="evidence-block is-error">
+            <h3>Patch 编译证据</h3>
+            ${compileErrors
+              .map(
+                (error) => `<div class="evidence-item">
+                  <strong>${escapeHtml(error.code)}</strong>
+                  <span>${escapeHtml(error.message)}</span>
+                </div>`,
+              )
+              .join("")}
+          </section>`
+        : ""
+    }
+    ${
+      patchValidation
+        ? `<section class="evidence-block">
+            <h3>Patch 校验证据</h3>
+            <div class="evidence-row">
+              <span>状态</span>
+              <code>${escapeHtml(patchValidation.status)}</code>
+            </div>
+            ${(patchValidation.checks || [])
+              .map(
+                (check) => `<div class="evidence-row">
+                  <span>${escapeHtml(check.code)}</span>
+                  <code>${escapeHtml(check.status)}</code>
+                </div>`,
+              )
+              .join("")}
+          </section>`
+        : ""
+    }
+    ${
+      patchDiff.length
+        ? `<section class="evidence-block">
+            <h3>Excel 字段差异证据</h3>
+            ${patchDiff
+              .map(
+                (row) => `<div class="evidence-item">
+                  <strong>${escapeHtml(row.logicalAddress)}</strong>
+                  <code>${escapeHtml(row.before || "空")} → ${escapeHtml(
+                    row.after || "空",
+                  )}</code>
+                  <span>${escapeHtml(row.semanticField)} · ${escapeHtml(
+                    row.source,
+                  )}</span>
+                </div>`,
+              )
+              .join("")}
+          </section>`
+        : ""
+    }
+  `;
+}
+
+function diffInspectorHtml(
+  patchJson,
+  compileStatus,
+  compileErrors,
+  patchValidation,
+  patchDiff,
+  applyResult,
+) {
+  if (!patchJson && compileStatus !== "Compiling" && compileErrors.length === 0) {
+    return `
+      <div class="inspector-empty">
+        <i data-lucide="table-2"></i>
+        <h3>尚无 WorkbookPatch</h3>
+        <p>生成可编译的 SkillConfigPlan 后，这里会显示 Excel 字段级差异。</p>
+      </div>
+    `;
+  }
+
+  if (compileStatus === "Compiling") {
+    return `
+      <div class="inspector-empty">
+        <i data-lucide="loader-circle"></i>
+        <h3>正在编译 WorkbookPatch</h3>
+        <p>编译器只读取当前工作区快照，不会修改源工作簿。</p>
+      </div>
+    `;
+  }
+
+  const valid = patchValidation?.status === "Valid";
+  const checks = patchValidation?.checks || [];
+  const noChange = compileStatus === "NoChange";
+  const errors = (compileErrors || []).filter(
+    (error) => error.code !== "compiler.no_change",
+  );
+  const rows = patchDiff || [];
+  const failedChecks = checks.filter(
+    (check) => check.status === "Failed" || check.status === "NotRun",
+  );
+  return `
+    <div class="plan-validation ${valid ? "is-valid" : "is-error"}">
+      <strong>${
+        valid
+          ? "WorkbookPatch 校验通过"
+          : noChange
+            ? "没有字段变化"
+            : "WorkbookPatch 已阻止"
+      }</strong>
+      <span>源工作簿不会被修改；本阶段只允许写入临时工作区副本。</span>
+    </div>
+    ${
+      errors.length
+        ? `<section class="evidence-block is-error">
+            <h3>编译器问题</h3>
+            ${errors
+              .map(
+                (error) => `<div class="evidence-item">
+                  <strong>${escapeHtml(error.code)}</strong>
+                  <span>${escapeHtml(error.message)}</span>
+                  ${
+                    error.subject
+                      ? `<code>${escapeHtml(error.subject)}</code>`
+                      : ""
+                  }
+                </div>`,
+              )
+              .join("")}
+          </section>`
+        : ""
+    }
+    ${
+      checks.length
+        ? `<section class="evidence-block">
+            <h3>校验检查</h3>
+            ${checks
+              .map(
+                (check) => `<div class="evidence-row">
+                  <span>${escapeHtml(check.code)}</span>
+                  <code>${escapeHtml(check.status)}</code>
+                </div>`,
+              )
+              .join("")}
+          </section>`
+        : ""
+    }
+    ${
+      patchJson
+        ? `<section class="evidence-block">
+            <div class="patch-change-header">
+              <h3>Excel 字段变化</h3>
+              <button
+                class="quiet-button"
+                type="button"
+                data-apply-temporary
+                ${valid ? "" : "disabled"}
+              >
+                ${icon("play")}
+                <span>验证到临时副本</span>
+              </button>
+            </div>
+            <div class="patch-table-wrap">
+              <table class="patch-table">
+                <thead>
+                  <tr>
+                    <th>逻辑地址</th>
+                    <th>字段</th>
+                    <th>before</th>
+                    <th>after</th>
+                    <th>来源</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rows
+                    .map(
+                      (row) => `<tr class="${row.isNoOp ? "is-noop" : ""}">
+                        <td><code>${escapeHtml(row.logicalAddress)}</code></td>
+                        <td>
+                          <strong>${escapeHtml(row.semanticField)}</strong>
+                          <span>${escapeHtml(row.field)}</span>
+                        </td>
+                        <td><code>${escapeHtml(row.before || "空")}</code></td>
+                        <td><code>${escapeHtml(row.after || "空")}</code></td>
+                        <td><span>${escapeHtml(row.source)}</span></td>
+                      </tr>`,
+                    )
+                    .join("")}
+                </tbody>
+              </table>
+            </div>
+          </section>`
+        : ""
+    }
+    ${
+      failedChecks.length
+        ? `<section class="evidence-block is-error">
+            <h3>阻止原因</h3>
+            ${failedChecks
+              .map(
+                (check) => `<div class="evidence-item">
+                  <strong>${escapeHtml(check.code)}</strong>
+                  <span>${escapeHtml(check.message)}</span>
+                </div>`,
+              )
+              .join("")}
+          </section>`
+        : ""
+    }
+    ${
+      applyResult
+        ? `<section class="evidence-block ${
+            applyResult.status === "Verified" ? "" : "is-error"
+          }">
+            <h3>临时副本验证</h3>
+            <div class="evidence-row">
+              <span>状态</span>
+              <code>${escapeHtml(applyResult.status)}</code>
+            </div>
+            ${
+              applyResult.outputRoot
+                ? `<div class="evidence-row">
+                    <span>输出目录</span>
+                    <code>${escapeHtml(applyResult.outputRoot)}</code>
+                  </div>`
+                : ""
+            }
+            <div class="evidence-row">
+              <span>源哈希未变</span>
+              <code>${applyResult.sourceUnchanged ? "是" : "否"}</code>
+            </div>
+            <div class="evidence-row">
+              <span>重读字段</span>
+              <code>${escapeHtml(applyResult.verifiedFieldCount ?? 0)}</code>
+            </div>
+            <div class="evidence-item">
+              <span>${escapeHtml(applyResult.message || "")}</span>
+            </div>
           </section>`
         : ""
     }
@@ -1279,6 +1556,12 @@ function activateConversation(conversation) {
   state.inspector.planDisposition =
     conversation.planDisposition ||
     (conversation.planJson ? "Expected" : "None");
+  state.inspector.compileStatus = null;
+  state.inspector.compileErrors = [];
+  state.inspector.patchJson = null;
+  state.inspector.patchValidation = null;
+  state.inspector.patchDiff = [];
+  state.inspector.applyResult = null;
   state.inspector.clarifications = [];
   state.inspector.unsupported = [];
   state.inspector.toolExecutions = [];
@@ -1380,7 +1663,8 @@ async function openConversation(conversationId) {
     await loadSkillChain(conversation.selectedSkillId, false);
   }
   if (conversation.planJson) {
-    showInspectorTab("plan");
+    const compiledPatch = await compilePlan(conversation.planJson);
+    showInspectorTab(compiledPatch ? "diff" : "plan");
   }
 }
 
@@ -1392,6 +1676,101 @@ async function refreshConversationList() {
 
   state.conversations = await response.json();
   renderConversationList();
+}
+
+async function compilePlan(planJson) {
+  if (!planJson) {
+    return false;
+  }
+
+  state.inspector.compileStatus = "Compiling";
+  state.inspector.compileErrors = [];
+  state.inspector.patchJson = null;
+  state.inspector.patchValidation = null;
+  state.inspector.patchDiff = [];
+  state.inspector.applyResult = null;
+  renderInspector();
+  try {
+    const response = await fetch("/api/v1/workbook-patches/compile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planJson }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(
+        payload.detail || payload.error || `编译失败：HTTP ${response.status}`,
+      );
+    }
+
+    state.inspector.compileStatus = payload.status || "Invalid";
+    state.inspector.compileErrors = payload.errors || [];
+    state.inspector.patchJson = payload.patchJson || null;
+    state.inspector.patchValidation = payload.validation || null;
+    state.inspector.patchDiff = payload.diff || [];
+    renderInspector();
+    return Boolean(state.inspector.patchJson);
+  } catch (error) {
+    state.inspector.compileStatus = "Invalid";
+    state.inspector.compileErrors = [
+      {
+        code: "studio.compile_failed",
+        message: error.message,
+      },
+    ];
+    renderInspector();
+    return false;
+  }
+}
+
+async function applyTemporaryPatch() {
+  const patchJson = state.inspector.patchJson;
+  if (!patchJson || state.inspector.patchValidation?.status !== "Valid") {
+    return;
+  }
+
+  state.inspector.applyResult = {
+    status: "Applying",
+    sourceUnchanged: true,
+    verifiedFieldCount: 0,
+    message: "正在复制工作区并应用 Patch。",
+  };
+  renderInspector();
+  try {
+    const response = await fetch(
+      "/api/v1/workbook-patches/apply-temporary",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patchJson }),
+      },
+    );
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(
+        payload.detail || payload.error || `临时应用失败：HTTP ${response.status}`,
+      );
+    }
+
+    state.inspector.patchValidation =
+      payload.validation || state.inspector.patchValidation;
+    state.inspector.applyResult = payload.applyResult || {
+      status: payload.status || "Failed",
+      sourceUnchanged: true,
+      verifiedFieldCount: 0,
+      message: "服务未返回临时应用详情。",
+    };
+    renderInspector();
+  } catch (error) {
+    state.inspector.applyResult = {
+      status: "Failed",
+      sourceUnchanged: true,
+      verifiedFieldCount: 0,
+      message: error.message,
+    };
+    renderInspector();
+    showToast(error.message, "error");
+  }
 }
 
 async function sendMessage(message) {
@@ -1462,6 +1841,14 @@ async function sendMessage(message) {
     state.inspector.clarifications = payload.clarifications || [];
     state.inspector.unsupported = payload.unsupported || [];
     state.inspector.toolExecutions = payload.toolExecutions || [];
+    let compiledPatch = false;
+    if (
+      payload.planJson &&
+      payload.turnStatus === "Ready" &&
+      payload.planDisposition === "Expected"
+    ) {
+      compiledPatch = await compilePlan(payload.planJson);
+    }
     if (
       !payload.selectedAsset &&
       Array.isArray(payload.mentionedAssets) &&
@@ -1487,11 +1874,13 @@ async function sendMessage(message) {
     }
     updateInspector(null);
     showInspectorTab(
-      payload.expectedPlan ||
-        payload.planJson ||
-        state.inspector.planErrors.length > 0
-        ? "plan"
-        : "evidence",
+      compiledPatch
+        ? "diff"
+        : payload.expectedPlan ||
+            payload.planJson ||
+            state.inspector.planErrors.length > 0
+          ? "plan"
+          : "evidence",
     );
     await refreshConversationList();
   } catch (error) {
@@ -1515,6 +1904,13 @@ function setTreeSubtreeOpen(details, open) {
 }
 
 elements.inspectorContent.addEventListener("click", (event) => {
+  const applyButton = event.target.closest("[data-apply-temporary]");
+  if (applyButton) {
+    event.preventDefault();
+    applyTemporaryPatch().catch((error) => showToast(error.message, "error"));
+    return;
+  }
+
   if (!event.shiftKey) {
     return;
   }
@@ -1681,10 +2077,8 @@ elements.messageInput.addEventListener("keydown", (event) => {
   }
 });
 
-document.querySelectorAll(".tab").forEach((tab) => {
-  tab.addEventListener("click", () => {
-    showInspectorTab(tab.dataset.tab);
-  });
+elements.inspectorTab.addEventListener("change", (event) => {
+  showInspectorTab(event.target.value);
 });
 
 Promise.all([loadProviders(), loadWorkspace()])

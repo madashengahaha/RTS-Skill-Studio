@@ -1,5 +1,6 @@
 using RtsSkillStudio.Agent;
 using RtsSkillStudio.Agent.Llm;
+using RtsSkillStudio.Agent.Patch;
 using RtsSkillStudio.Agent.Workspaces;
 using System.Text.RegularExpressions;
 
@@ -9,6 +10,8 @@ public sealed class AgentToolLoop(
     LlmProviderFactory providers,
     IAgentReadOnlyToolService tools,
     SkillConfigPlanValidator planValidator,
+    SkillConfigPlanNormalizer planNormalizer,
+    SkillWorkspaceService workspace,
     ILogger<AgentToolLoop> logger
 )
 {
@@ -369,6 +372,38 @@ public sealed class AgentToolLoop(
         SkillConfigPlanExtraction extraction = SkillConfigPlanParser.Extract(
             finalResult.Text
         );
+        if (
+            route.ExpectsPlan
+            && !string.IsNullOrWhiteSpace(extraction.PlanJson)
+        )
+        {
+            try
+            {
+                WorkbookPatchWorkspaceSnapshot snapshot =
+                    await workspace.GetPatchWorkspaceSnapshotAsync(
+                        cancellationToken
+                    );
+                string normalizedPlan = planNormalizer.Normalize(
+                    extraction.PlanJson,
+                    message,
+                    snapshot
+                );
+                extraction = new SkillConfigPlanExtraction(
+                    normalizedPlan,
+                    []
+                );
+            }
+            catch (Exception exception) when (
+                exception is InvalidOperationException
+                    or FileNotFoundException
+            )
+            {
+                logger.LogWarning(
+                    exception,
+                    "Failed to normalize SkillConfigPlan."
+                );
+            }
+        }
         var validationErrors = new List<string>(extraction.Errors);
         SkillConfigPlanValidationResult? validation = null;
         if (!string.IsNullOrWhiteSpace(extraction.PlanJson))

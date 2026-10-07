@@ -1,5 +1,89 @@
 # Implementation Log
 
+## 2026-10-07 - Phase B Modify Skill Vertical Slice
+
+### Scope
+
+Implemented the first end-to-end path from a typed `SkillConfigPlan` to a
+temporary, verified Excel workbook change.
+
+### Decisions
+
+- The compiler is a pure deterministic component over a workspace snapshot and
+  the generated registry; it does not perform Excel I/O.
+- Compile input is schema-validated before the Phase B `ModifySkill` subset is
+  compiled.
+- A deterministic normalization step maps registry aliases to semantic field
+  names, infers explicit units from the user request, and stamps the current
+  workspace and contract versions into the Plan base before validation.
+- Semantic Plan values carry units; conversion aliases and factors come from the
+  versioned default-value contract.
+- Patch validation returns a separate report and treats failed or not-run
+  required checks as invalid.
+- Apply accepts only a Valid report for the same `patchId`, copies the source
+  data root under `.studio-work`, writes the copy, re-reads it, and verifies the
+  source hash remains unchanged.
+- The Studio UI compiles automatically when a Ready Plan is available and exposes
+  the Excel diff plus a temporary-copy verification action.
+
+### Verified
+
+```text
+dotnet build RtsSkillStudio.sln
+dotnet test RtsSkillStudio.sln
+npm run validate
+npm test
+npm run eval:readonly
+npm run eval:modify
+```
+
+Real-workspace smoke verified `TbSkill:100101`, `cooldown=8s`, cell value
+`8000`, `Valid` Patch validation, one diff row, and `Verified` temporary apply
+with an unchanged source-root hash.
+
+## 2026-10-07 - Phase B Contract Hardening
+
+### Scope
+
+Resolved the pre-compiler contract gaps identified in review before Phase B
+implementation starts.
+
+### Decisions
+
+- Renamed the immutable compiler artifact to `WorkbookPatch`; the old
+  `AuthoringPatch` name is retired.
+- Split validation into `WorkbookPatchValidationReport`. Checks now declare
+  `required`, `severity`, and `status`, including explicit `NotRun` handling.
+- `WorkbookPatch.patchId` is SHA-256 over canonical Patch JSON with `patchId`
+  omitted.
+- Plan and Patch bases now carry `workspaceId`, catalog `revision`, and a
+  source-root `sourceHash`; the Studio computes the source-root hash from a
+  deterministic inventory and the file bytes.
+- Plan `ModifySkill.fields` keys are capability-registry semantic names rather
+  than workbook column names.
+- `Skill.cd_time` and `Skill.duration` now expose semantic names, raw types,
+  units, scale, aliases, and ranges through `entityFields`.
+- Plan values may declare a semantic unit. The compiler owns conversion from
+  semantic units to workbook cell units.
+- Patch field changes now carry a stable logical address plus semantic value,
+  semantic unit, and raw before/after values.
+- Compile and validation failures use versioned machine-readable codes from
+  `config/workbook-patch-errors.v0.json`.
+- All-no-op requests are defined as a structured `NoChange` compile result, not
+  an empty Patch.
+- The writer round-trip smoke test remains independent from temporary Patch
+  application, and `.studio-work` runs have a configured retention count.
+
+### Verified
+
+```text
+npm run build:registry
+npm run verify:source
+npm run validate
+npm test
+dotnet test RtsSkillStudio.sln --no-build --no-restore
+```
+
 ## 2026-10-07 - Generic Capability Learning Questions
 
 ### Scope
@@ -343,7 +427,7 @@ skill configuration agent.
 
 - The structural capability layer is generated from an external semantic schema.
 - The semantic interpretation layer is versioned and reviewed inside this repository.
-- Models propose `SkillConfigPlan`; they never edit `AuthoringPatch` or authoring fields.
+- Models propose `SkillConfigPlan`; they never edit `WorkbookPatch` or authoring fields.
 - Equivalent mechanisms require an explicit default-mechanism rule.
 - Unsupported requests must return a structured rejection, not silently degrade.
 - Semantic evaluation uses normalized IR rather than exact JSON matching.

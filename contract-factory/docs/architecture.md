@@ -5,7 +5,7 @@ Natural-language request
   -> read-only capability context
   -> SkillConfigPlan
   -> deterministic compiler
-  -> AuthoringPatch
+  -> WorkbookPatch
   -> schema/reference/semantic validation
   -> field and graph diff
   -> user confirmation
@@ -20,7 +20,8 @@ Natural-language request
 | Capability registry | A versioned snapshot plus semantic annotations |
 | `SkillConfigPlan` | User/model intent, assumptions, clarifications, and value provenance |
 | Compiler | Unit conversion, name resolution, ID allocation, mechanism selection |
-| `AuthoringPatch` | Deterministic command and field-change output |
+| `WorkbookPatch` | Immutable deterministic command and field-change output |
+| `WorkbookPatchValidationReport` | Validation status and required checks for one Patch |
 | Validator | Schema, reference, ownership, revision, and semantic gates |
 | Existing authoring service | Draft and Excel execution |
 
@@ -36,7 +37,7 @@ The model may:
 The model may not:
 
 - write authoring commands directly;
-- edit an `AuthoringPatch`;
+- edit a `WorkbookPatch`;
 - invent identifiers or references;
 - choose among equivalent mechanisms outside the default-mechanism contract;
 - skip compile or validation.
@@ -49,4 +50,3 @@ When the base revision changes:
 - regenerate `ModelProposed` values;
 - refresh `Default` values from the active contract;
 - mark conflicts and require confirmation again.
-

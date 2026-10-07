@@ -161,7 +161,7 @@
       "assertions": [
         {"kind": "status", "equals": "Ready"},
         {"kind": "hasOperation", "operation": "ModifySkill"},
-        {"kind": "paramEquals", "path": "ModifySkill.cd_time", "equals": 8000}
+        {"kind": "paramEquals", "path": "ModifySkill.cooldown", "equals": 8}
       ],
       "forbidden": []
     },

@@ -342,7 +342,9 @@ const enumReferences = sorted(
       .flatMap((action) => action.parameters)
       .map((parameter) => parameter.enumName)
       .filter(Boolean),
-    ...foundation.entityFields.map((field) => field.enumName)
+    ...foundation.entityFields
+      .map((field) => field.enumName)
+      .filter(Boolean)
   ])
 );
 

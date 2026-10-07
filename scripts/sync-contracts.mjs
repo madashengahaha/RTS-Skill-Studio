@@ -26,7 +26,8 @@ const destinationRoot = path.join(
 );
 
 const files = [
-  "contracts/authoring-patch.schema.json",
+  "contracts/workbook-patch.schema.json",
+  "contracts/workbook-patch-validation.schema.json",
   "contracts/capability-registry.schema.json",
   "contracts/read-only-results.schema.json",
   "contracts/skill-config-plan.schema.json",
@@ -39,6 +40,7 @@ const files = [
   "config/read-only-tools.v0.json",
   "config/registry-foundation.v0.json",
   "config/semantic-overlay.v0.json",
+  "config/workbook-patch-errors.v0.json",
   "evals/equivalence-rules.v0.json",
   "evals/golden-cases.schema.json",
   "evals/golden-cases.v0.json",

@@ -103,8 +103,8 @@ public static class SkillAgentInstructions
         【配置计划输出】
         当用户请求创建或修改技能配置时，除了正常说明外，必须在答复末尾追加一个 ```json 代码块，且代码块只能包含一个符合 SkillConfigPlan 结构的 JSON 对象。
         Plan 必须包含 schemaVersion、planId、base、request、status 和 operations。
-        base 必须包含 workspaceId、revision、capabilityRegistryVersion、defaultValueContractVersion、defaultMechanismContractVersion。
-        workspaceId 使用 "studio-workspace"，当前 revision 使用工作区上下文中提供的值，三个 contract version 在当前阶段使用 "v0"。
+        base 必须包含 workspaceId、revision、sourceHash、capabilityRegistryVersion、defaultValueContractVersion、defaultMechanismContractVersion。
+        workspaceId、当前 revision 和 sourceHash 必须使用工作区上下文中提供的值，三个 contract version 在当前阶段使用 "v0"。
         Ready 状态必须包含至少一个 operation；NeedsClarification 必须包含 clarifications；Unsupported 必须包含 unsupported。
         Ready 不得同时包含 clarification 或 unsupported；需要用户确认时，status 必须改为 NeedsClarification，并把这些确认项写入 clarifications。
         当前可使用的 operation kind 只能是 CreateSkill、ModifySkill、ModifyAsset、AddEffectIntent、ModifyEffectIntent、DeleteEffectIntent、AddConditionIntent、ModifyConditionIntent、DeleteConditionIntent、LinkExisting、RemoveLink、ReorderMembers。
@@ -121,6 +121,7 @@ public static class SkillAgentInstructions
           "base": {
             "workspaceId": "studio-workspace",
             "revision": "<工作区 revision>",
+            "sourceHash": "<工作区 sourceHash>",
             "capabilityRegistryVersion": "v0",
             "defaultValueContractVersion": "v0",
             "defaultMechanismContractVersion": "v0"
@@ -145,7 +146,8 @@ public static class SkillAgentInstructions
               },
               "fields": {
                 "duration": {
-                  "value": 3000,
+                  "value": 3,
+                  "unit": "s",
                   "source": "ModelProposed",
                   "evidence": []
                 }
@@ -154,7 +156,10 @@ public static class SkillAgentInstructions
           ]
         }
         ```
-         source 只能是 ModelProposed、UserEdited 或 Default。除上述属性外不要增加 rawText、target、changes、unit 或 writeRequested 等非 schema 字段。
+        ModifySkill.fields 的 key 必须是能力注册表中的语义字段名，例如 cooldown、duration；不得直接写 cd_time 等 Excel 列名。
+        时间值必须在 unit 中声明语义单位；编译器负责把语义值转换成目标单元格单位。source 只能是 ModelProposed、UserEdited 或 Default。
+        ModifySkill 只修改 Skill 根表字段；不得把技能根字段需求改写成 Effect、DamagePipeline、action_param 或子节点修改，除非用户明确要求修改这些子节点。
+        除 schema 已声明属性外不要增加 rawText、target、changes 或 writeRequested 等非 schema 字段。
          ExistingConfig 是 evidence.kind，不是 value.source；现有配置只能放进 evidence，不得写成 source。
         assumptions 必须是对象数组，每项格式为 {"key":"<字段或假设名>","value":{"value":<值>,"source":"ModelProposed","evidence":[]},"reason":"<原因>","requiresConfirmation":false}。
         clarifications 必须是对象数组，每项格式为 {"key":"<稳定问题键>","question":"<问题>","fieldPath":"<字段路径>","required":true,"options":[]}；options 若提供，必须是 {"key":"<候选键>","label":"<候选显示名>","summary":"<可选说明>"} 的对象数组，不能是字符串数组。

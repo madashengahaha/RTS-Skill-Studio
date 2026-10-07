@@ -388,6 +388,8 @@ public sealed class AgentStageATests
             {
                 ["workspaceId"] = "studio-workspace",
                 ["revision"] = "r1",
+                ["sourceHash"] =
+                    "0000000000000000000000000000000000000000000000000000000000000000",
                 ["capabilityRegistryVersion"] = "0.1.0",
                 ["defaultValueContractVersion"] = "0.1.0",
                 ["defaultMechanismContractVersion"] = "0.1.0"

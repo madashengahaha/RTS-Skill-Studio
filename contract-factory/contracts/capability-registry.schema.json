@@ -178,15 +178,68 @@
     "EntityField": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "enumName"],
+      "required": ["path"],
       "properties": {
         "path": {
           "type": "string",
           "minLength": 1
         },
+        "semanticName": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable Plan-facing field name resolved by the compiler."
+        },
+        "kind": {
+          "enum": [
+            "Text",
+            "Integer",
+            "Boolean",
+            "Enum",
+            "Reference",
+            "List",
+            "Map",
+            "DelimitedList"
+          ]
+        },
+        "rawType": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
         "enumName": {
           "type": "string",
           "minLength": 1
+        },
+        "referenceTarget": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scale": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minimum": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "default": []
+        },
+        "description": {
+          "type": "string"
         }
       }
     },

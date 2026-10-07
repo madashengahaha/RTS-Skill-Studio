@@ -127,6 +127,7 @@
       "required": [
         "workspaceId",
         "revision",
+        "sourceHash",
         "capabilityRegistryVersion",
         "defaultValueContractVersion",
         "defaultMechanismContractVersion"
@@ -137,6 +138,10 @@
         },
         "revision": {
           "type": "string"
+        },
+        "sourceHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
         },
         "capabilityRegistryVersion": {
           "type": "string"
@@ -172,6 +177,10 @@
       "required": ["value", "source"],
       "properties": {
         "value": true,
+        "unit": {
+          "type": "string",
+          "description": "Optional semantic unit requested in the Plan. The compiler converts it to the workbook cell unit."
+        },
         "source": {
           "enum": ["ModelProposed", "UserEdited", "Default"]
         },
@@ -481,6 +490,7 @@
             },
             "fields": {
               "type": "object",
+              "description": "Keys are registry semantic field names, not workbook column names. The compiler resolves them through entityFields.semanticName.",
               "additionalProperties": {
                 "$ref": "#/$defs/Value"
               }

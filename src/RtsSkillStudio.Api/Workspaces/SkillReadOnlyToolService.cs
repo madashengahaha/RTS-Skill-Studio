@@ -266,6 +266,28 @@ public sealed class SkillReadOnlyToolService(
             .Nodes.Take(nodeLimit)
             .Select(FilterAgentVisibleFields)
             .ToArray();
+        JsonObject registry = await _registry.Value;
+        IReadOnlyDictionary<string, SkillChainNode> nodesByKey = chain
+            .Nodes.ToDictionary(node => node.Key, StringComparer.Ordinal);
+        var nodePayloads = new JsonArray();
+        foreach (SkillChainNode node in nodes)
+        {
+            JsonObject payload = JsonSerializer
+                .SerializeToNode(node)!
+                .AsObject();
+            JsonObject? parameterDetails =
+                EffectActionParameterProjector.Project(
+                    registry,
+                    node,
+                    chain.Edges,
+                    nodesByKey
+                );
+            if (parameterDetails is not null)
+            {
+                payload["actionParameterDetails"] = parameterDetails;
+            }
+            nodePayloads.Add(payload);
+        }
         var nodeKeys = nodes
             .Select(node => node.Key)
             .ToHashSet(StringComparer.Ordinal);
@@ -302,7 +324,7 @@ public sealed class SkillReadOnlyToolService(
                     edges = chain.Edges.Count
                 },
                 truncated,
-                nodes,
+                nodes = nodePayloads,
                 edges
             }
         )!;

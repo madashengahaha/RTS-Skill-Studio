@@ -21,7 +21,7 @@ public sealed class TemporaryWorkbookPatchApplyService(
     SkillWorkspaceOptions options,
     IHostEnvironment environment,
     IGameDataCatalogReader catalogReader,
-    IGameDataWorkbookWriter workbookWriter,
+    IGameDataWorkbookReader workbookReader,
     ILogger<TemporaryWorkbookPatchApplyService> logger
 )
 {
@@ -81,16 +81,22 @@ public sealed class TemporaryWorkbookPatchApplyService(
                 () =>
                 {
                     Directory.CreateDirectory(outputDataRoot);
-                    SkillWorkspaceService.CopyTree(
-                        sourceDataRoot,
-                        outputDataRoot
-                    );
+                    IReadOnlyCollection<string> tableKeys = patch
+                        .FieldChanges.Select(
+                            change => change.LogicalAddress.TableKey
+                        )
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                    GameDataCatalog sourceCatalog =
+                        catalogReader.Read(sourceDataRoot, tableKeys);
                     string copiedHash =
                         SkillWorkspaceService.ComputeSourceTreeHash(
                             outputDataRoot
                         );
                     ApplyAndVerify(
                         patch,
+                        sourceCatalog,
+                        sourceDataRoot,
                         outputDataRoot,
                         out string writtenHash,
                         out int verifiedFieldCount,
@@ -143,14 +149,17 @@ public sealed class TemporaryWorkbookPatchApplyService(
 
     private void ApplyAndVerify(
         WorkbookPatchDocument patch,
+        GameDataCatalog sourceCatalog,
+        string sourceDataRoot,
         string outputDataRoot,
         out string writtenHash,
         out int verifiedFieldCount,
         out IReadOnlyList<string> mismatches
     )
     {
-        GameDataCatalog catalog = catalogReader.Read(outputDataRoot);
+        GameDataCatalog catalog = sourceCatalog;
         var mismatchesList = new List<string>();
+        var stagedTables = new List<(string RelativePath, GameDataTable Table)>();
         foreach (
             IGrouping<string, WorkbookFieldChange> tableChanges in patch
                 .FieldChanges.GroupBy(
@@ -172,6 +181,27 @@ public sealed class TemporaryWorkbookPatchApplyService(
                 mismatchesList.Add($"缺少表 {tableChanges.Key}。");
                 continue;
             }
+
+            string relativePath = Path.GetRelativePath(
+                sourceDataRoot,
+                table.WorkbookPath
+            );
+            string stagedWorkbookPath = Path.Combine(
+                outputDataRoot,
+                relativePath
+            );
+            string? stagedDirectory = Path.GetDirectoryName(
+                stagedWorkbookPath
+            );
+            if (!string.IsNullOrWhiteSpace(stagedDirectory))
+            {
+                Directory.CreateDirectory(stagedDirectory);
+            }
+            File.Copy(
+                table.WorkbookPath,
+                stagedWorkbookPath,
+                overwrite: true
+            );
 
             var records = table.Records.ToDictionary(item => item.Id);
             foreach (
@@ -195,10 +225,11 @@ public sealed class TemporaryWorkbookPatchApplyService(
                 );
                 foreach (WorkbookFieldChange change in recordChanges)
                 {
-                    fields[change.Field] =
-                    [
+                    WorkbookPatchFieldAccessor.Apply(
+                        fields,
+                        change.Field,
                         WorkbookFieldChangeJson.RawText(change.After)
-                    ];
+                    );
                 }
 
                 records[record.Id] = record with
@@ -215,29 +246,78 @@ public sealed class TemporaryWorkbookPatchApplyService(
                     .ToArray()
             };
             catalog = catalog.ReplaceTable(updated);
-            workbookWriter.Write(updated.WorkbookPath, updated);
+            GameDataWorkbookCellUpdater.Apply(
+                stagedWorkbookPath,
+                table,
+                tableChanges
+                    .Select(
+                        change =>
+                        {
+                            (string BaseField, int IndexOffset) =
+                                ParseChangeField(change.Field);
+                            return new WorkbookPatchChange(
+                                change.Id,
+                                BaseField,
+                                IndexOffset,
+                                WorkbookFieldChangeJson.RawText(
+                                    change.After
+                                )
+                            );
+                        }
+                    )
+            );
+            IReadOnlyList<string> packageErrors =
+                WorkbookPackageIntegrityValidator.FindNewErrors(
+                    table.WorkbookPath,
+                    stagedWorkbookPath
+                );
+            if (packageErrors.Count > 0)
+            {
+                throw new InvalidDataException(
+                    $"写入后的 {Path.GetFileName(stagedWorkbookPath)} 出现新的 Excel 包校验错误："
+                        + string.Join("；", packageErrors)
+                );
+            }
+            stagedTables.Add((relativePath, updated));
         }
 
-        GameDataCatalog rereadCatalog = catalogReader.Read(outputDataRoot);
         int verified = 0;
         foreach (WorkbookFieldChange change in patch.FieldChanges)
         {
-            GameDataTable? table = rereadCatalog.Tables.FirstOrDefault(
-                item => string.Equals(
-                    item.Key,
-                    change.LogicalAddress.TableKey,
-                    StringComparison.OrdinalIgnoreCase
+            (string RelativePath, GameDataTable Table) staged =
+                stagedTables.FirstOrDefault(
+                    item => string.Equals(
+                        item.Table.Key,
+                        change.LogicalAddress.TableKey,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                );
+            if (staged.Table is null)
+            {
+                mismatchesList.Add(
+                    $"临时副本缺少表 {change.LogicalAddress.TableKey}。"
+                );
+                continue;
+            }
+
+            GameDataTable rereadTable = workbookReader.Read(
+                new GameDataTableSource(
+                    staged.Table.Key,
+                    staged.Table.DisplayName,
+                    staged.Table.Category,
+                    staged.RelativePath,
+                    Path.Combine(outputDataRoot, staged.RelativePath)
                 )
             );
-            GameDataRecord? record = table?.Records.FirstOrDefault(
+            GameDataRecord? record = rereadTable.Records.FirstOrDefault(
                 item => item.Id == change.Id
             );
-            string actual = record?.Fields.TryGetValue(
-                change.Field,
-                out IReadOnlyList<string>? values
-            ) == true
-                ? values.FirstOrDefault() ?? ""
-                : "";
+            string actual = record is null
+                ? ""
+                : WorkbookPatchFieldAccessor.Read(
+                    record.Fields,
+                    change.Field
+                );
             string expected = WorkbookFieldChangeJson.RawText(change.After);
             if (string.Equals(actual, expected, StringComparison.Ordinal))
             {
@@ -310,6 +390,31 @@ public sealed class TemporaryWorkbookPatchApplyService(
                 }
             }
         }
+    }
+
+    private static (string BaseField, int IndexOffset) ParseChangeField(
+        string field
+    )
+    {
+        const string prefix = "action_param[";
+        if (
+            field.StartsWith(
+                prefix,
+                StringComparison.OrdinalIgnoreCase
+            )
+            && field.EndsWith(']')
+            && int.TryParse(
+                field[prefix.Length..^1],
+                System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out int index
+            )
+        )
+        {
+            return ("action_param", index);
+        }
+
+        return (field, 0);
     }
 
     private string ResolveContentRootPath(string path)

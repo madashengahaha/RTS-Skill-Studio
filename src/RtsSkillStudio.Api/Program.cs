@@ -47,6 +47,8 @@ builder.Services.AddSingleton<IGameDataWorkbookReader, GameDataWorkbookReader>()
 builder.Services.AddSingleton<IGameDataCatalogReader, UnitGameDataCatalogReader>();
 builder.Services.AddSingleton<IGameDataWorkbookWriter, GameDataWorkbookWriter>();
 builder.Services.AddSingleton<TemporaryWorkbookPatchApplyService>();
+builder.Services.AddSingleton<FinalWorkbookPatchApplyService>();
+builder.Services.AddSingleton<WorkbookPatchTransactionStore>();
 builder.Services.AddSingleton<WorkbookPatchWorkspaceService>();
 builder.Services.AddSingleton(
     new ExecutionChainProjectionPolicy(
@@ -169,7 +171,7 @@ app.MapPost(
         catch (InvalidOperationException exception)
         {
             return Results.Problem(
-                detail: exception.Message,
+                detail: FriendlyWorkbookError(exception),
                 statusCode: StatusCodes.Status503ServiceUnavailable
             );
         }
@@ -396,7 +398,10 @@ app.MapPost(
             if (pendingSelection is not null)
             {
                 requestAsset = pendingSelection;
-                effectiveMessage = conversation.PendingRequest;
+                effectiveMessage =
+                    $"{pendingSelection.Namespace}:{pendingSelection.Id}"
+                    + Environment.NewLine
+                    + conversation.PendingRequest;
                 await conversations.ClearPendingAssetClarificationAsync(
                     conversationId,
                     cancellationToken
@@ -477,14 +482,6 @@ app.MapPost(
 
         StudioAssetRef? selectedAsset = requestAsset
             ?? conversation.SelectedAsset;
-        if (requestAsset is not null)
-        {
-            await conversations.UpdateSelectedAssetAsync(
-                conversationId,
-                requestAsset,
-                cancellationToken
-            );
-        }
 
         try
         {
@@ -563,14 +560,11 @@ app.MapPost(
                     cancellationToken
                 );
             }
-            StudioAssetRef? boundAsset =
-                requestAsset
-                ?? workspaceContext.Asset
-                ?? (
-                    workspaceContext.RequiresClarification
-                        ? null
-                        : conversation.SelectedAsset
-                );
+            StudioAssetRef? boundAsset = workspaceContext.RequiresClarification
+                ? null
+                : workspaceContext.Asset
+                    ?? requestAsset
+                    ?? conversation.SelectedAsset;
             IReadOnlyList<StudioAssetRef> mentionedAssets =
                 boundAsset is not null
                     ? [boundAsset]
@@ -579,7 +573,6 @@ app.MapPost(
                 workspaceContext.Asset is null
                 && workspaceContext.RequiresClarification
                 && workspaceContext.ValidCandidates.Count > 0
-                && requestAsset is null
             )
             {
                 IReadOnlyList<StudioAssetRef> candidates =
@@ -595,6 +588,11 @@ app.MapPost(
                 await conversations.UpdateMentionedAssetsAsync(
                     conversationId,
                     pendingCandidates,
+                    cancellationToken
+                );
+                await conversations.UpdateSelectedAssetAsync(
+                    conversationId,
+                    null,
                     cancellationToken
                 );
                 await conversations.AppendMessageAsync(
@@ -653,7 +651,6 @@ app.MapPost(
             );
             if (
                 workspaceContext.RequiresClarification
-                && requestAsset is null
                 && conversation.SelectedAsset is not null
             )
             {
@@ -664,14 +661,13 @@ app.MapPost(
                 );
             }
             else if (
-                requestAsset is null
-                && workspaceContext.Asset is not null
-                && workspaceContext.Asset != conversation.SelectedAsset
+                boundAsset is not null
+                && boundAsset != conversation.SelectedAsset
             )
             {
                 await conversations.UpdateSelectedAssetAsync(
                     conversationId,
-                    workspaceContext.Asset,
+                    boundAsset,
                     cancellationToken
                 );
             }
@@ -760,7 +756,7 @@ app.MapPost(
         catch (InvalidOperationException exception)
         {
             return Results.Problem(
-                detail: exception.Message,
+                detail: FriendlyWorkbookError(exception),
                 statusCode: StatusCodes.Status503ServiceUnavailable
             );
         }
@@ -808,7 +804,7 @@ app.MapGet(
         )
         {
             return Results.Problem(
-                detail: exception.Message,
+                detail: FriendlyWorkbookError(exception),
                 statusCode: StatusCodes.Status503ServiceUnavailable
             );
         }
@@ -1031,7 +1027,10 @@ app.MapPost(
         catch (Exception exception) when (
             exception is InvalidOperationException
                 or FileNotFoundException
+                or InvalidDataException
+                or KeyNotFoundException
                 or IOException
+                or UnauthorizedAccessException
                 or JsonException
         )
         {
@@ -1068,12 +1067,87 @@ app.MapPost(
         catch (Exception exception) when (
             exception is InvalidOperationException
                 or FileNotFoundException
+                or InvalidDataException
+                or KeyNotFoundException
+                or IOException
+                or UnauthorizedAccessException
+                or JsonException
+        )
+        {
+            return Results.Problem(
+                detail: FriendlyWorkbookError(exception),
+                statusCode: StatusCodes.Status503ServiceUnavailable
+            );
+        }
+    }
+);
+
+app.MapPost(
+    "/api/v1/workbook-patches/apply",
+    async (
+        WorkbookPatchApplyFinalRequest request,
+        WorkbookPatchWorkspaceService patches,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        if (string.IsNullOrWhiteSpace(request.PatchJson))
+        {
+            return Results.BadRequest(new { error = "PatchJson is required." });
+        }
+
+        try
+        {
+            return Results.Ok(
+                await patches.ApplyFinalAsync(
+                    request.PatchJson,
+                    cancellationToken
+                )
+            );
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException
+                or FileNotFoundException
+                or InvalidDataException
+                or KeyNotFoundException
+                or IOException
+                or UnauthorizedAccessException
+                or JsonException
+        )
+        {
+            return Results.Problem(
+                detail: FriendlyWorkbookError(exception),
+                statusCode: StatusCodes.Status503ServiceUnavailable
+            );
+        }
+    }
+);
+
+app.MapPost(
+    "/api/v1/workbook-patches/transactions/{transactionId}/undo",
+    async (
+        string transactionId,
+        WorkbookPatchWorkspaceService patches,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        try
+        {
+            return Results.Ok(
+                await patches.UndoAsync(
+                    transactionId,
+                    cancellationToken
+                )
+            );
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException
+                or FileNotFoundException
                 or IOException
                 or JsonException
         )
         {
             return Results.Problem(
-                detail: exception.Message,
+                detail: FriendlyWorkbookError(exception),
                 statusCode: StatusCodes.Status503ServiceUnavailable
             );
         }
@@ -1087,6 +1161,13 @@ static StudioAssetRef? ResolveLlmRequestAsset(LlmChatApiRequest request)
         request.AssetId,
         request.SkillId
     );
+}
+
+static string FriendlyWorkbookError(Exception exception)
+{
+    return exception is IOException or UnauthorizedAccessException
+        ? "目标 Excel 文件正在被占用或暂时无法访问，请关闭对应的 Excel 文件后重试。"
+        : exception.Message;
 }
 
 static StudioAssetRef? ResolveConversationRequestAsset(

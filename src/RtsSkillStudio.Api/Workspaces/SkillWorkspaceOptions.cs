@@ -10,6 +10,8 @@ public sealed class SkillWorkspaceOptions
 
     public string WriteTestRoot { get; set; } = ".studio-work";
 
+    public string TransactionRoot { get; set; } = ".studio-work/transactions";
+
     public int WriteTestRetentionCount { get; set; } = 5;
 
     public string ConversationDatabasePath { get; set; } =

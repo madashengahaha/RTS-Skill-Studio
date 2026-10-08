@@ -1,4 +1,5 @@
 using System.Text.Json;
+using TianshuDM.Domain.GameData;
 
 namespace RtsSkillStudio.Agent.Patch;
 
@@ -42,7 +43,8 @@ public static class WorkbookPatchRegistryLoader
             GetRequiredString(mechanisms, "contractVersion"),
             ReadEntities(capability),
             ReadEntityFields(capability),
-            ReadConversionRules(defaults)
+            ReadConversionRules(defaults),
+            ReadActions(capability)
         );
     }
 
@@ -139,6 +141,176 @@ public static class WorkbookPatchRegistryLoader
             .ToArray();
     }
 
+    private static IReadOnlyList<WorkbookPatchAction> ReadActions(
+        JsonElement capability
+    )
+    {
+        IReadOnlyDictionary<string, IReadOnlyList<GameDataOption>>
+            enumOptions = ReadEnumOptions(capability);
+        var actions = new List<WorkbookPatchAction>();
+        foreach ((string category, string propertyName) in new[]
+        {
+            ("effect", "effects"),
+            ("condition", "conditions")
+        })
+        {
+            if (
+                !capability.TryGetProperty(
+                    propertyName,
+                    out JsonElement actionElements
+                )
+                || actionElements.ValueKind != JsonValueKind.Array
+            )
+            {
+                continue;
+            }
+
+            foreach (
+                JsonElement actionElement in actionElements.EnumerateArray()
+            )
+            {
+                string actionKey = GetRequiredString(actionElement, "key");
+                var parameters = new List<WorkbookPatchActionParameter>();
+                if (
+                    actionElement.TryGetProperty(
+                        "parameters",
+                        out JsonElement parameterElements
+                    )
+                    && parameterElements.ValueKind == JsonValueKind.Array
+                )
+                {
+                    foreach (
+                        JsonElement parameter in
+                            parameterElements.EnumerateArray()
+                    )
+                    {
+                        string contractKind =
+                            GetString(parameter, "kind") ?? "Text";
+                        string? enumName = GetString(parameter, "enumName");
+                        parameters.Add(
+                            new WorkbookPatchActionParameter(
+                                GetInt32(parameter, "index"),
+                                GetRequiredString(parameter, "key"),
+                                GetString(parameter, "label") ?? "",
+                                contractKind,
+                                MapFieldKind(contractKind),
+                                contractKind,
+                                GetString(parameter, "referenceTarget"),
+                                enumName,
+                                GetBoolean(parameter, "required"),
+                                GetDecimal(parameter, "scale") ?? 1,
+                                GetString(parameter, "unit"),
+                                GetDecimal(parameter, "minimum"),
+                                GetDecimal(parameter, "maximum"),
+                                GetBoolean(parameter, "repeating"),
+                                GetInt32(parameter, "repeatStep"),
+                                enumName is not null
+                                && enumOptions.TryGetValue(
+                                    enumName,
+                                    out IReadOnlyList<GameDataOption>? options
+                                )
+                                    ? options
+                                    : []
+                            )
+                        );
+                    }
+                }
+
+                actions.Add(
+                    new WorkbookPatchAction(
+                        category,
+                        actionKey,
+                        GetNullableInt32(actionElement, "legacyValue"),
+                        parameters
+                    )
+                );
+            }
+        }
+
+        return actions;
+    }
+
+    private static IReadOnlyDictionary<
+        string,
+        IReadOnlyList<GameDataOption>
+    > ReadEnumOptions(JsonElement capability)
+    {
+        if (
+            !capability.TryGetProperty("enums", out JsonElement enums)
+            || enums.ValueKind != JsonValueKind.Array
+        )
+        {
+            return new Dictionary<string, IReadOnlyList<GameDataOption>>(
+                StringComparer.OrdinalIgnoreCase
+            );
+        }
+
+        return enums
+            .EnumerateArray()
+            .Where(item => item.ValueKind == JsonValueKind.Object)
+            .Select(
+                enumElement =>
+                {
+                    string name = GetRequiredString(enumElement, "name");
+                    IReadOnlyList<GameDataOption> options =
+                        enumElement.TryGetProperty(
+                            "values",
+                            out JsonElement values
+                        )
+                        && values.ValueKind == JsonValueKind.Array
+                            ? values
+                                .EnumerateArray()
+                                .Where(
+                                    value =>
+                                        value.ValueKind
+                                        == JsonValueKind.Object
+                                )
+                                .Select(
+                                    value => new GameDataOption(
+                                        GetInt32(value, "value").ToString(
+                                            System.Globalization.CultureInfo.InvariantCulture
+                                        ),
+                                        FirstNonEmpty(
+                                            GetString(value, "alias"),
+                                            GetString(value, "name")
+                                        ),
+                                        GetString(value, "name"),
+                                        GetInt32(value, "value")
+                                    )
+                                )
+                                .ToArray()
+                            : [];
+                    return (Name: name, Options: options);
+                }
+            )
+            .ToDictionary(
+                item => item.Name,
+                item => item.Options,
+                StringComparer.OrdinalIgnoreCase
+            );
+    }
+
+    private static GameDataFieldKind MapFieldKind(string contractKind)
+    {
+        return contractKind switch
+        {
+            "ScaledInteger" => GameDataFieldKind.Integer,
+            "Integer" => GameDataFieldKind.Integer,
+            "Enum" => GameDataFieldKind.Enum,
+            "Reference" => GameDataFieldKind.Reference,
+            "Boolean" => GameDataFieldKind.Boolean,
+            "Text" => GameDataFieldKind.Text,
+            _ => GameDataFieldKind.Text
+        };
+    }
+
+    private static string FirstNonEmpty(params string?[] values)
+    {
+        return values.FirstOrDefault(
+            value => !string.IsNullOrWhiteSpace(value)
+        ) ?? "";
+    }
+
     private static string GetRequiredString(
         JsonElement owner,
         string propertyName
@@ -171,6 +343,18 @@ public static class WorkbookPatchRegistryLoader
             && value.TryGetInt32(out int result)
             ? result
             : 0;
+    }
+
+    private static int? GetNullableInt32(
+        JsonElement owner,
+        string propertyName
+    )
+    {
+        return owner.TryGetProperty(propertyName, out JsonElement value)
+            && value.ValueKind == JsonValueKind.Number
+            && value.TryGetInt32(out int result)
+                ? result
+                : null;
     }
 
     private static bool GetBoolean(

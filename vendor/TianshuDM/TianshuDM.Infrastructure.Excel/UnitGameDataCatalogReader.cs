@@ -89,12 +89,34 @@ public sealed class UnitGameDataCatalogReader(IGameDataWorkbookReader workbookRe
 
     public GameDataCatalog Read(string excelDataRoot)
     {
+        return ReadSources(excelDataRoot, Sources);
+    }
+
+    public GameDataCatalog Read(
+        string excelDataRoot,
+        IReadOnlyCollection<string> tableKeys
+    )
+    {
+        HashSet<string> selected = tableKeys.ToHashSet(
+            StringComparer.OrdinalIgnoreCase
+        );
+        return ReadSources(
+            excelDataRoot,
+            Sources.Where(source => selected.Contains(source.Key))
+        );
+    }
+
+    private GameDataCatalog ReadSources(
+        string excelDataRoot,
+        IEnumerable<GameDataSourceDefinition> sources
+    )
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(excelDataRoot);
         string dataRoot = Path.GetFullPath(excelDataRoot);
         HashSet<string> flagsEnums = ReadFlagsEnums(dataRoot);
         var runtimeEnumCache = new Dictionary<string, IReadOnlyList<GameDataOption>?>(
             StringComparer.Ordinal);
-        GameDataTable[] tables = Sources.Select(
+        GameDataTable[] tables = sources.Select(
                 source =>
                 {
                     string workbookPath = Path.Combine(

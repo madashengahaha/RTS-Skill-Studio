@@ -25,6 +25,8 @@ public static class SkillAgentInstructions
         EffectGroup 和 ConditionGroup 是虚拟组。Effect 和 Condition 通过 group_id 归属，组内顺序按 Excel 数据行顺序解释。
         Effect 的行为由 action_type 和 action_param 决定，参数顺序和引用目标具有明确业务语义。
         解释 action_param 时只能使用 get_capability_context 返回的 parameters 数组：按 index 对齐，逐项引用 key、label、kind、scale、referenceTarget 和 enumName。
+        如果 get_graph 的 Effect 或 Condition 节点返回 actionParameterDetails，必须以该数组为权威对齐结果：index、rawValue、logicalValue、enumValue、resolvedKey 和 resolvedLabel 必须逐项原样使用，禁止重新绑定参数索引、跨项复用值或再次做换算。
+        Enum 的 alias 只能使用同一个 enumValue 对象中的 alias；alias 为空时不得补写，也不得复用当前资产、技能或其他枚举项的名称。
         禁止根据数字大小、字段名、常见游戏经验、上下文猜测或“通常/可能/大概率”推断 action_param 的含义。
         如果 get_capability_context 没有返回对应动作或参数契约，必须明确写“当前证据不足以解释该参数”，不能给出替代解释或修改建议。
         ScaledInteger 必须按契约换算：逻辑值 = Excel 原值 / scale；所有 ScaledInteger 参数都遵守同一规则。
@@ -89,7 +91,8 @@ public static class SkillAgentInstructions
         涉及计算时必须写出公式，例如：2000 / 10000 = 0.2，百分比显示为 20%。
 
         【当前阶段】
-        当前 Studio 尚未接通完整的 Plan 编译、校验、diff 和写入闭环。
+        当前 Studio 已支持 ModifySkill 标量字段修改，以及 Effect/Condition 非重复 action_param 的 ModifyAsset 修改；Plan 编译、Patch 校验、Excel diff、临时副本验证和受控正式写入已接通。
+        重复参数、结构增删、跨资产重排和从零创建仍受当前阶段限制；不能用“已支持某一类修改”推断所有技能结构操作都已支持。
         你可以解释现状、澄清需求、分析链路、提出配置方案和修改建议。
         你不能声称已经修改 Excel，不能假装拥有尚未查询到的字段、ID 或引用证据，也不能把当前阶段说成最终目标不清楚。
 
@@ -181,6 +184,7 @@ public static class SkillAgentInstructions
         evidence 必须是对象数组，每项格式为 {"kind":"Capability|Schema|RuntimeBinding|ExistingConfig|DefaultContract|UserInput","ref":"<证据引用>","note":"<可选说明>"}。
         不要把 assumptions、clarifications、unsupported 或 evidence 写成字符串数组。
         当用户明确要求直接修改非 Skill 行为资产时，使用 ModifyAsset：asset 使用 Existing namespace + id，fields 使用与 ModifySkill 相同的字段 Value 结构。
+        ModifyAsset 修改 Effect/Condition 的 action_param 时，fields 的 key 必须使用动作契约参数 key（例如 attackType、fixedDamage、attackScale），不得写 action_param[1] 等 Excel 槽位或 Excel 列名；编译器按动作契约自动绑定 index、scale、unit、枚举和引用。
         """;
 
     public static bool IsHiddenLegacyField(string fieldKey)

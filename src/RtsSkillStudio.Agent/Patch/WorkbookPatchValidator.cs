@@ -232,7 +232,11 @@ public sealed class WorkbookPatchValidator
                 continue;
             }
 
-            WorkbookPatchField? field = FindField(table, change.Field);
+            WorkbookPatchField? field = FindField(
+                table,
+                record,
+                change.Field
+            );
             if (field is null)
             {
                 fieldErrors.Add(
@@ -325,12 +329,7 @@ public sealed class WorkbookPatchValidator
                 scaleUnitErrors.Add(scaleUnitError);
             }
 
-            string current = record.Fields.TryGetValue(
-                field.Key,
-                out IReadOnlyList<string>? values
-            )
-                ? values.FirstOrDefault() ?? ""
-                : "";
+            string current = WorkbookPatchRecordValue.Read(record, field);
             if (
                 !string.Equals(
                     current,
@@ -710,17 +709,25 @@ public sealed class WorkbookPatchValidator
 
     private static WorkbookPatchField? FindField(
         WorkbookPatchTable table,
+        WorkbookPatchRecord record,
         string field
     )
     {
-        return table.Fields.FirstOrDefault(
-            item =>
-                string.Equals(
-                    item.Key,
-                    field,
-                    StringComparison.OrdinalIgnoreCase
-                )
-        );
+        return table.Fields
+            .Where(
+                item =>
+                    string.Equals(
+                        item.Key,
+                        field,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                    && (
+                        item.RecordId is null
+                        || item.RecordId == record.Id
+                    )
+            )
+            .OrderByDescending(item => item.RecordId == record.Id)
+            .FirstOrDefault();
     }
 
     private static bool EnumMatches(

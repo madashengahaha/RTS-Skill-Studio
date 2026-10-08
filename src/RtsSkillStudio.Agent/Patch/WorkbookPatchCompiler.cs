@@ -76,17 +76,27 @@ public sealed class WorkbookPatchCompiler(WorkbookPatchRegistry registry)
         {
             return Invalid(
                 "compiler.multiple_operations",
-                "阶段 B 只接受一个 ModifySkill operation。"
+                "当前阶段只接受一个 ModifySkill 或 ModifyAsset operation。"
             );
         }
 
         JsonElement operation = operations[0];
         string operationKind = GetString(operation, "kind") ?? "";
-        if (!string.Equals(operationKind, "ModifySkill", StringComparison.Ordinal))
+        bool modifySkill = string.Equals(
+            operationKind,
+            "ModifySkill",
+            StringComparison.Ordinal
+        );
+        bool modifyAsset = string.Equals(
+            operationKind,
+            "ModifyAsset",
+            StringComparison.Ordinal
+        );
+        if (!modifySkill && !modifyAsset)
         {
             return Invalid(
                 "compiler.unsupported_operation",
-                $"阶段 B 不支持 operation kind={operationKind}。"
+                $"当前阶段不支持 operation kind={operationKind}。"
             );
         }
 
@@ -95,18 +105,19 @@ public sealed class WorkbookPatchCompiler(WorkbookPatchRegistry registry)
         {
             return Invalid(
                 "compiler.invalid_plan",
-                "ModifySkill.operationId 不能为空。"
+                $"{operationKind}.operationId 不能为空。"
             );
         }
 
+        string targetProperty = modifySkill ? "skill" : "asset";
         if (
-            !operation.TryGetProperty("skill", out JsonElement target)
+            !operation.TryGetProperty(targetProperty, out JsonElement target)
             || target.ValueKind != JsonValueKind.Object
         )
         {
             return Invalid(
                 "compiler.invalid_plan",
-                "ModifySkill.skill 必须是对象。"
+                $"{operationKind}.{targetProperty} 必须是对象。"
             );
         }
 
@@ -121,16 +132,19 @@ public sealed class WorkbookPatchCompiler(WorkbookPatchRegistry registry)
         {
             return Invalid(
                 "compiler.invalid_plan",
-                "ModifySkill.skill 必须使用 Existing binding 和整数 id。"
+                $"{operationKind}.{targetProperty} 必须使用 Existing binding 和整数 id。"
             );
         }
 
         WorkbookPatchTable? table = workspace.Tables.FirstOrDefault(
             item =>
-                string.Equals(
-                    item.EntityKey,
-                    "Skill",
-                    StringComparison.OrdinalIgnoreCase
+                (
+                    !modifySkill
+                    || string.Equals(
+                        item.EntityKey,
+                        "Skill",
+                        StringComparison.OrdinalIgnoreCase
+                    )
                 )
                 && NamespaceMatches(item, targetNamespace)
         );
@@ -138,7 +152,7 @@ public sealed class WorkbookPatchCompiler(WorkbookPatchRegistry registry)
         {
             return Invalid(
                 "compiler.missing_target",
-                $"当前工作区不存在目标技能类型 {targetNamespace}。",
+                $"当前工作区不存在目标类型 {targetNamespace}。",
                 $"{targetNamespace}:{targetId}"
             );
         }
@@ -150,7 +164,7 @@ public sealed class WorkbookPatchCompiler(WorkbookPatchRegistry registry)
         {
             return Invalid(
                 "compiler.missing_target",
-                $"当前工作区不存在技能 {table.Namespace}:{targetId}。",
+                $"当前工作区不存在目标资产 {table.Namespace}:{targetId}。",
                 $"{table.Namespace}:{targetId}"
             );
         }
@@ -162,7 +176,7 @@ public sealed class WorkbookPatchCompiler(WorkbookPatchRegistry registry)
         {
             return Invalid(
                 "compiler.invalid_plan",
-                "ModifySkill.fields 必须是对象。"
+                $"{operationKind}.fields 必须是对象。"
             );
         }
 
@@ -175,14 +189,21 @@ public sealed class WorkbookPatchCompiler(WorkbookPatchRegistry registry)
                 .OrderBy(item => item.Name, StringComparer.Ordinal)
         )
         {
-            WorkbookPatchField? field = table.Fields.FirstOrDefault(
-                item =>
-                    string.Equals(
-                        item.SemanticName,
-                        planField.Name,
-                        StringComparison.OrdinalIgnoreCase
-                    )
-            );
+            WorkbookPatchField? field = table.Fields
+                .Where(
+                    item =>
+                        string.Equals(
+                            item.SemanticName,
+                            planField.Name,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                        && (
+                            item.RecordId is null
+                            || item.RecordId == targetId
+                        )
+                )
+                .OrderByDescending(item => item.RecordId == targetId)
+                .FirstOrDefault();
             if (field is null)
             {
                 errors.Add(
@@ -190,6 +211,18 @@ public sealed class WorkbookPatchCompiler(WorkbookPatchRegistry registry)
                         "compiler.unknown_semantic_field",
                         $"能力注册表没有声明语义字段 {planField.Name}。",
                         planField.Name
+                    )
+                );
+                continue;
+            }
+
+            if (field.Repeating)
+            {
+                errors.Add(
+                    new WorkbookPatchCompileError(
+                        "compiler.unsupported_repeating_field",
+                        $"字段 {field.Path} 是重复参数，当前阶段暂不支持部分修改。",
+                        field.Path
                     )
                 );
                 continue;
@@ -267,7 +300,7 @@ public sealed class WorkbookPatchCompiler(WorkbookPatchRegistry registry)
                 continue;
             }
 
-            string before = RecordValue(record, field.Key);
+            string before = WorkbookPatchRecordValue.Read(record, field);
             if (string.Equals(before, after, StringComparison.Ordinal))
             {
                 continue;

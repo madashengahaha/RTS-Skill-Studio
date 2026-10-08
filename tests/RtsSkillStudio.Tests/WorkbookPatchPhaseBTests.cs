@@ -228,6 +228,165 @@ public sealed class WorkbookPatchPhaseBTests
     }
 
     [Fact]
+    public async Task CompilerModifiesEffectActionParametersByContractIndex()
+    {
+        WorkbookPatchRegistry registry = LoadRegistry();
+        WorkbookPatchAction damage = Assert.Single(
+            registry.Actions,
+            action => action.Key == "Damage"
+        );
+        WorkbookPatchField[] actionFields = damage.Parameters
+            .Select(
+                parameter => new WorkbookPatchField(
+                    $"action_param[{parameter.Index}]",
+                    $"Effect.action_param[{parameter.Index}]",
+                    parameter.Key,
+                    parameter.FieldKind,
+                    parameter.RawType,
+                    parameter.Required,
+                    parameter.Scale,
+                    parameter.Unit,
+                    parameter.Minimum,
+                    parameter.Maximum,
+                    parameter.Options,
+                    parameter.ReferenceTarget,
+                    WorkbookPatchFieldBindingKind.ActionParameter,
+                    100600180,
+                    damage.Key,
+                    parameter.Index,
+                    parameter.Repeating
+                )
+            )
+            .ToArray();
+        var workspace = new WorkbookPatchWorkspace(
+            "studio-workspace",
+            RevisionA,
+            SourceHashA,
+            [
+                new WorkbookPatchTable(
+                    "Effect",
+                    "TbEffect",
+                    "effect",
+                    actionFields,
+                    [
+                        new WorkbookPatchRecord(
+                            100600180,
+                            new Dictionary<string, IReadOnlyList<string>>
+                            {
+                                ["Id"] = ["100600180"],
+                                ["action_type"] = ["伤害"],
+                                ["action_param"] =
+                                [
+                                    "1006",
+                                    "1020",
+                                    "50000",
+                                    "10000"
+                                ]
+                            }
+                        )
+                    ]
+                )
+            ]
+        );
+        var plan = new JsonObject
+        {
+            ["schemaVersion"] = 0,
+            ["planId"] = "plan-effect-params",
+            ["base"] = new JsonObject
+            {
+                ["workspaceId"] = "studio-workspace",
+                ["revision"] = RevisionA,
+                ["sourceHash"] = SourceHashA,
+                ["capabilityRegistryVersion"] =
+                    registry.CapabilityRegistryVersion,
+                ["defaultValueContractVersion"] =
+                    registry.DefaultValueContractVersion,
+                ["defaultMechanismContractVersion"] =
+                    registry.DefaultMechanismContractVersion
+            },
+            ["request"] = new JsonObject
+            {
+                ["text"] = "改成火焰，去掉固定伤害，倍率改成10"
+            },
+            ["status"] = "Ready",
+            ["operations"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["operationId"] = "op-1",
+                    ["kind"] = "ModifyAsset",
+                    ["asset"] = new JsonObject
+                    {
+                        ["binding"] = "Existing",
+                        ["namespace"] = "TbEffect",
+                        ["id"] = 100600180
+                    },
+                    ["fields"] = new JsonObject
+                    {
+                        ["attackType"] = new JsonObject
+                        {
+                            ["value"] = 1019,
+                            ["source"] = "UserEdited",
+                            ["evidence"] = new JsonArray()
+                        },
+                        ["fixedDamage"] = new JsonObject
+                        {
+                            ["value"] = 0,
+                            ["source"] = "UserEdited",
+                            ["evidence"] = new JsonArray()
+                        },
+                        ["attackScale"] = new JsonObject
+                        {
+                            ["value"] = 10,
+                            ["source"] = "UserEdited",
+                            ["evidence"] = new JsonArray()
+                        }
+                    }
+                }
+            }
+        };
+        var compiler = new WorkbookPatchCompiler(registry);
+
+        WorkbookPatchCompileResult compiled = compiler.Compile(
+            plan.ToJsonString(),
+            workspace
+        );
+
+        Assert.Equal("Compiled", compiled.Status);
+        Assert.NotNull(compiled.Patch);
+        Assert.Collection(
+            compiled.Patch!.FieldChanges.OrderBy(change => change.Field),
+            change =>
+            {
+                Assert.Equal("action_param[1]", change.Field);
+                Assert.Equal("1019", WorkbookFieldChangeJson.RawText(change.After));
+            },
+            change =>
+            {
+                Assert.Equal("action_param[2]", change.Field);
+                Assert.Equal("0", WorkbookFieldChangeJson.RawText(change.After));
+            },
+            change =>
+            {
+                Assert.Equal("action_param[3]", change.Field);
+                Assert.Equal("100000", WorkbookFieldChangeJson.RawText(change.After));
+            }
+        );
+
+        var validator = new WorkbookPatchValidator(
+            FindContractRoot(),
+            registry
+        );
+        WorkbookPatchValidationReport validation =
+            await validator.ValidateAsync(
+                compiled.PatchJson!,
+                workspace,
+                CancellationToken.None
+            );
+        Assert.Equal("Valid", validation.Status);
+    }
+
+    [Fact]
     public async Task PlanNormalizerMapsRegistryAliasesInfersUnitsAndRepairsBase()
     {
         WorkbookPatchRegistry registry = LoadRegistry();
@@ -360,7 +519,7 @@ public sealed class WorkbookPatchPhaseBTests
                 options,
                 environment,
                 catalogReader,
-                new GameDataWorkbookWriter(),
+                new GameDataWorkbookReader(),
                 NullLogger<TemporaryWorkbookPatchApplyService>.Instance
             );
 
@@ -478,7 +637,7 @@ public sealed class WorkbookPatchPhaseBTests
                 options,
                 new TestHostEnvironment { ContentRootPath = testRoot },
                 new SingleSkillCatalogReader(),
-                new GameDataWorkbookWriter(),
+                new GameDataWorkbookReader(),
                 NullLogger<TemporaryWorkbookPatchApplyService>.Instance
             );
             var patch = new WorkbookPatchDocument(
@@ -547,6 +706,515 @@ public sealed class WorkbookPatchPhaseBTests
 
             Assert.Equal("Blocked", result.Status);
             Assert.False(Directory.Exists(writeRoot));
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot))
+            {
+                Directory.Delete(testRoot, true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task FinalApplyWritesSourceAndReReadsIt()
+    {
+        string testRoot = CreateTestRoot();
+        try
+        {
+            string sourceDataRoot = Path.Combine(
+                testRoot,
+                "source",
+                "Datas"
+            );
+            string workbookPath = Path.Combine(
+                sourceDataRoot,
+                "Skill",
+                "Skill.xlsx"
+            );
+            Directory.CreateDirectory(Path.GetDirectoryName(workbookPath)!);
+            CreateSkillWorkbook(workbookPath, cooldown: 5000);
+            string sourceHashBefore =
+                SkillWorkspaceService.ComputeSourceTreeHash(sourceDataRoot);
+
+            var options = new SkillWorkspaceOptions
+            {
+                ExcelDataRoot = sourceDataRoot,
+                WriteTestRoot = Path.Combine(testRoot, "work"),
+                WriteTestRetentionCount = 2
+            };
+            var environment = new TestHostEnvironment
+            {
+                ContentRootPath = testRoot
+            };
+            var catalogReader = new SingleSkillCatalogReader();
+            var temporaryService = new TemporaryWorkbookPatchApplyService(
+                options,
+                environment,
+                catalogReader,
+                new GameDataWorkbookReader(),
+                NullLogger<TemporaryWorkbookPatchApplyService>.Instance
+            );
+            var finalService = new FinalWorkbookPatchApplyService(
+                options,
+                temporaryService,
+                catalogReader,
+                new WorkbookPatchTransactionStore(
+                    options,
+                    environment,
+                    NullLogger<WorkbookPatchTransactionStore>.Instance
+                ),
+                NullLogger<FinalWorkbookPatchApplyService>.Instance
+            );
+
+            WorkbookPatchRegistry registry = LoadRegistry();
+            var compiler = new WorkbookPatchCompiler(registry);
+            WorkbookPatchWorkspace workspace = CreateWorkspace(
+                cooldown: "5000",
+                workspaceId: "test-workspace",
+                revision: "test-revision",
+                sourceHash: sourceHashBefore
+            );
+            WorkbookPatchCompileResult compiled = compiler.Compile(
+                CreateCooldownPlan(
+                    workspace,
+                    registry,
+                    cooldown: 8,
+                    unit: "s",
+                    workspaceId: "test-workspace",
+                    revision: "test-revision",
+                    sourceHash: sourceHashBefore
+                ),
+                workspace
+            );
+            Assert.NotNull(compiled.Patch);
+
+            FinalWorkbookPatchApplyResult applied =
+                await finalService.ApplyAsync(
+                    compiled.PatchJson!,
+                    new WorkbookPatchValidationReport(
+                        0,
+                        compiled.Patch.PatchId,
+                        "Valid",
+                        [
+                            new WorkbookPatchValidationCheck(
+                                "test",
+                                "Passed",
+                                "Info",
+                                true,
+                                "test validation"
+                            )
+                        ]
+                    ),
+                    CancellationToken.None
+                );
+
+            Assert.True(
+                applied.Status == "Applied",
+                $"{applied.Message} | {string.Join("; ", applied.Mismatches)}"
+            );
+            Assert.Equal(1, applied.AppliedFieldCount);
+            Assert.NotEqual(
+                sourceHashBefore,
+                SkillWorkspaceService.ComputeSourceTreeHash(sourceDataRoot)
+            );
+
+            GameDataTable reread = new GameDataWorkbookReader().Read(
+                new GameDataTableSource(
+                    "skill",
+                    "技能",
+                    "英雄配置图谱",
+                    "Skill/Skill.xlsx",
+                    workbookPath
+                )
+            );
+            Assert.Equal(
+                "8000",
+                reread.Record(100101).Fields["cd_time"].Single()
+            );
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot))
+            {
+                Directory.Delete(testRoot, true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task FinalApplyWritesEffectActionParametersToSource()
+    {
+        string testRoot = CreateTestRoot();
+        try
+        {
+            string sourceDataRoot = Path.Combine(
+                testRoot,
+                "source",
+                "Datas"
+            );
+            string workbookPath = Path.Combine(
+                sourceDataRoot,
+                "Skill",
+                "Effect.xlsx"
+            );
+            Directory.CreateDirectory(Path.GetDirectoryName(workbookPath)!);
+            CreateEffectWorkbook(
+                workbookPath,
+                ["1006", "1020", "50000", "10000"]
+            );
+            string sourceHashBefore =
+                SkillWorkspaceService.ComputeSourceTreeHash(sourceDataRoot);
+
+            var options = new SkillWorkspaceOptions
+            {
+                ExcelDataRoot = sourceDataRoot,
+                WriteTestRoot = Path.Combine(testRoot, "work"),
+                WriteTestRetentionCount = 2
+            };
+            var environment = new TestHostEnvironment
+            {
+                ContentRootPath = testRoot
+            };
+            var catalogReader = new SingleEffectCatalogReader();
+            var temporaryService = new TemporaryWorkbookPatchApplyService(
+                options,
+                environment,
+                catalogReader,
+                new GameDataWorkbookReader(),
+                NullLogger<TemporaryWorkbookPatchApplyService>.Instance
+            );
+            var finalService = new FinalWorkbookPatchApplyService(
+                options,
+                temporaryService,
+                catalogReader,
+                new WorkbookPatchTransactionStore(
+                    options,
+                    environment,
+                    NullLogger<WorkbookPatchTransactionStore>.Instance
+                ),
+                NullLogger<FinalWorkbookPatchApplyService>.Instance
+            );
+
+            WorkbookPatchRegistry registry = LoadRegistry();
+            WorkbookPatchAction damage = Assert.Single(
+                registry.Actions,
+                action => action.Key == "Damage"
+            );
+            GameDataTable effectTable = catalogReader
+                .Read(sourceDataRoot)
+                .Table("effect");
+            WorkbookPatchField[] actionFields = damage.Parameters
+                .Select(
+                    parameter => new WorkbookPatchField(
+                        $"action_param[{parameter.Index}]",
+                        $"Effect.action_param[{parameter.Index}]",
+                        parameter.Key,
+                        parameter.FieldKind,
+                        parameter.RawType,
+                        parameter.Required,
+                        parameter.Scale,
+                        parameter.Unit,
+                        parameter.Minimum,
+                        parameter.Maximum,
+                        parameter.Options,
+                        parameter.ReferenceTarget,
+                        WorkbookPatchFieldBindingKind.ActionParameter,
+                        100600180,
+                        damage.Key,
+                        parameter.Index,
+                        parameter.Repeating
+                    )
+                )
+                .ToArray();
+            var workspace = new WorkbookPatchWorkspace(
+                "test-workspace",
+                "test-revision",
+                sourceHashBefore,
+                [
+                    new WorkbookPatchTable(
+                        "Effect",
+                        "TbEffect",
+                        "effect",
+                        actionFields,
+                        effectTable.Records
+                            .Select(
+                                record => new WorkbookPatchRecord(
+                                    record.Id,
+                                    record.Fields
+                                )
+                            )
+                            .ToArray()
+                    )
+                ]
+            );
+            var compiler = new WorkbookPatchCompiler(registry);
+            WorkbookPatchCompileResult compiled = compiler.Compile(
+                CreateEffectActionPlan(
+                    workspace,
+                    registry,
+                    workspaceId: "test-workspace",
+                    revision: "test-revision",
+                    sourceHash: sourceHashBefore
+                ),
+                workspace
+            );
+            Assert.Equal("Compiled", compiled.Status);
+            Assert.NotNull(compiled.Patch);
+
+            var validator = new WorkbookPatchValidator(
+                FindContractRoot(),
+                registry
+            );
+            WorkbookPatchValidationReport validation =
+                await validator.ValidateAsync(
+                    compiled.PatchJson!,
+                    workspace,
+                    CancellationToken.None
+                );
+            Assert.Equal("Valid", validation.Status);
+
+            FinalWorkbookPatchApplyResult applied =
+                await finalService.ApplyAsync(
+                    compiled.PatchJson!,
+                    validation,
+                    CancellationToken.None
+                );
+
+            Assert.True(
+                applied.Status == "Applied",
+                $"{applied.Message} | {string.Join("; ", applied.Mismatches)}"
+            );
+            Assert.Equal(3, applied.AppliedFieldCount);
+            Assert.Empty(applied.Mismatches);
+
+            GameDataTable reread = catalogReader.Read(sourceDataRoot)
+                .Table("effect");
+            Assert.Equal(
+                ["1006", "1019", "0", "100000"],
+                reread.Record(100600180).Fields["action_param"]
+            );
+
+            Assert.True(applied.UndoAvailable);
+            Assert.False(string.IsNullOrWhiteSpace(applied.TransactionId));
+            FinalWorkbookPatchApplyResult undone =
+                await finalService.UndoAsync(
+                    applied.TransactionId!,
+                    CancellationToken.None
+                );
+            Assert.Equal("Undone", undone.Status);
+
+            GameDataTable restored = catalogReader.Read(sourceDataRoot)
+                .Table("effect");
+            Assert.Equal(
+                ["1006", "1020", "50000", "10000"],
+                restored.Record(100600180).Fields["action_param"]
+            );
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot))
+            {
+                Directory.Delete(testRoot, true);
+            }
+        }
+    }
+
+    [Fact]
+    public void CellUpdaterUsesFirstSheetInWorkbookOrder()
+    {
+        string testRoot = CreateTestRoot();
+        try
+        {
+            string sourceDataRoot = Path.Combine(testRoot, "Datas");
+            string workbookPath = Path.Combine(
+                sourceDataRoot,
+                "Skill",
+                "Effect.xlsx"
+            );
+            Directory.CreateDirectory(Path.GetDirectoryName(workbookPath)!);
+            CreateEffectWorkbook(
+                workbookPath,
+                ["1006", "1020", "50000", "10000"],
+                addEarlierDecoyPart: true
+            );
+            GameDataTable table = new SingleEffectCatalogReader()
+                .Read(sourceDataRoot)
+                .Table("effect");
+
+            GameDataWorkbookCellUpdater.Apply(
+                workbookPath,
+                table,
+                [new WorkbookPatchChange(100600180, "action_param", 1, "1019")]
+            );
+
+            GameDataTable reread = new SingleEffectCatalogReader()
+                .Read(sourceDataRoot)
+                .Table("effect");
+            Assert.Equal(
+                "1019",
+                reread.Record(100600180).Fields["action_param"][1]
+            );
+            using SpreadsheetDocument written = SpreadsheetDocument.Open(
+                workbookPath,
+                false
+            );
+            WorkbookPart workbookPart = written.WorkbookPart!;
+            Sheet firstSheet = workbookPart.Workbook!
+                .GetFirstChild<Sheets>()!
+                .Elements<Sheet>()
+                .First();
+            WorksheetPart firstPart = (WorksheetPart)workbookPart.GetPartById(
+                firstSheet.Id!.Value!
+            );
+            Cell numericCell = firstPart.Worksheet!
+                .GetFirstChild<SheetData>()!
+                .Descendants<Cell>()
+                .First(cell => cell.CellReference?.Value == "E4");
+            Assert.Equal(CellValues.Number, numericCell.DataType?.Value);
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot))
+            {
+                Directory.Delete(testRoot, true);
+            }
+        }
+    }
+
+    [Fact]
+    public void CellUpdaterFindsRecordByIdWhenSourceRowIsNotPhysicalRow()
+    {
+        string testRoot = CreateTestRoot();
+        try
+        {
+            string sourceDataRoot = Path.Combine(testRoot, "Datas");
+            string workbookPath = Path.Combine(
+                sourceDataRoot,
+                "Skill",
+                "Effect.xlsx"
+            );
+            Directory.CreateDirectory(Path.GetDirectoryName(workbookPath)!);
+            CreateEffectWorkbook(
+                workbookPath,
+                ["1006", "1020", "50000", "10000"]
+            );
+            using (SpreadsheetDocument document =
+                SpreadsheetDocument.Open(workbookPath, true))
+            {
+                Worksheet worksheet = document.WorkbookPart!
+                    .WorksheetParts.First()
+                    .Worksheet
+                    ?? throw new InvalidDataException(
+                        "测试工作簿缺少工作表。"
+                    );
+                SheetData data = worksheet.GetFirstChild<SheetData>()!;
+                Row target = data.Elements<Row>().Last();
+                Row decoy = (Row)target.CloneNode(true);
+                SetRowNumber(target, 10);
+                SetRowNumber(decoy, 5);
+                Cell id = decoy.Elements<Cell>().First(
+                    cell => cell.CellReference?.Value == "B5"
+                );
+                id.InlineString = new InlineString(new Text("999999"));
+                data.InsertBefore(decoy, target);
+                worksheet.Save();
+            }
+
+            var reader = new SingleEffectCatalogReader();
+            GameDataTable table = reader.Read(sourceDataRoot).Table("effect");
+            Assert.Equal(5, table.Record(100600180).SourceRow);
+            GameDataWorkbookCellUpdater.Apply(
+                workbookPath,
+                table,
+                [new WorkbookPatchChange(100600180, "action_param", 1, "1019")]
+            );
+
+            GameDataTable reread = reader.Read(sourceDataRoot).Table("effect");
+            Assert.Equal(
+                "1019",
+                reread.Record(100600180).Fields["action_param"][1]
+            );
+            Assert.Equal(
+                "1020",
+                reread.Record(999999).Fields["action_param"][1]
+            );
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot))
+            {
+                Directory.Delete(testRoot, true);
+            }
+        }
+    }
+
+    private static void SetRowNumber(Row row, uint rowNumber)
+    {
+        row.RowIndex = rowNumber;
+        foreach (Cell cell in row.Elements<Cell>())
+        {
+            string reference = cell.CellReference?.Value ?? "";
+            cell.CellReference = new string(
+                reference.TakeWhile(char.IsLetter).ToArray()
+            ) + rowNumber;
+        }
+    }
+
+    [Fact]
+    public void LockCheckerDetectsWorkbookHeldByAnotherWriter()
+    {
+        string testRoot = CreateTestRoot();
+        try
+        {
+            string path = Path.Combine(testRoot, "Locked.xlsx");
+            File.WriteAllText(path, "locked");
+            using FileStream stream = new(
+                path,
+                FileMode.Open,
+                FileAccess.ReadWrite,
+                FileShare.None
+            );
+
+            IReadOnlyList<string> locked =
+                WorkbookFileLockChecker.FindLockedFiles([path]);
+
+            Assert.Equal([path], locked);
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot))
+            {
+                Directory.Delete(testRoot, true);
+            }
+        }
+    }
+
+    [Fact]
+    public void SourceHashIgnoresExcelTemporaryLockFiles()
+    {
+        string testRoot = CreateTestRoot();
+        try
+        {
+            File.WriteAllText(
+                Path.Combine(testRoot, "Effect.xlsx"),
+                "workbook"
+            );
+            string before =
+                SkillWorkspaceService.ComputeSourceTreeHash(testRoot);
+
+            File.WriteAllText(
+                Path.Combine(testRoot, "~$Effect.xlsx"),
+                "excel-lock"
+            );
+            File.WriteAllText(
+                Path.Combine(testRoot, "~$Effect.xlsx.meta"),
+                "unity-meta"
+            );
+            string after =
+                SkillWorkspaceService.ComputeSourceTreeHash(testRoot);
+
+            Assert.Equal(before, after);
         }
         finally
         {
@@ -748,6 +1416,74 @@ public sealed class WorkbookPatchPhaseBTests
         return plan.ToJsonString();
     }
 
+    private static string CreateEffectActionPlan(
+        WorkbookPatchWorkspace workspace,
+        WorkbookPatchRegistry registry,
+        string workspaceId,
+        string revision,
+        string sourceHash
+    )
+    {
+        var plan = new JsonObject
+        {
+            ["schemaVersion"] = 0,
+            ["planId"] = "plan-effect-parameters",
+            ["base"] = new JsonObject
+            {
+                ["workspaceId"] = workspaceId,
+                ["revision"] = revision,
+                ["sourceHash"] = sourceHash,
+                ["capabilityRegistryVersion"] =
+                    registry.CapabilityRegistryVersion,
+                ["defaultValueContractVersion"] =
+                    registry.DefaultValueContractVersion,
+                ["defaultMechanismContractVersion"] =
+                    registry.DefaultMechanismContractVersion
+            },
+            ["request"] = new JsonObject
+            {
+                ["text"] = "改成火焰，去掉固定伤害，倍率改成10"
+            },
+            ["status"] = "Ready",
+            ["operations"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["operationId"] = "op-1",
+                    ["kind"] = "ModifyAsset",
+                    ["asset"] = new JsonObject
+                    {
+                        ["binding"] = "Existing",
+                        ["namespace"] = "TbEffect",
+                        ["id"] = 100600180
+                    },
+                    ["fields"] = new JsonObject
+                    {
+                        ["attackType"] = new JsonObject
+                        {
+                            ["value"] = 1019,
+                            ["source"] = "UserEdited",
+                            ["evidence"] = new JsonArray()
+                        },
+                        ["fixedDamage"] = new JsonObject
+                        {
+                            ["value"] = 0,
+                            ["source"] = "UserEdited",
+                            ["evidence"] = new JsonArray()
+                        },
+                        ["attackScale"] = new JsonObject
+                        {
+                            ["value"] = 10,
+                            ["source"] = "UserEdited",
+                            ["evidence"] = new JsonArray()
+                        }
+                    }
+                }
+            }
+        };
+        return plan.ToJsonString();
+    }
+
     private static string CreateTestRoot()
     {
         string path = Path.Combine(
@@ -784,6 +1520,67 @@ public sealed class WorkbookPatchPhaseBTests
             Row("##type", "int", "int", "int"),
             Row("##", "编号", "冷却", "持续时间"),
             Row("", "100101", cooldown.ToString(), "1000")
+        );
+        worksheetPart.Worksheet.Save();
+        workbookPart.Workbook.Save();
+    }
+
+    private static void CreateEffectWorkbook(
+        string path,
+        IReadOnlyList<string> actionParameters,
+        bool addEarlierDecoyPart = false
+    )
+    {
+        using SpreadsheetDocument document = SpreadsheetDocument.Create(
+            path,
+            SpreadsheetDocumentType.Workbook
+        );
+        WorkbookPart workbookPart = document.AddWorkbookPart();
+        workbookPart.Workbook = new Workbook();
+        WorksheetPart? decoyPart = null;
+        if (addEarlierDecoyPart)
+        {
+            decoyPart = workbookPart.AddNewPart<WorksheetPart>();
+            decoyPart.Worksheet = new Worksheet(new SheetData());
+        }
+        WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+        worksheetPart.Worksheet = new Worksheet(new SheetData());
+        Sheets sheets = workbookPart.Workbook.AppendChild(new Sheets());
+        sheets.Append(
+            new Sheet
+            {
+                Id = workbookPart.GetIdOfPart(worksheetPart),
+                SheetId = 1,
+                Name = "Effect"
+            }
+        );
+        if (decoyPart is not null)
+        {
+            sheets.Append(
+                new Sheet
+                {
+                    Id = workbookPart.GetIdOfPart(decoyPart),
+                    SheetId = 2,
+                    Name = "Decoy"
+                }
+            );
+            decoyPart.Worksheet!.Save();
+        }
+        SheetData sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>()!;
+        sheetData.Append(
+            Row("##var", "Id", "action_type", "action_param", "", "", ""),
+            Row("##type", "int", "string", "array,int", "", "", ""),
+            Row("##", "编号", "动作", "参数", "", "", ""),
+            Row(
+                "",
+                "100600180",
+                "伤害",
+                actionParameters.ElementAtOrDefault(0) ?? "",
+                actionParameters.ElementAtOrDefault(1) ?? "",
+                actionParameters.ElementAtOrDefault(2) ?? "",
+                actionParameters.ElementAtOrDefault(3) ?? "",
+                ""
+            )
         );
         worksheetPart.Worksheet.Save();
         workbookPart.Workbook.Save();
@@ -846,6 +1643,24 @@ public sealed class WorkbookPatchPhaseBTests
                     "英雄配置图谱",
                     "Skill/Skill.xlsx",
                     Path.Combine(excelDataRoot, "Skill", "Skill.xlsx")
+                )
+            );
+            return new GameDataCatalog([table]);
+        }
+    }
+
+    private sealed class SingleEffectCatalogReader : IGameDataCatalogReader
+    {
+        public GameDataCatalog Read(string excelDataRoot)
+        {
+            var reader = new GameDataWorkbookReader();
+            GameDataTable table = reader.Read(
+                new GameDataTableSource(
+                    "effect",
+                    "效果",
+                    "英雄配置图谱",
+                    "Skill/Effect.xlsx",
+                    Path.Combine(excelDataRoot, "Skill", "Effect.xlsx")
                 )
             );
             return new GameDataCatalog([table]);

@@ -35,6 +35,32 @@ public sealed record WorkbookPatchRegistryField(
     IReadOnlyList<string> Aliases
 );
 
+public sealed record WorkbookPatchActionParameter(
+    int Index,
+    string Key,
+    string Label,
+    string ContractKind,
+    GameDataFieldKind FieldKind,
+    string RawType,
+    string? ReferenceTarget,
+    string? EnumName,
+    bool Required,
+    decimal Scale,
+    string? Unit,
+    decimal? Minimum,
+    decimal? Maximum,
+    bool Repeating,
+    int RepeatStep,
+    IReadOnlyList<GameDataOption> Options
+);
+
+public sealed record WorkbookPatchAction(
+    string Category,
+    string Key,
+    int? LegacyValue,
+    IReadOnlyList<WorkbookPatchActionParameter> Parameters
+);
+
 public sealed record WorkbookPatchRegistry(
     int SchemaVersion,
     string CapabilityRegistryVersion,
@@ -42,7 +68,8 @@ public sealed record WorkbookPatchRegistry(
     string DefaultMechanismContractVersion,
     IReadOnlyList<WorkbookPatchRegistryEntity> Entities,
     IReadOnlyList<WorkbookPatchRegistryField> EntityFields,
-    IReadOnlyList<WorkbookPatchConversionRule> ConversionRules
+    IReadOnlyList<WorkbookPatchConversionRule> ConversionRules,
+    IReadOnlyList<WorkbookPatchAction> Actions
 );
 
 public sealed record WorkbookPatchWorkspace(
@@ -76,8 +103,20 @@ public sealed record WorkbookPatchField(
     decimal? Minimum,
     decimal? Maximum,
     IReadOnlyList<GameDataOption> Options,
-    string? ReferenceNamespace
+    string? ReferenceNamespace,
+    WorkbookPatchFieldBindingKind BindingKind =
+        WorkbookPatchFieldBindingKind.Scalar,
+    int? RecordId = null,
+    string? ActionKey = null,
+    int? ParameterIndex = null,
+    bool Repeating = false
 );
+
+public enum WorkbookPatchFieldBindingKind
+{
+    Scalar,
+    ActionParameter
+}
 
 public sealed record WorkbookPatchRecord(
     int Id,
@@ -201,6 +240,74 @@ public sealed record WorkbookPatchWorkspaceSnapshot(
     string SourceHash,
     GameDataCatalog Catalog
 );
+
+public static class WorkbookPatchRecordValue
+{
+    public static string Read(
+        WorkbookPatchRecord record,
+        WorkbookPatchField field
+    )
+    {
+        if (
+            field.BindingKind != WorkbookPatchFieldBindingKind.ActionParameter
+            || field.ParameterIndex is not int parameterIndex
+        )
+        {
+            return record.Fields.TryGetValue(
+                field.Key,
+                out IReadOnlyList<string>? values
+            )
+                ? values.FirstOrDefault() ?? ""
+                : "";
+        }
+
+        return record.Fields.TryGetValue(
+                "action_param",
+                out IReadOnlyList<string>? parameters
+            )
+            && parameterIndex >= 0
+            && parameterIndex < parameters.Count
+                ? parameters[parameterIndex]
+                : "";
+    }
+
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> Write(
+        WorkbookPatchRecord record,
+        WorkbookPatchField field,
+        string value
+    )
+    {
+        Dictionary<string, IReadOnlyList<string>> fields = record.Fields
+            .ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value,
+                StringComparer.Ordinal
+            );
+        if (
+            field.BindingKind != WorkbookPatchFieldBindingKind.ActionParameter
+            || field.ParameterIndex is not int parameterIndex
+        )
+        {
+            fields[field.Key] = [value];
+            return fields;
+        }
+
+        List<string> parameters = fields.TryGetValue(
+            "action_param",
+            out IReadOnlyList<string>? existing
+        )
+            ? existing.ToList()
+            : [];
+        while (parameters.Count <= parameterIndex)
+        {
+            parameters.Add("");
+        }
+
+        parameters[parameterIndex] = value;
+        fields["action_param"] = parameters;
+        return fields;
+    }
+}
 
 public static class WorkbookFieldChangeJson
 {

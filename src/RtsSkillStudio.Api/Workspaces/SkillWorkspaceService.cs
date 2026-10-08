@@ -78,6 +78,19 @@ public sealed class SkillWorkspaceService(
     private readonly SemaphoreSlim _loadGate = new(1, 1);
     private WorkspaceSnapshot? _snapshot;
 
+    public void InvalidateSnapshot()
+    {
+        _loadGate.Wait();
+        try
+        {
+            _snapshot = null;
+        }
+        finally
+        {
+            _loadGate.Release();
+        }
+    }
+
     public async Task<SkillWorkspaceStatus> GetStatusAsync(
         CancellationToken cancellationToken
     )
@@ -443,6 +456,7 @@ public sealed class SkillWorkspaceService(
         );
 
         return results
+            .Where(result => result.Ref.Id == assetId)
             .GroupBy(
                 result => result.Ref,
                 EqualityComparer<StudioAssetRef>.Default
@@ -1649,6 +1663,13 @@ public sealed class SkillWorkspaceService(
         foreach (
             string sourcePath in Directory
                 .EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories)
+                .Where(
+                    path =>
+                        !Path.GetFileName(path).StartsWith(
+                            "~$",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                )
                 .OrderBy(
                     path => Path.GetRelativePath(sourceRoot, path),
                     StringComparer.Ordinal

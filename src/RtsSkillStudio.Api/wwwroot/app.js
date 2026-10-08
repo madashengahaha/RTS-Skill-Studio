@@ -548,11 +548,20 @@ function stripPlanBlock(content) {
     .trim();
 }
 
-function appendMessage({ role, content, latencyMs, error = false }) {
+function appendMessage({
+  role,
+  content,
+  latencyMs,
+  error = false,
+  messageId = null,
+}) {
   showEmptyState(false);
 
   const message = document.createElement("article");
   message.className = `message is-${role}${error ? " is-error" : ""}`;
+  if (messageId !== null && messageId !== undefined) {
+    message.dataset.messageId = String(messageId);
+  }
 
   const roleName = role === "user" ? "你" : error ? "调用失败" : "Skill Agent";
   const avatar = role === "user" ? "你" : error ? "!" : "AI";
@@ -579,6 +588,72 @@ function appendMessage({ role, content, latencyMs, error = false }) {
   elements.messages.appendChild(message);
   elements.conversation.scrollTop = elements.conversation.scrollHeight;
   return message;
+}
+
+function attachPlanAction(message, compiledPatch) {
+  if (
+    !message ||
+    !state.inspector.planJson ||
+    state.inspector.planDisposition !== "Expected" ||
+    state.inspector.planErrors.length > 0
+  ) {
+    return;
+  }
+
+  const valid =
+    compiledPatch &&
+    state.inspector.patchValidation?.status === "Valid" &&
+    Boolean(state.inspector.patchJson);
+  const noChange = state.inspector.compileStatus === "NoChange";
+  const diffCount = state.inspector.patchDiff.length;
+  const body = message.querySelector(".message-body");
+  if (!body) {
+    return;
+  }
+
+  let actions = body.querySelector(".message-plan-actions");
+  if (!actions) {
+    actions = document.createElement("div");
+    actions.className = "message-plan-actions";
+    body.appendChild(actions);
+  }
+
+  actions.classList.toggle("is-error", !valid && compiledPatch === false);
+  actions.innerHTML = `
+    <div class="message-plan-copy">
+      <strong>Excel 修改提案</strong>
+      <span>${
+        valid
+          ? `${diffCount} 个字段变化，Patch 校验通过`
+          : noChange
+            ? "当前提案没有需要写入的字段变化"
+          : compiledPatch
+            ? "Patch 校验未通过，暂不能写入"
+            : state.inspector.compileStatus === "Invalid"
+              ? "Patch 编译未通过，暂不能写入"
+              : "正在编译并校验 Patch"
+      }</span>
+    </div>
+    <button
+      class="send-button"
+      type="button"
+      data-confirm-write
+      ${valid ? "" : "disabled"}
+    >
+      ${icon(valid || noChange ? "check" : "loader-circle")}
+      <span>${noChange ? "无需重复写入" : "确认并写入正式工作区"}</span>
+    </button>
+  `;
+  renderIcons();
+  elements.conversation.scrollTop = elements.conversation.scrollHeight;
+}
+
+function attachLatestPlanAction(compiledPatch) {
+  const assistantMessages = elements.messages.querySelectorAll(
+    ".message.is-assistant:not(.is-error)",
+  );
+  const latest = assistantMessages[assistantMessages.length - 1];
+  attachPlanAction(latest, compiledPatch);
 }
 
 function appendTypingMessage() {
@@ -1399,7 +1474,7 @@ function diffInspectorHtml(
             ? "没有字段变化"
             : "WorkbookPatch 已阻止"
       }</strong>
-      <span>源工作簿不会被修改；本阶段只允许写入临时工作区副本。</span>
+      <span>确认后将先执行临时副本验证，再写入正式工作区并回读校验。</span>
     </div>
     ${
       errors.length
@@ -1441,15 +1516,6 @@ function diffInspectorHtml(
         ? `<section class="evidence-block">
             <div class="patch-change-header">
               <h3>Excel 字段变化</h3>
-              <button
-                class="quiet-button"
-                type="button"
-                data-apply-temporary
-                ${valid ? "" : "disabled"}
-              >
-                ${icon("play")}
-                <span>验证到临时副本</span>
-              </button>
             </div>
             <div class="patch-table-wrap">
               <table class="patch-table">
@@ -1775,6 +1841,7 @@ function renderConversationMessages(messages) {
       role: message.role === "assistant" ? "assistant" : "user",
       content: message.content,
       latencyMs: message.latencyMs,
+      messageId: message.id,
     });
   });
   renderIcons();
@@ -1845,6 +1912,7 @@ async function openConversation(conversationId) {
   }
   if (conversation.planJson) {
     const compiledPatch = await compilePlan(conversation.planJson);
+    attachLatestPlanAction(compiledPatch);
     showInspectorTab(compiledPatch ? "diff" : "plan");
   }
 }
@@ -1904,52 +1972,153 @@ async function compilePlan(planJson) {
   }
 }
 
-async function applyTemporaryPatch() {
+async function applyFinalPatch(button) {
   const patchJson = state.inspector.patchJson;
-  if (!patchJson || state.inspector.patchValidation?.status !== "Valid") {
+  if (
+    !patchJson ||
+    state.inspector.patchValidation?.status !== "Valid" ||
+    button.disabled
+  ) {
     return;
   }
 
-  state.inspector.applyResult = {
-    status: "Applying",
-    sourceUnchanged: true,
-    verifiedFieldCount: 0,
-    message: "正在复制工作区并应用 Patch。",
-  };
-  renderInspector();
+  const actions = button.closest(".message-plan-actions");
+  const status = actions?.querySelector(".message-plan-copy span");
+  const originalHtml = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = `${icon("loader-circle")}<span>正在写入正式工作区</span>`;
+  renderIcons();
+  if (actions) {
+    actions.classList.remove("is-error");
+    actions.classList.add("is-applying");
+  }
+  if (status) {
+    status.textContent = "正在执行最终校验和原子替换";
+  }
+
+  try {
+    const response = await fetch("/api/v1/workbook-patches/apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ patchJson }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(
+        payload.detail || payload.error || `正式写入失败：HTTP ${response.status}`,
+      );
+    }
+
+    const result = payload.applyResult;
+    if (result?.status !== "Applied") {
+      throw new Error(result?.message || "正式写入未完成。");
+    }
+
+    if (actions) {
+      actions.classList.remove("is-applying", "is-error");
+      actions.classList.add("is-applied");
+      if (result.transactionId) {
+        actions.dataset.transactionId = result.transactionId;
+      }
+    }
+    if (status) {
+      status.textContent = `已写入 ${result.appliedFieldCount} 个字段`;
+    }
+    button.outerHTML = `
+      <button
+        class="quiet-button"
+        type="button"
+        data-undo-write
+      >
+        ${icon("undo-2")}
+        <span>撤销写入</span>
+      </button>
+    `;
+    renderIcons();
+    showToast("已写入正式工作区");
+    await loadWorkspace();
+    if (state.selectedAsset) {
+      await loadAssetChain(
+        state.selectedAsset.namespace,
+        state.selectedAsset.id,
+        false,
+      );
+    }
+  } catch (error) {
+    if (
+      error.message.includes("源工作区哈希") &&
+      state.inspector.planJson
+    ) {
+      const message = button.closest(".message");
+      const recompiled = await compilePlan(state.inspector.planJson);
+      if (message) {
+        attachPlanAction(message, recompiled);
+      }
+      showToast("Patch 已过期，已按当前工作区重新编译，请再次确认。");
+      return;
+    }
+
+    button.disabled = false;
+    button.innerHTML = originalHtml;
+    if (actions) {
+      actions.classList.remove("is-applying");
+      actions.classList.add("is-error");
+    }
+    if (status) {
+      status.textContent = error.message;
+    }
+    renderIcons();
+    showToast(error.message, "error");
+  }
+}
+
+async function applyUndoWrite(button) {
+  const actions = button.closest(".message-plan-actions");
+  const transactionId = actions?.dataset.transactionId;
+  if (!transactionId || button.disabled) {
+    return;
+  }
+
+  button.disabled = true;
+  button.innerHTML = `${icon("loader-circle")}<span>正在撤销</span>`;
+  renderIcons();
   try {
     const response = await fetch(
-      "/api/v1/workbook-patches/apply-temporary",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patchJson }),
-      },
+      `/api/v1/workbook-patches/transactions/${encodeURIComponent(
+        transactionId,
+      )}/undo`,
+      { method: "POST" },
     );
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(
-        payload.detail || payload.error || `临时应用失败：HTTP ${response.status}`,
+        payload.detail || payload.error || `撤销失败：HTTP ${response.status}`,
       );
     }
 
-    state.inspector.patchValidation =
-      payload.validation || state.inspector.patchValidation;
-    state.inspector.applyResult = payload.applyResult || {
-      status: payload.status || "Failed",
-      sourceUnchanged: true,
-      verifiedFieldCount: 0,
-      message: "服务未返回临时应用详情。",
-    };
-    renderInspector();
+    const result = payload.applyResult;
+    if (result?.status !== "Undone") {
+      throw new Error(result?.message || "撤销未完成。");
+    }
+
+    if (actions) {
+      actions.classList.remove("is-applied", "is-error");
+    }
+    button.outerHTML = `${icon("check")}<span>已撤销写入</span>`;
+    renderIcons();
+    showToast("已撤销正式工作区写入");
+    await loadWorkspace();
+    if (state.selectedAsset) {
+      await loadAssetChain(
+        state.selectedAsset.namespace,
+        state.selectedAsset.id,
+        false,
+      );
+    }
   } catch (error) {
-    state.inspector.applyResult = {
-      status: "Failed",
-      sourceUnchanged: true,
-      verifiedFieldCount: 0,
-      message: error.message,
-    };
-    renderInspector();
+    button.disabled = false;
+    button.innerHTML = `${icon("undo-2")}<span>撤销写入</span>`;
+    renderIcons();
     showToast(error.message, "error");
   }
 }
@@ -2011,7 +2180,7 @@ async function sendMessage(message) {
     }
 
     const assistantText = payload.text || "";
-    appendMessage({
+    const assistantMessage = appendMessage({
       role: "assistant",
       content: assistantText,
       latencyMs: payload.latencyMs,
@@ -2053,6 +2222,7 @@ async function sendMessage(message) {
         false,
       ).catch(() => {});
     }
+    attachPlanAction(assistantMessage, compiledPatch);
     updateInspector(null);
     showInspectorTab(
       compiledPatch
@@ -2084,14 +2254,28 @@ function setTreeSubtreeOpen(details, open) {
   });
 }
 
-elements.inspectorContent.addEventListener("click", (event) => {
-  const applyButton = event.target.closest("[data-apply-temporary]");
-  if (applyButton) {
+elements.messages.addEventListener("click", (event) => {
+  const undoButton = event.target.closest("[data-undo-write]");
+  if (undoButton) {
     event.preventDefault();
-    applyTemporaryPatch().catch((error) => showToast(error.message, "error"));
+    applyUndoWrite(undoButton).catch((error) =>
+      showToast(error.message, "error"),
+    );
     return;
   }
 
+  const confirmButton = event.target.closest("[data-confirm-write]");
+  if (!confirmButton) {
+    return;
+  }
+
+  event.preventDefault();
+  applyFinalPatch(confirmButton).catch((error) =>
+    showToast(error.message, "error"),
+  );
+});
+
+elements.inspectorContent.addEventListener("click", (event) => {
   if (!event.shiftKey) {
     return;
   }

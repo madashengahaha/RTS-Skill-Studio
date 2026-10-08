@@ -27,6 +27,9 @@ const overlay = await readJson("config/semantic-overlay.v0.json");
 const runtimeActionOverrides = await readJson(
   "config/runtime-action-overrides.v0.json"
 );
+const valueConversionAudit = await readJson(
+  "config/value-conversion-audit.v0.json"
+);
 const executionProjection = await readJson(
   "config/execution-projection.v0.json"
 );
@@ -77,6 +80,19 @@ assert(
   "Runtime action overrides must contain patchConditions."
 );
 assert(
+  valueConversionAudit.schemaVersion === 0,
+  "Value conversion audit schemaVersion must be 0."
+);
+assert(
+  Array.isArray(valueConversionAudit.statuses) &&
+    valueConversionAudit.statuses.length > 0,
+  "Value conversion audit must declare statuses."
+);
+assert(
+  Array.isArray(valueConversionAudit.entries),
+  "Value conversion audit must contain entries."
+);
+assert(
   executionProjection.schemaVersion === foundation.schemaVersion,
   "Execution projection schemaVersion must match the foundation schemaVersion."
 );
@@ -115,6 +131,86 @@ assert(
 );
 
 const executionProjectionValues = new Set(["Subtree", "Node", "Hidden"]);
+const valueConversionStatuses = new Set(valueConversionAudit.statuses);
+assert(
+  valueConversionStatuses.has(valueConversionAudit.defaultStatus),
+  "Value conversion audit defaultStatus is invalid."
+);
+for (const entry of valueConversionAudit.entries) {
+  assert(
+    valueConversionStatuses.has(entry.status),
+    `Value conversion audit entry has invalid status: ${entry.status}.`
+  );
+  assert(
+    entry.status !== "RuntimeCodeVerified" ||
+      (Array.isArray(entry.evidence) && entry.evidence.length > 0),
+    "RuntimeCodeVerified conversion entries must include runtime evidence."
+  );
+}
+
+function conversionAuditKey(category, ownerKey, parameterKey) {
+  return `${category}:${ownerKey}:${parameterKey}`;
+}
+
+const valueConversionByActionParameter = new Map(
+  valueConversionAudit.entries
+    .filter(
+      (entry) =>
+        entry.category === "effect" || entry.category === "condition"
+    )
+    .map((entry) => [
+      conversionAuditKey(
+        entry.category,
+        entry.actionKey,
+        entry.parameterKey
+      ),
+      entry
+    ])
+);
+const valueConversionByEntityField = new Map(
+  valueConversionAudit.entries
+    .filter((entry) => entry.category === "entity-field")
+    .map((entry) => [entry.path, entry])
+);
+
+function conversionMetadata(category, ownerKey, parameterKey, scale) {
+  if (!Number.isInteger(scale)) {
+    return {};
+  }
+
+  const entry = valueConversionByActionParameter.get(
+    conversionAuditKey(category, ownerKey, parameterKey)
+  );
+  assert(
+    !entry || entry.scale === scale,
+    `${category}.${ownerKey}.${parameterKey} conversion scale does not match the audit entry.`
+  );
+  return {
+    unit: entry?.unit ?? null,
+    conversionStatus:
+      entry?.status ?? valueConversionAudit.defaultStatus,
+    conversionEvidence: entry?.evidence ?? []
+  };
+}
+
+function entityConversionMetadata(field) {
+  if (!Number.isInteger(field.scale)) {
+    return {};
+  }
+
+  const entry = valueConversionByEntityField.get(field.path);
+  assert(
+    !entry || entry.scale === field.scale,
+    `${field.path} conversion scale does not match the audit entry.`
+  );
+  return {
+    unit: entry?.unit ?? field.unit ?? null,
+    conversionStatus:
+      entry?.status ?? valueConversionAudit.defaultStatus,
+    conversionEvidence: entry?.evidence ?? []
+  };
+}
+
 for (const [ruleSetName, rules] of [
   ["parameterRules", executionProjection.parameterRules],
   ["edgeRules", executionProjection.edgeRules]
@@ -241,7 +337,13 @@ function decorateActions(actions, annotations, category) {
             : {}),
           ...(parameter.defaultValue !== undefined
             ? { defaultValue: parameter.defaultValue }
-            : {})
+            : {}),
+          ...conversionMetadata(
+            category,
+            action.key,
+            parameter.key,
+            parameter.scale
+          )
         })),
         semantic
       };
@@ -312,6 +414,36 @@ const conditions = decorateActions(
   overlay.conditions,
   "condition"
 );
+const entityFields = foundation.entityFields.map((field) => ({
+  ...field,
+  ...entityConversionMetadata(field)
+}));
+
+for (const entry of valueConversionAudit.entries) {
+  if (entry.category === "entity-field") {
+    assert(
+      entityFields.some((field) => field.path === entry.path),
+      `Value conversion audit references unknown entity field ${entry.path}.`
+    );
+    continue;
+  }
+
+  const actions =
+    entry.category === "condition" ? conditions : effects;
+  const action = actions.find((candidate) => candidate.key === entry.actionKey);
+  assert(
+    action,
+    `Value conversion audit references unknown ${entry.category} ${entry.actionKey}.`
+  );
+  assert(
+    action.parameters.some(
+      (parameter) =>
+        parameter.key === entry.parameterKey &&
+        parameter.scale === entry.scale
+    ),
+    `Value conversion audit references unknown parameter ${entry.actionKey}.${entry.parameterKey} or mismatched scale.`
+  );
+}
 
 for (const rule of executionProjection.parameterRules) {
   const candidates =
@@ -342,7 +474,7 @@ const enumReferences = sorted(
       .flatMap((action) => action.parameters)
       .map((parameter) => parameter.enumName)
       .filter(Boolean),
-    ...foundation.entityFields
+    ...entityFields
       .map((field) => field.enumName)
       .filter(Boolean)
   ])
@@ -433,7 +565,7 @@ const registry = {
   valueSources: foundation.valueSources,
   similarityScoring: foundation.similarityScoring,
   skillGraphSchema,
-  entityFields: foundation.entityFields,
+  entityFields,
   intents: foundation.intents,
   effects,
   conditions,

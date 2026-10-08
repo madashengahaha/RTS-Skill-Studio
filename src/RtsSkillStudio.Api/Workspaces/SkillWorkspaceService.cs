@@ -17,6 +17,8 @@ public sealed class SkillWorkspaceService(
     ILogger<SkillWorkspaceService> logger
 )
 {
+    private const int MaxMentionCandidatesPerNamespace = 5;
+
     private static readonly HashSet<string> GenericMentionTokens =
     [
         "自己",
@@ -40,13 +42,37 @@ public sealed class SkillWorkspaceService(
 
     private static readonly (string TableKey, string Namespace)[] SearchRoots =
     [
+        // Priority 1: current skill-authoring roots.
         ("skill", "TbSkill"),
+        ("effect", "TbEffect"),
         ("item", "TbItem"),
         ("buff", "TbBuff"),
         ("bullet", "TbBullet"),
         ("search", "TbSearch"),
         ("trap", "TbTrap"),
-        ("equipment", "TbEquipment")
+        ("equipment", "TbEquipment"),
+        // Priority 2: direct behavior dependencies.
+        ("condition", "TbCondition"),
+        ("damage-pipeline", "TbDamagePipeline"),
+        ("skill-resource", "TbSkillResource"),
+        ("resource", "TbResource"),
+        // Priority 3: remaining Agent-associated authoring tables.
+        ("hero", "TbHero"),
+        ("hero-skin", "TbHeroSkin"),
+        ("hero-upgrade", "TbHeroUpgrade"),
+        ("hero-skill-description", "TbHeroSkillDes"),
+        ("equipment-upgrade", "TbEquipmentUpgrade"),
+        ("random-bag", "TbRandomBag"),
+        ("random-set", "TbRandomSet"),
+        ("random-card", "TbRandomCard"),
+        ("view-function-component", "TbViewFunctionComponent"),
+        ("battle-hero-shop", "TbBattleHeroShop"),
+        ("battle-soldier-level-up", "TbBattleSoldierLevelUp"),
+        ("soldier-upgrade", "TbSoldierUpgrade"),
+        ("card", "TbCard"),
+        ("soldier", "TbSoldier"),
+        ("building", "TbBuilding"),
+        ("block", "TbBlock")
     ];
 
     private readonly SemaphoreSlim _loadGate = new(1, 1);
@@ -266,6 +292,166 @@ public sealed class SkillWorkspaceService(
             .ToArray();
     }
 
+    public async Task<IReadOnlyList<AssetSearchResult>> SearchAssetIdsAsync(
+        string? query,
+        int limit,
+        CancellationToken cancellationToken
+    )
+    {
+        if (limit is < 1 or > 50)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(limit),
+                "资产ID检索数量必须在 1 到 50 之间。"
+            );
+        }
+
+        string term = query?.Trim() ?? "";
+        if (
+            !int.TryParse(
+                term,
+                System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out int assetId
+            )
+        )
+        {
+            return [];
+        }
+
+        var snapshot = await LoadAsync(cancellationToken);
+        var results = new List<AssetSearchResult>();
+        foreach ((string tableKey, string nodeNamespace) in SearchRoots)
+        {
+            GameDataTable? table = snapshot.Catalog.Tables.FirstOrDefault(
+                candidate => string.Equals(
+                    candidate.Key,
+                    tableKey,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
+            if (table is null)
+            {
+                continue;
+            }
+
+            GameDataRecord? record = table.Records.FirstOrDefault(
+                candidate => candidate.Id == assetId
+            );
+            if (record is null)
+            {
+                continue;
+            }
+
+            results.Add(
+                new AssetSearchResult(
+                    new StudioAssetRef(nodeNamespace, record.Id),
+                    Title(table, record),
+                    BuildAssetSearchSummary(table, record),
+                    table.DisplayName,
+                    record.SourceRow
+                )
+            );
+            if (results.Count >= limit)
+            {
+                break;
+            }
+        }
+
+        return results;
+    }
+
+    public async Task<IReadOnlyList<AssetSearchResult>> SearchConversationCandidatesByNumericIdAsync(
+        string? query,
+        int limit,
+        CancellationToken cancellationToken
+    )
+    {
+        if (limit is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(limit),
+                "对话资产候选数量必须在 1 到 100 之间。"
+            );
+        }
+
+        string term = query?.Trim() ?? "";
+        if (
+            !int.TryParse(
+                term,
+                System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out int assetId
+            )
+        )
+        {
+            return [];
+        }
+
+        var snapshot = await LoadAsync(cancellationToken);
+        var results = new List<AssetSearchResult>();
+        foreach ((string tableKey, string nodeNamespace) in SearchRoots)
+        {
+            GameDataTable? table = snapshot.Catalog.Tables.FirstOrDefault(
+                candidate => string.Equals(
+                    candidate.Key,
+                    tableKey,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
+            if (table is null)
+            {
+                continue;
+            }
+
+            GameDataRecord? record = table.Records.FirstOrDefault(
+                candidate => candidate.Id == assetId
+            );
+            if (record is null)
+            {
+                continue;
+            }
+
+            results.Add(
+                new AssetSearchResult(
+                    new StudioAssetRef(nodeNamespace, record.Id),
+                    Title(table, record),
+                    BuildAssetSearchSummary(table, record),
+                    table.DisplayName,
+                    record.SourceRow
+                )
+            );
+        }
+
+        AddGroupSearchResults(
+            snapshot.Catalog,
+            "effect",
+            "TbEffect",
+            "EffectGroup",
+            "EffectGroup",
+            assetId,
+            results
+        );
+        AddGroupSearchResults(
+            snapshot.Catalog,
+            "condition",
+            "TbCondition",
+            "ConditionGroup",
+            "ConditionGroup",
+            assetId,
+            results
+        );
+
+        return results
+            .GroupBy(
+                result => result.Ref,
+                EqualityComparer<StudioAssetRef>.Default
+            )
+            .Select(group => group.First())
+            .Take(limit)
+            .ToArray();
+    }
+
     public async Task<IReadOnlyList<AssetTableFieldSummary>> GetTableFieldsAsync(
         IReadOnlyDictionary<string, string> entityNamespaces,
         CancellationToken cancellationToken
@@ -350,9 +536,16 @@ public sealed class SkillWorkspaceService(
         return fields;
     }
 
-    public async Task<IReadOnlyList<AssetSearchResult>> FindAssetsByMentionAsync(
+    public async Task<
+        IReadOnlyList<(
+            AssetSearchResult Result,
+            int Score,
+            bool IsExactName
+        )>
+    > FindAssetsByMentionAsync(
         string message,
         int limit,
+        IReadOnlySet<string>? namespaceFilter,
         CancellationToken cancellationToken
     )
     {
@@ -362,9 +555,21 @@ public sealed class SkillWorkspaceService(
         }
 
         var snapshot = await LoadAsync(cancellationToken);
-        var matches = new List<(AssetSearchResult Result, int Score)>();
+        var matches = new List<(
+            AssetSearchResult Result,
+            int Score,
+            bool IsExactName
+        )>();
         foreach ((string tableKey, string nodeNamespace) in SearchRoots)
         {
+            if (
+                namespaceFilter is { Count: > 0 }
+                && !namespaceFilter.Contains(nodeNamespace)
+            )
+            {
+                continue;
+            }
+
             GameDataTable? table = snapshot.Catalog.Tables.FirstOrDefault(
                 candidate => string.Equals(
                     candidate.Key,
@@ -382,12 +587,17 @@ public sealed class SkillWorkspaceService(
                 string label = Title(table, record);
                 string summary = BuildAssetSearchSummary(table, record);
                 int score =
-                    MentionScore(message, label, nodeNamespace)
-                    + MentionScore(message, summary, nodeNamespace);
+                    AssetLabelMentionScore(message, label)
+                    + AssetFieldMentionScore(message, record.Fields);
                 if (score <= 0)
                 {
                     continue;
                 }
+                score += NamespaceIntentScore(message, nodeNamespace);
+                bool isExactName = IsExactMentionName(
+                    message,
+                    label
+                );
 
                 matches.Add(
                     (
@@ -398,48 +608,86 @@ public sealed class SkillWorkspaceService(
                             table.DisplayName,
                             record.SourceRow
                         ),
-                        score
+                        score,
+                        isExactName
                     )
                 );
             }
         }
 
-        return matches
-            .OrderByDescending(match => match.Score)
+        IReadOnlyList<(
+            AssetSearchResult Result,
+            int Score,
+            bool IsExactName
+        )> ranked = matches
+            .OrderByDescending(match => match.IsExactName)
+            .ThenByDescending(match => match.Score)
             .ThenBy(
                 match => match.Result.Ref.Namespace == "TbSkill" ? 0 : 1
             )
             .ThenBy(match => match.Result.Ref.Id)
-            .Select(match => match.Result)
-            .DistinctBy(match => match.Ref)
-            .Take(limit)
             .ToArray();
-    }
-
-    private static int MentionScore(
-        string message,
-        string label,
-        string nodeNamespace
-    )
-    {
-        if (
-            !string.IsNullOrWhiteSpace(label)
-            && message.Contains(label, StringComparison.OrdinalIgnoreCase)
+        var selected = new List<(
+            AssetSearchResult Result,
+            int Score,
+            bool IsExactName
+        )>();
+        var namespaceCounts = new Dictionary<string, int>(
+            StringComparer.Ordinal
+        );
+        var seen = new HashSet<StudioAssetRef>();
+        foreach (
+            (AssetSearchResult result, int score, bool isExactName) in ranked
         )
         {
-            return 1000
-                + label.Length
-                + NamespaceIntentScore(message, nodeNamespace);
+            if (!seen.Add(result.Ref))
+            {
+                continue;
+            }
+
+            int namespaceCount = namespaceCounts.GetValueOrDefault(
+                result.Ref.Namespace
+            );
+            if (namespaceCount >= MaxMentionCandidatesPerNamespace)
+            {
+                continue;
+            }
+
+            namespaceCounts[result.Ref.Namespace] = namespaceCount + 1;
+            selected.Add((result, score, isExactName));
+            if (selected.Count >= limit)
+            {
+                break;
+            }
+        }
+
+        return selected;
+    }
+
+    private static int AssetLabelMentionScore(string message, string label)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+        {
+            return 0;
+        }
+
+        if (
+            message.Contains(label, StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return 2000 + label.Length;
+        }
+
+        if (
+            message.Length >= 2
+            && label.Contains(message, StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return 1800 + message.Length;
         }
 
         int score = 0;
-        foreach (
-            string token in label.Split(
-                ['-', '_', '/', ' ', '·'],
-                StringSplitOptions.RemoveEmptyEntries
-                    | StringSplitOptions.TrimEntries
-            )
-        )
+        foreach (string token in MentionTokens(label))
         {
             if (
                 token.Length >= 2
@@ -450,13 +698,104 @@ public sealed class SkillWorkspaceService(
                 )
             )
             {
-                score = Math.Max(score, token.Length);
+                score = Math.Max(score, 1000 + token.Length);
             }
         }
 
-        return score <= 0
-            ? 0
-            : score + NamespaceIntentScore(message, nodeNamespace);
+        return score;
+    }
+
+    private static int AssetFieldMentionScore(
+        string message,
+        IReadOnlyDictionary<string, IReadOnlyList<string>> fields
+    )
+    {
+        int score = 0;
+        foreach (
+            KeyValuePair<string, IReadOnlyList<string>> field in fields
+        )
+        {
+            foreach (string value in field.Value)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                if (
+                    string.Equals(
+                        message,
+                        value,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    score = Math.Max(score, 900 + value.Length);
+                    continue;
+                }
+
+                if (
+                    message.Length >= 2
+                    && value.Contains(
+                        message,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    score = Math.Max(score, 700 + message.Length);
+                    continue;
+                }
+
+                foreach (string token in MentionTokens(value))
+                {
+                    if (
+                        token.Length >= 2
+                        && !GenericMentionTokens.Contains(token)
+                        && message.Contains(
+                            token,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        score = Math.Max(score, 100 + token.Length);
+                    }
+                }
+            }
+        }
+
+        return score;
+    }
+
+    private static bool IsExactMentionName(
+        string message,
+        string label
+    )
+    {
+        return !string.IsNullOrWhiteSpace(label)
+            && message.Contains(label, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IEnumerable<string> MentionTokens(string text)
+    {
+        return text.Split(
+            [
+                '-',
+                '_',
+                '/',
+                ' ',
+                '·',
+                ',',
+                '.',
+                ':',
+                ';',
+                '，',
+                '。',
+                '：',
+                '；'
+            ],
+            StringSplitOptions.RemoveEmptyEntries
+                | StringSplitOptions.TrimEntries
+        );
     }
 
     private static int NamespaceIntentScore(
@@ -545,6 +884,67 @@ public sealed class SkillWorkspaceService(
                     $"{group.Count()} 个有序 Effect",
                     "Effect Group",
                     group.Min(record => record.SourceRow)
+                )
+            );
+        }
+    }
+
+    private static void AddGroupSearchResults(
+        GameDataCatalog catalog,
+        string tableKey,
+        string memberNamespace,
+        string namespaceName,
+        string displayName,
+        int groupId,
+        ICollection<AssetSearchResult> results
+    )
+    {
+        GameDataTable? table = catalog.Tables.FirstOrDefault(
+            candidate => string.Equals(
+                candidate.Key,
+                tableKey,
+                StringComparison.OrdinalIgnoreCase
+            )
+        );
+        if (table is null)
+        {
+            return;
+        }
+
+        GameDataRecord[] members = table
+            .Records.Where(
+                record =>
+                    Values(record, "group_id").Any(
+                        value =>
+                            int.TryParse(value, out int memberGroupId)
+                            && memberGroupId == groupId
+                    )
+            )
+            .OrderBy(record => record.SourceOrder)
+            .ToArray();
+        if (members.Length == 0)
+        {
+            return;
+        }
+
+        results.Add(
+            new AssetSearchResult(
+                new StudioAssetRef(namespaceName, groupId),
+                $"{displayName} {groupId}",
+                $"{members.Length} 个成员",
+                displayName,
+                members.Min(record => record.SourceRow)
+            )
+        );
+        foreach (GameDataRecord member in members)
+        {
+            results.Add(
+                new AssetSearchResult(
+                    new StudioAssetRef(memberNamespace, member.Id),
+                    Title(table, member),
+                    BuildAssetSearchSummary(table, member),
+                    table.DisplayName,
+                    member.SourceRow
                 )
             );
         }

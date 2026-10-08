@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using RtsSkillStudio.Agent;
 using RtsSkillStudio.Agent.Patch;
 using RtsSkillStudio.Agent.Workspaces;
 
@@ -15,16 +16,28 @@ public sealed partial class SkillAgentContextBuilder(
     private const int MaxHistoryEdges = 320;
     private const int MaxFieldValues = 8;
 
-    private static readonly string[] BareCandidateNamespaces =
-    [
-        "TbSkill",
-        "TbItem",
-        "TbBuff",
-        "TbBullet",
-        "TbSearch",
-        "TbTrap",
-        "TbEquipment"
-    ];
+    private static readonly IReadOnlyDictionary<string, string[]>
+        NamespaceHints = new Dictionary<string, string[]>(
+            StringComparer.OrdinalIgnoreCase
+        )
+        {
+            ["TbSkill"] = ["skill", "skills", "技能"],
+            ["TbEffect"] = ["effect", "effects", "效果", "特效"],
+            ["TbBuff"] = ["buff", "buffs"],
+            ["TbBullet"] = ["bullet", "bullets", "子弹"],
+            ["TbTrap"] = ["trap", "traps", "陷阱", "机关"],
+            ["TbSearch"] = ["search", "搜索"],
+            ["TbItem"] = ["item", "items", "物品", "道具"],
+            ["TbEquipment"] = ["equipment", "装备"],
+            ["TbCard"] = ["card", "cards", "卡牌"],
+            ["TbHero"] = ["hero", "heroes", "英雄"],
+            ["TbCondition"] = ["condition", "conditions", "条件"],
+            ["TbDamagePipeline"] =
+                ["damage pipeline", "伤害管线"],
+            ["TbSkillResource"] =
+                ["skill resource", "技能资源"],
+            ["TbResource"] = ["resource", "resources", "资源"]
+        };
 
     public async Task<AgentWorkspaceContext> BuildAsync(
         StudioAssetRef? selectedAsset,
@@ -99,6 +112,13 @@ public sealed partial class SkillAgentContextBuilder(
             );
             if (resolution.Asset is null)
             {
+                if (resolution.MissingAssetIds is { Count: > 0 })
+                {
+                    builder.AppendLine(
+                        "未找到资产 ID: "
+                            + string.Join(", ", resolution.MissingAssetIds)
+                    );
+                }
                 if (resolution.RequiresClarification)
                 {
                     builder.AppendLine(
@@ -141,7 +161,8 @@ public sealed partial class SkillAgentContextBuilder(
                     null,
                     resolution.ValidCandidates,
                     resolution.InvalidCandidates,
-                    resolution.RequiresClarification
+                    resolution.RequiresClarification,
+                    resolution.MissingAssetIds
                 );
             }
 
@@ -301,6 +322,8 @@ public sealed partial class SkillAgentContextBuilder(
     )
     {
         bool parameterContext = ParameterContextRegex().IsMatch(userMessage);
+        IReadOnlySet<string> namespaceConstraints =
+            ResolveNamespaceConstraints(userMessage);
         var explicitCandidates = new List<StudioAssetRef>();
         foreach (Match match in ExplicitAssetRegex().Matches(userMessage))
         {
@@ -338,46 +361,11 @@ public sealed partial class SkillAgentContextBuilder(
             );
         }
 
-        bool explicitMode = explicitCandidates.Count > 0;
         var candidates = explicitCandidates.Distinct().ToList();
+        bool numericMode = false;
+        var missingAssetIds = new List<string>();
         if (candidates.Count == 0)
         {
-            if (ShouldResolveAssetMentions(userMessage))
-            {
-                IReadOnlyList<AssetSearchResult> namedMatches =
-                    await workspace.FindAssetsByMentionAsync(
-                        userMessage,
-                        8,
-                        cancellationToken
-                    );
-                IReadOnlyList<StudioAssetRef> namedCandidates = namedMatches
-                    .Select(match => match.Ref)
-                    .Distinct()
-                    .ToArray();
-                if (namedCandidates.Count > 0)
-                {
-                    if (
-                        selectedAsset is not null
-                        && namedCandidates.Contains(selectedAsset)
-                    )
-                    {
-                        return new AssetResolution(
-                            selectedAsset,
-                            [],
-                            [],
-                            false
-                        );
-                    }
-
-                    return new AssetResolution(
-                        null,
-                        namedCandidates,
-                        [],
-                        true
-                    );
-                }
-            }
-
             HashSet<int> modificationValueIndexes = ModificationValueRegex()
                 .Matches(userMessage)
                 .Select(match => match.Groups["id"].Index)
@@ -403,18 +391,113 @@ public sealed partial class SkillAgentContextBuilder(
                     continue;
                 }
 
-                foreach (string candidateNamespace in BareCandidateNamespaces)
+                numericMode = true;
+                IReadOnlyList<AssetSearchResult> idMatches =
+                    await workspace.SearchConversationCandidatesByNumericIdAsync(
+                        id.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture
+                        ),
+                        100,
+                        cancellationToken
+                    );
+                if (namespaceConstraints.Count > 0)
                 {
-                    candidates.Add(
-                        new StudioAssetRef(candidateNamespace, id)
+                    idMatches = idMatches
+                        .Where(
+                            match =>
+                                namespaceConstraints.Contains(
+                                    match.Ref.Namespace
+                                )
+                        )
+                        .ToArray();
+                }
+                foreach (AssetSearchResult idMatch in idMatches)
+                {
+                    candidates.Add(idMatch.Ref);
+                }
+                if (idMatches.Count == 0)
+                {
+                    missingAssetIds.Add(
+                        id.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture
+                        )
                     );
                 }
             }
         }
 
+        if (
+            candidates.Count == 0
+            && !numericMode
+            && ShouldResolveAssetMentions(userMessage)
+        )
+        {
+            IReadOnlyList<(
+                AssetSearchResult Result,
+                int Score,
+                bool IsExactName
+            )> namedMatches =
+                await workspace.FindAssetsByMentionAsync(
+                    userMessage,
+                    20,
+                    namespaceConstraints,
+                    cancellationToken
+                );
+            IReadOnlyList<StudioAssetRef> namedCandidates = namedMatches
+                .Select(match => match.Result.Ref)
+                .Distinct()
+                .ToArray();
+            if (namedCandidates.Count > 0)
+            {
+                if (
+                    selectedAsset is not null
+                    && namedCandidates.Contains(selectedAsset)
+                )
+                {
+                    return new AssetResolution(
+                        selectedAsset,
+                        [],
+                        [],
+                        false
+                    );
+                }
+
+                return new AssetResolution(
+                    null,
+                    namedCandidates,
+                    [],
+                    true
+                );
+            }
+        }
+
+        if (
+            candidates.Count == 0
+            && !numericMode
+            && LooksLikeExplicitTargetMention(userMessage)
+        )
+        {
+            return new AssetResolution(null, [], [], true);
+        }
+
+        bool explicitMode =
+            explicitCandidates.Count > 0
+            || numericMode
+            || namespaceConstraints.Count > 0;
         candidates = candidates.Distinct().ToList();
         if (candidates.Count == 0)
         {
+            if (explicitMode)
+            {
+                return new AssetResolution(
+                    null,
+                    [],
+                    [],
+                    true,
+                    missingAssetIds
+                );
+            }
+
             return selectedAsset is null
                 ? new AssetResolution(null, [], [], false)
                 : new AssetResolution(selectedAsset, [], [], false);
@@ -552,6 +635,56 @@ public sealed partial class SkillAgentContextBuilder(
         };
     }
 
+    private static IReadOnlySet<string> ResolveNamespaceConstraints(
+        string message
+    )
+    {
+        var namespaces = new HashSet<string>(StringComparer.Ordinal);
+        foreach (
+            KeyValuePair<string, string[]> hint in NamespaceHints
+        )
+        {
+            if (
+                hint.Value.Any(
+                    alias => ContainsNamespaceHint(message, alias)
+                )
+            )
+            {
+                namespaces.Add(hint.Key);
+            }
+        }
+
+        return namespaces;
+    }
+
+    private static bool ContainsNamespaceHint(
+        string message,
+        string alias
+    )
+    {
+        if (
+            alias.All(
+                character =>
+                    char.IsAsciiLetterOrDigit(character)
+                    || character == ' '
+            )
+        )
+        {
+            return Regex.IsMatch(
+                message,
+                $@"(?i)(?<![a-z0-9]){Regex.Escape(alias)}(?![a-z0-9])"
+            );
+        }
+
+        return message.Contains(alias, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool LooksLikeExplicitTargetMention(string message)
+    {
+        return HyphenatedTargetRegex().IsMatch(message)
+            || QuotedTargetRegex().IsMatch(message);
+    }
+
     private static bool IsInsideSquareBrackets(string text, int index)
     {
         int open = text.LastIndexOf('[', index);
@@ -595,6 +728,11 @@ public sealed partial class SkillAgentContextBuilder(
                 .OrderBy(pair => pair.Key, StringComparer.Ordinal)
         )
         {
+            if (SkillAgentInstructions.IsHiddenLegacyField(field.Key))
+            {
+                continue;
+            }
+
             IReadOnlyList<string> configuredValues = field
                 .Value.Where(value => !string.IsNullOrWhiteSpace(value))
                 .ToArray();
@@ -674,11 +812,21 @@ public sealed partial class SkillAgentContextBuilder(
     )]
     private static partial Regex SuffixAssetRegex();
 
-    [GeneratedRegex(@"(?<!\d)(?<id>\d{5,8})(?!\d)")]
+    [GeneratedRegex(@"(?<!\d)(?<id>\d{5,12})(?!\d)")]
     private static partial Regex BareAssetRegex();
 
     [GeneratedRegex(@"(?i)(?:action_param|param|参数|参数槽)")]
     private static partial Regex ParameterContextRegex();
+
+    [GeneratedRegex(
+        @"[\p{IsCJKUnifiedIdeographs}A-Za-z0-9_·]+(?:[-—][\p{IsCJKUnifiedIdeographs}A-Za-z0-9_·]+){1,}"
+    )]
+    private static partial Regex HyphenatedTargetRegex();
+
+    [GeneratedRegex(
+        @"[`“”](?<target>[^`“”\r\n]{2,80})[`“”]"
+    )]
+    private static partial Regex QuotedTargetRegex();
 }
 
 public sealed record AgentWorkspaceContext(
@@ -686,12 +834,14 @@ public sealed record AgentWorkspaceContext(
     StudioAssetRef? Asset,
     IReadOnlyList<StudioAssetRef> ValidCandidates,
     IReadOnlyList<StudioAssetRef> InvalidCandidates,
-    bool RequiresClarification
+    bool RequiresClarification,
+    IReadOnlyList<string>? MissingAssetIds = null
 );
 
 internal sealed record AssetResolution(
     StudioAssetRef? Asset,
     IReadOnlyList<StudioAssetRef> ValidCandidates,
     IReadOnlyList<StudioAssetRef> InvalidCandidates,
-    bool RequiresClarification
+    bool RequiresClarification,
+    IReadOnlyList<string>? MissingAssetIds = null
 );

@@ -194,6 +194,36 @@ public sealed class SkillReadOnlyToolService(
         };
     }
 
+    private static SkillChainNode FilterAgentVisibleFields(
+        SkillChainNode node
+    )
+    {
+        if (
+            !node.Fields.Keys.Any(
+                SkillAgentInstructions.IsHiddenLegacyField
+            )
+        )
+        {
+            return node;
+        }
+
+        return node with
+        {
+            Fields = node.Fields
+                .Where(
+                    pair =>
+                        !SkillAgentInstructions.IsHiddenLegacyField(
+                            pair.Key
+                        )
+                )
+                .ToDictionary(
+                    pair => pair.Key,
+                    pair => pair.Value,
+                    StringComparer.Ordinal
+                )
+        };
+    }
+
     private async Task<JsonNode> GetGraphAsync(
         JsonNode? arguments,
         CancellationToken cancellationToken
@@ -232,7 +262,10 @@ public sealed class SkillReadOnlyToolService(
             direction,
             cancellationToken
         );
-        SkillChainNode[] nodes = chain.Nodes.Take(nodeLimit).ToArray();
+        SkillChainNode[] nodes = chain
+            .Nodes.Take(nodeLimit)
+            .Select(FilterAgentVisibleFields)
+            .ToArray();
         var nodeKeys = nodes
             .Select(node => node.Key)
             .ToHashSet(StringComparer.Ordinal);
@@ -556,10 +589,19 @@ public sealed class SkillReadOnlyToolService(
         IReadOnlyList<AssetTableFieldSummary> allTableFields =
             actionScoped
                 ? []
-                : await workspace.GetTableFieldsAsync(
-                    EntityNamespaceMap(entities),
-                    cancellationToken
-                );
+                : (
+                    await workspace.GetTableFieldsAsync(
+                        EntityNamespaceMap(entities),
+                        cancellationToken
+                    )
+                )
+                    .Where(
+                        field =>
+                            !SkillAgentInstructions.IsHiddenLegacyField(
+                                field.Key
+                            )
+                    )
+                    .ToArray();
         selectedEntities = MergeEntities(
             selectedEntities,
             entities,

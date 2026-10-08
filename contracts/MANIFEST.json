@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "config/capability-registry.v0.json",
-      "sha256": "fb135d0843e4da090c1e5fe2e6531232221720fdbda6cababfb58bd46403bfe2"
+      "sha256": "9deafeec0b67da21b78f5c0dba1a802dbd929623f8389acdab518f84f426d938"
     },
     {
       "path": "config/default-mechanism-contract.v0.json",
@@ -34,12 +34,16 @@
       "sha256": "76dcfbb91c0c45e575a833f0a1ac838595428fa5d68904cab7ba02c523f25f29"
     },
     {
+      "path": "config/value-conversion-audit.v0.json",
+      "sha256": "9002e7d6c91df960fb0217944cc674d09aa14b37acf6c97196ed2a56827fea87"
+    },
+    {
       "path": "config/workbook-patch-errors.v0.json",
       "sha256": "57131ec25ac9a85f8fad162171f35dae0cb8a7622ea7ae3ec7ea38c4f66ced98"
     },
     {
       "path": "contracts/capability-registry.schema.json",
-      "sha256": "71a79ae155b83f2ebf2230f16c76bb13450392ee7a3a2d13839d7d7d596d6c41"
+      "sha256": "ef3936c4d50054c2cee212d534b36725bb82dca2eb615425cad1d0004df4b9ae"
     },
     {
       "path": "contracts/read-only-results.schema.json",
@@ -86,5 +90,5 @@
       "sha256": "404d3989cf8344c6178599c28d62c991ac7229c9df5470f47e3101c702cd3f6a"
     }
   ],
-  "combinedSha256": "4bc0e3c046c5ee642932dd8737403afba1b2f0263920f629b6292b862eb4f533"
+  "combinedSha256": "7e0726111134e2baf1b6122ee087343ba8e206a96b81bc161773cf8fd84646d7"
 }

@@ -495,10 +495,82 @@ app.MapPost(
                     effectiveMessage,
                     cancellationToken
                 );
+            IReadOnlyList<string> missingAssetIds =
+                workspaceContext.MissingAssetIds ?? [];
+            if (missingAssetIds.Count > 0)
+            {
+                await conversations.UpdateSelectedAssetAsync(
+                    conversationId,
+                    null,
+                    cancellationToken
+                );
+                await conversations.AppendMessageAsync(
+                    conversationId,
+                    "user",
+                    request.Message,
+                    null,
+                    null,
+                    null,
+                    cancellationToken
+                );
+                string missingText = BuildMissingAssetText(missingAssetIds);
+                await conversations.AppendMessageAsync(
+                    conversationId,
+                    "assistant",
+                    missingText,
+                    "studio",
+                    "asset-resolver",
+                    0,
+                    cancellationToken
+                );
+                return Results.Ok(
+                    new ConversationChatResponse(
+                        conversationId,
+                        null,
+                        null,
+                        "studio",
+                        "asset-resolver",
+                        missingText,
+                        0,
+                        null,
+                        [],
+                        false,
+                        "NeedsClarification",
+                        [],
+                        route.Kind.ToString(),
+                        "NeedsClarification",
+                        [
+                            new SkillPlanClarification(
+                                "asset-not-found",
+                                missingText,
+                                "request.focus"
+                            )
+                        ],
+                        [],
+                        []
+                    )
+                );
+            }
+            if (
+                requestAsset is null
+                && workspaceContext.Asset is null
+                && workspaceContext.RequiresClarification
+            )
+            {
+                await conversations.UpdateSelectedAssetAsync(
+                    conversationId,
+                    null,
+                    cancellationToken
+                );
+            }
             StudioAssetRef? boundAsset =
                 requestAsset
                 ?? workspaceContext.Asset
-                ?? conversation.SelectedAsset;
+                ?? (
+                    workspaceContext.RequiresClarification
+                        ? null
+                        : conversation.SelectedAsset
+                );
             IReadOnlyList<StudioAssetRef> mentionedAssets =
                 boundAsset is not null
                     ? [boundAsset]
@@ -804,7 +876,7 @@ app.MapGet(
         try
         {
             return Results.Ok(
-                await workspace.SearchAssetsAsync(
+                await workspace.SearchAssetIdsAsync(
                     query,
                     limit ?? 20,
                     cancellationToken
@@ -1146,6 +1218,11 @@ static string BuildAssetClarificationText(
             : "请回复对应编号或 `Namespace:id`。"
     );
     return builder.ToString().Trim();
+}
+
+static string BuildMissingAssetText(IReadOnlyList<string> assetIds)
+{
+    return $"未找到资产 ID：{string.Join("、", assetIds)}。请确认 ID 是否正确，或提供 namespace。";
 }
 
 app.Run();

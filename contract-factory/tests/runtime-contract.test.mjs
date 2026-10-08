@@ -52,6 +52,18 @@ test("runtime-backed parameter contracts are exposed to the agent", async () => 
   assert.equal(byKey.get("Knockback").parameters[0].defaultValue, 0);
   assert.equal(byKey.get("Knockback").parameters[1].defaultValue, 15000);
   assert.equal(
+    byKey
+      .get("Damage")
+      .parameters.find((parameter) => parameter.key === "fixedDamage")
+      .conversionStatus,
+    "ConfigDeclared"
+  );
+  assert.equal(
+    registry.entityFields.find((field) => field.path === "Skill.cd_time")
+      .conversionStatus,
+    "WorkbookRoundTrip"
+  );
+  assert.equal(
     registry.conditions
       .find((action) => action.key === "HasBuff")
       .parameters[1].defaultValue,

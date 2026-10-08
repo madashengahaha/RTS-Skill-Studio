@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 0,
+  "auditVersion": "0.1.0",
+  "defaultStatus": "ConfigDeclared",
+  "statuses": [
+    "WorkbookRoundTrip",
+    "RuntimeCodeVerified",
+    "ConfigDeclared",
+    "Unverified"
+  ],
+  "entries": [
+    {
+      "category": "effect",
+      "actionKey": "Damage",
+      "parameterKey": "fixedDamage",
+      "scale": 10000,
+      "unit": null,
+      "status": "ConfigDeclared",
+      "evidence": [
+        "capability-registry.v0.json:Damage.fixedDamage"
+      ]
+    },
+    {
+      "category": "effect",
+      "actionKey": "Damage",
+      "parameterKey": "attackScale",
+      "scale": 10000,
+      "unit": null,
+      "status": "ConfigDeclared",
+      "evidence": [
+        "capability-registry.v0.json:Damage.attackScale"
+      ]
+    },
+    {
+      "category": "effect",
+      "actionKey": "DistanceScaledDamage",
+      "parameterKey": "minDistance",
+      "scale": 10000,
+      "unit": null,
+      "status": "ConfigDeclared",
+      "evidence": [
+        "capability-registry.v0.json:DistanceScaledDamage.minDistance"
+      ]
+    },
+    {
+      "category": "effect",
+      "actionKey": "DistanceScaledDamage",
+      "parameterKey": "maxDistance",
+      "scale": 10000,
+      "unit": null,
+      "status": "ConfigDeclared",
+      "evidence": [
+        "capability-registry.v0.json:DistanceScaledDamage.maxDistance"
+      ]
+    },
+    {
+      "category": "effect",
+      "actionKey": "DistanceScaledDamage",
+      "parameterKey": "minDamage",
+      "scale": 10000,
+      "unit": null,
+      "status": "ConfigDeclared",
+      "evidence": [
+        "capability-registry.v0.json:DistanceScaledDamage.minDamage"
+      ]
+    },
+    {
+      "category": "effect",
+      "actionKey": "DistanceScaledDamage",
+      "parameterKey": "maxDamage",
+      "scale": 10000,
+      "unit": null,
+      "status": "ConfigDeclared",
+      "evidence": [
+        "capability-registry.v0.json:DistanceScaledDamage.maxDamage"
+      ]
+    },
+    {
+      "category": "entity-field",
+      "path": "Skill.cd_time",
+      "scale": 1,
+      "unit": "ms",
+      "status": "WorkbookRoundTrip",
+      "evidence": [
+        "WorkbookPatchPhaseBTests.TemporaryApplyWritesCopyReReadsAndLeavesSourceUntouched",
+        "Phase B real workspace smoke: cooldown 8s -> cd_time 8000"
+      ]
+    },
+    {
+      "category": "entity-field",
+      "path": "Skill.duration",
+      "scale": 1,
+      "unit": "ms",
+      "status": "ConfigDeclared",
+      "evidence": [
+        "registry-foundation.v0.json:Skill.duration"
+      ]
+    }
+  ]
+}

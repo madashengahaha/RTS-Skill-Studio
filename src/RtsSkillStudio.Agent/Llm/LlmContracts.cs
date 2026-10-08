@@ -36,7 +36,8 @@ public sealed record LlmCompletionResult(
     string Provider,
     string Model,
     string Text,
-    long LatencyMs
+    long LatencyMs,
+    string? FinishReason = null
 );
 
 public sealed record LlmProviderDescriptor(

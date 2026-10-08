@@ -39,11 +39,18 @@
 
         <section class="asset-search-section">
           <div class="section-heading">
-            <span>资产</span>
+            <span>资产ID</span>
           </div>
           <label class="skill-search">
             <i data-lucide="search"></i>
-            <input id="assetSearch" type="search" placeholder="TbItem:100604" autocomplete="off" />
+            <input
+              id="assetSearch"
+              type="search"
+              placeholder="100700060"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              autocomplete="off"
+            />
           </label>
           <div id="assetSearchResults" class="asset-search-results"></div>
         </section>
@@ -60,35 +67,6 @@
           </div>
         </section>
 
-        <section class="side-section">
-          <div class="section-heading">
-            <span>模型</span>
-            <button id="refreshProviders" class="icon-button" type="button" title="刷新模型状态">
-              <i data-lucide="refresh-cw"></i>
-            </button>
-          </div>
-          <label class="field-label" for="providerSelect">Provider</label>
-          <select id="providerSelect" class="select-control" disabled>
-            <option>正在读取...</option>
-          </select>
-          <label class="field-label provider-field-label" for="modelSelect">Model</label>
-          <select id="modelSelect" class="select-control" disabled>
-            <option>跟随 Provider</option>
-          </select>
-          <label class="field-label provider-field-label" for="reasoningSelect">Reasoning</label>
-          <select id="reasoningSelect" class="select-control">
-            <option value="">Provider 默认</option>
-            <option value="none">关闭思考</option>
-            <option value="low">低</option>
-            <option value="medium">中</option>
-            <option value="high">高</option>
-          </select>
-          <div id="providerStatus" class="status-row">
-            <span class="status-dot is-pending"></span>
-            <span>检查连接中</span>
-          </div>
-        </section>
-
         <section class="side-section workspace-section">
           <div class="section-heading">
             <span>工作区</span>
@@ -99,6 +77,71 @@
             <span id="workspaceRevision"></span>
           </div>
         </section>
+
+        <div class="sidebar-settings">
+          <section
+            id="settingsPanel"
+            class="sidebar-settings-panel"
+            aria-label="设置"
+            hidden
+          >
+            <div class="settings-header">
+              <span>设置</span>
+            </div>
+            <div id="settingsTabs" class="settings-tabs" role="tablist" aria-label="设置分类">
+              <button
+                class="settings-tab is-active"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                data-settings-tab="model"
+              >
+                模型
+              </button>
+              <button id="refreshProviders" class="icon-button" type="button" title="刷新模型状态">
+                <i data-lucide="refresh-cw"></i>
+              </button>
+            </div>
+            <section
+              id="modelSettings"
+              class="settings-section"
+              role="tabpanel"
+              data-settings-content="model"
+            >
+              <label class="field-label" for="providerSelect">Provider</label>
+              <select id="providerSelect" class="select-control" disabled>
+                <option>正在读取...</option>
+              </select>
+              <label class="field-label provider-field-label" for="modelSelect">Model</label>
+              <select id="modelSelect" class="select-control" disabled>
+                <option>跟随 Provider</option>
+              </select>
+              <label class="field-label provider-field-label" for="reasoningSelect">Reasoning</label>
+              <select id="reasoningSelect" class="select-control">
+                <option value="">Provider 默认</option>
+                <option value="none">关闭思考</option>
+                <option value="low">低</option>
+                <option value="medium">中</option>
+                <option value="high">高</option>
+              </select>
+              <div id="providerStatus" class="status-row">
+                <span class="status-dot is-pending"></span>
+                <span>检查连接中</span>
+              </div>
+            </section>
+          </section>
+          <button
+            id="settingsToggle"
+            class="settings-toggle"
+            type="button"
+            title="设置"
+            aria-label="设置"
+            aria-controls="settingsPanel"
+            aria-expanded="false"
+          >
+            <i data-lucide="settings"></i>
+          </button>
+        </div>
       </aside>
 
       <div

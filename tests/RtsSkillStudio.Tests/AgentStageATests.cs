@@ -267,6 +267,7 @@ public sealed class AgentStageATests
             | 字段 | 值 |
             |---|---|
             | __remark_2（名称） | \u82F1\u96C4-\u5E7F\u5F79\u523A\u5BA2-\u7A92\u788D\u77ED\u5315 |
+            | **技能名称** | 英豪 - 雷火枪炮 - 榴霰弹 |
             """;
         string normalized = AgentToolProtocol.NormalizeAssetIdentityText(
             modelText,
@@ -277,6 +278,7 @@ public sealed class AgentStageATests
         Assert.DoesNotContain("瞬影短浴", normalized);
         Assert.DoesNotContain("瞬斩短弹", normalized);
         Assert.DoesNotContain("窒碍短匕首", normalized);
+        Assert.DoesNotContain("雷火枪炮", normalized);
         Assert.DoesNotContain(@"\u82F1", normalized);
         Assert.Contains("### 一、技能本体（TbSkill:100402）", normalized);
 
@@ -295,6 +297,23 @@ public sealed class AgentStageATests
         );
         Assert.Contains("权威实体名 (TbEntity: 9001)", related);
         Assert.DoesNotContain("错误名称", related);
+    }
+
+    [Fact]
+    public void ToolCallBlockRemovalHandlesNestedJson()
+    {
+        const string modelText = """
+            最终回答内容
+            ```json
+            {"type":"skill_studio_tool_calls","calls":[{"name":"get_graph","arguments":{"root":"TbSkill:100502","depth":32}}]}
+            ```
+            """;
+
+        string normalized = AgentToolProtocol.RemoveToolCallBlock(
+            modelText
+        );
+
+        Assert.Equal("最终回答内容", normalized);
     }
 
     [Fact]

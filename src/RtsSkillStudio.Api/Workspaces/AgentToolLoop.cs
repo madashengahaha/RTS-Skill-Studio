@@ -59,6 +59,8 @@ public sealed class AgentToolLoop(
         string currentMessage = message;
         long latencyMs = 0;
         LlmCompletionResult? finalResult = null;
+        var continuedAnswerParts = new List<string>();
+        int continuationCount = 0;
         bool userRecorded = false;
         AgentAssetIdentity? authoritativeIdentity = null;
 
@@ -231,6 +233,42 @@ public sealed class AgentToolLoop(
             );
             if (calls.Count == 0)
             {
+                if (IsLengthTruncated(result) && continuationCount < 2)
+                {
+                    continuedAnswerParts.Add(result.Text);
+                    if (!userRecorded)
+                    {
+                        baseHistory.Add(new LlmChatMessage("user", message));
+                        userRecorded = true;
+                    }
+                    baseHistory.Add(
+                        new LlmChatMessage("assistant", result.Text)
+                    );
+                    currentMessage =
+                        "继续输出上一条回答，从断点继续，不要重复已经输出的内容，也不要重新开始。";
+                    continuationCount += 1;
+                    finalResult = result;
+                    continue;
+                }
+
+                if (continuedAnswerParts.Count > 0)
+                {
+                    result = result with
+                    {
+                        Text = string.Concat(continuedAnswerParts)
+                            + result.Text
+                    };
+                }
+                if (IsLengthTruncated(result))
+                {
+                    result = result with
+                    {
+                        Text = result.Text
+                            + Environment.NewLine
+                            + Environment.NewLine
+                            + "（回答因模型输出长度限制被截断。）"
+                    };
+                }
                 finalResult = result;
                 break;
             }
@@ -531,6 +569,18 @@ public sealed class AgentToolLoop(
             selectedAsset,
             mentionedAssets
         );
+    }
+
+    private static bool IsLengthTruncated(LlmCompletionResult result)
+    {
+        return result.FinishReason?.Trim().ToLowerInvariant() switch
+        {
+            "length" => true,
+            "max_tokens" => true,
+            "max_output_tokens" => true,
+            "incomplete" => true,
+            _ => false
+        };
     }
 
     private static string BuildMissingParameterContractText(

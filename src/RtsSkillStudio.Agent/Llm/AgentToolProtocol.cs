@@ -858,7 +858,7 @@ public static partial class AgentToolProtocol
     }
 
     [GeneratedRegex(
-        @"```json\s*(?<json>\{.*?\})\s*```",
+        @"```json\s*(?<json>.*?)\s*```",
         RegexOptions.IgnoreCase | RegexOptions.Singleline
     )]
     private static partial Regex JsonFenceRegex();
@@ -877,7 +877,7 @@ public static partial class AgentToolProtocol
     private static partial Regex IdentityNameLineRegex();
 
     [GeneratedRegex(
-        @"(?im)^(?<prefix>\s*\|\s*`?(?:名称|技能名称|别名|备注|__remark_2|label|name)`?[^|]*\|\s*)(?<value>[^|]+?)(?<suffix>\s*\|.*)$"
+        @"(?im)^(?<prefix>\s*\|\s*`?(?:\*\*)?\s*(?:名称|技能名称|别名|备注|__remark_2|label|name)\s*(?:\*\*)?`?[^|]*\|\s*)(?<value>[^|]+?)(?<suffix>\s*\|.*)$"
     )]
     private static partial Regex IdentityNameTableRegex();
 

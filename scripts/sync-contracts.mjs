@@ -40,6 +40,7 @@ const files = [
   "config/read-only-tools.v0.json",
   "config/registry-foundation.v0.json",
   "config/semantic-overlay.v0.json",
+  "config/value-conversion-audit.v0.json",
   "config/workbook-patch-errors.v0.json",
   "evals/equivalence-rules.v0.json",
   "evals/golden-cases.schema.json",

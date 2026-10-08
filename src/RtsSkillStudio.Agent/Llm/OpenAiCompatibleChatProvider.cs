@@ -133,19 +133,27 @@ public sealed class OpenAiCompatibleChatProvider : ILlmProvider
             );
         }
 
-        var text = ExtractMessageText(responseBody);
+        string text = ExtractMessageText(
+            responseBody,
+            out string? finishReason
+        );
         stopwatch.Stop();
 
         return new LlmCompletionResult(
             Descriptor.Name,
             model,
             text,
-            stopwatch.ElapsedMilliseconds
+            stopwatch.ElapsedMilliseconds,
+            finishReason
         );
     }
 
-    private static string ExtractMessageText(string responseBody)
+    private static string ExtractMessageText(
+        string responseBody,
+        out string? finishReason
+    )
     {
+        finishReason = null;
         using var document = JsonDocument.Parse(responseBody);
         if (
             !document.RootElement.TryGetProperty("choices", out var choices)
@@ -159,6 +167,13 @@ public sealed class OpenAiCompatibleChatProvider : ILlmProvider
         }
 
         var firstChoice = choices[0];
+        if (
+            firstChoice.TryGetProperty("finish_reason", out var reason)
+            && reason.ValueKind == JsonValueKind.String
+        )
+        {
+            finishReason = reason.GetString();
+        }
         if (
             !firstChoice.TryGetProperty("message", out var message)
             || !message.TryGetProperty("content", out var content)

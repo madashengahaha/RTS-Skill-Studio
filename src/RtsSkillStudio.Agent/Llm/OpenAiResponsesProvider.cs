@@ -140,21 +140,46 @@ public sealed class OpenAiResponsesProvider : ILlmProvider
             );
         }
 
-        var text = ExtractOutputText(responseBody);
+        string text = ExtractOutputText(
+            responseBody,
+            out string? finishReason
+        );
         stopwatch.Stop();
 
         return new LlmCompletionResult(
             Descriptor.Name,
             model,
             text,
-            stopwatch.ElapsedMilliseconds
+            stopwatch.ElapsedMilliseconds,
+            finishReason
         );
     }
 
-    private static string ExtractOutputText(string responseBody)
+    private static string ExtractOutputText(
+        string responseBody,
+        out string? finishReason
+    )
     {
+        finishReason = null;
         using var document = JsonDocument.Parse(responseBody);
         var root = document.RootElement;
+        if (
+            root.TryGetProperty("status", out var status)
+            && status.ValueKind == JsonValueKind.String
+            && string.Equals(
+                status.GetString(),
+                "incomplete",
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
+        {
+            finishReason =
+                root.TryGetProperty("incomplete_details", out var details)
+                && details.TryGetProperty("reason", out var reason)
+                && reason.ValueKind == JsonValueKind.String
+                    ? reason.GetString()
+                    : "incomplete";
+        }
 
         if (
             root.TryGetProperty("output_text", out var outputText)

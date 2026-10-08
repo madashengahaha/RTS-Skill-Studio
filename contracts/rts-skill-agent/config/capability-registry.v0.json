@@ -864,7 +864,12 @@
         "冷却",
         "冷却时间"
       ],
-      "description": "技能冷却时间，Plan uses semantic seconds or milliseconds with an explicit unit and the compiler writes milliseconds."
+      "description": "技能冷却时间，Plan uses semantic seconds or milliseconds with an explicit unit and the compiler writes milliseconds.",
+      "conversionStatus": "WorkbookRoundTrip",
+      "conversionEvidence": [
+        "WorkbookPatchPhaseBTests.TemporaryApplyWritesCopyReReadsAndLeavesSourceUntouched",
+        "Phase B real workspace smoke: cooldown 8s -> cd_time 8000"
+      ]
     },
     {
       "path": "Skill.duration",
@@ -879,7 +884,11 @@
         "持续时间",
         "duration_ms"
       ],
-      "description": "技能持续时间，Plan uses semantic seconds or milliseconds with an explicit unit and the compiler writes milliseconds."
+      "description": "技能持续时间，Plan uses semantic seconds or milliseconds with an explicit unit and the compiler writes milliseconds.",
+      "conversionStatus": "ConfigDeclared",
+      "conversionEvidence": [
+        "registry-foundation.v0.json:Skill.duration"
+      ]
     },
     {
       "path": "Skill.consume_type",
@@ -1048,7 +1057,10 @@
           "scale": 10000,
           "repeating": true,
           "repeatStep": 2,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -1083,7 +1095,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 1,
@@ -1097,7 +1112,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 2,
@@ -1111,7 +1129,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 3,
@@ -1139,7 +1160,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 5,
@@ -1153,7 +1177,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -1218,7 +1245,12 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": [
+            "capability-registry.v0.json:Damage.fixedDamage"
+          ]
         },
         {
           "index": 3,
@@ -1232,7 +1264,12 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": [
+            "capability-registry.v0.json:Damage.attackScale"
+          ]
         }
       ],
       "semantic": {
@@ -1459,7 +1496,10 @@
           "scale": 10000,
           "repeating": true,
           "repeatStep": 2,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -1508,7 +1548,10 @@
           "scale": 10000,
           "repeating": true,
           "repeatStep": 2,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -1572,7 +1615,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 3,
@@ -1586,7 +1632,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 4,
@@ -1600,7 +1649,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 5,
@@ -1665,7 +1717,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 2,
@@ -1679,7 +1734,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 3,
@@ -1693,7 +1751,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -1978,7 +2039,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 2,
@@ -1992,7 +2056,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 3,
@@ -2006,7 +2073,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -2056,7 +2126,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 2,
@@ -2070,7 +2143,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 3,
@@ -2084,7 +2160,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -2134,7 +2213,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 2,
@@ -2148,7 +2230,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 3,
@@ -2162,7 +2247,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 4,
@@ -2242,7 +2330,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 2,
@@ -2256,7 +2347,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 3,
@@ -2270,7 +2364,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 4,
@@ -2298,7 +2395,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -2400,7 +2500,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 2,
@@ -2414,7 +2517,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 3,
@@ -2470,7 +2576,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -2522,7 +2631,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 2,
@@ -2536,7 +2648,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 3,
@@ -2550,7 +2665,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -2644,7 +2762,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 5,
@@ -2725,7 +2846,10 @@
           "repeating": false,
           "repeatStep": 0,
           "allowsMultipleEnumValues": false,
-          "defaultValue": -1
+          "defaultValue": -1,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 2,
@@ -2793,7 +2917,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 2,
@@ -2807,7 +2934,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 3,
@@ -2821,7 +2951,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 4,
@@ -2849,7 +2982,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -2985,7 +3121,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 1,
@@ -3066,7 +3205,10 @@
           "repeating": false,
           "repeatStep": 0,
           "allowsMultipleEnumValues": false,
-          "defaultValue": 15000
+          "defaultValue": 15000,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 2,
@@ -3146,7 +3288,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -3195,7 +3340,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -3259,7 +3407,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -3323,7 +3474,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -3387,7 +3541,12 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": [
+            "capability-registry.v0.json:DistanceScaledDamage.minDistance"
+          ]
         },
         {
           "index": 3,
@@ -3401,7 +3560,12 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": [
+            "capability-registry.v0.json:DistanceScaledDamage.maxDistance"
+          ]
         },
         {
           "index": 4,
@@ -3415,7 +3579,12 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": [
+            "capability-registry.v0.json:DistanceScaledDamage.minDamage"
+          ]
         },
         {
           "index": 5,
@@ -3429,7 +3598,12 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": [
+            "capability-registry.v0.json:DistanceScaledDamage.maxDamage"
+          ]
         }
       ],
       "semantic": {
@@ -3493,7 +3667,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -3663,7 +3840,10 @@
           "scale": 10000,
           "repeating": true,
           "repeatStep": 2,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -3714,7 +3894,10 @@
           "scale": 10000,
           "repeating": true,
           "repeatStep": 2,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -3781,7 +3964,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         },
         {
           "index": 3,
@@ -4015,7 +4201,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {
@@ -4063,7 +4252,10 @@
           "scale": 10000,
           "repeating": false,
           "repeatStep": 0,
-          "allowsMultipleEnumValues": false
+          "allowsMultipleEnumValues": false,
+          "unit": null,
+          "conversionStatus": "ConfigDeclared",
+          "conversionEvidence": []
         }
       ],
       "semantic": {

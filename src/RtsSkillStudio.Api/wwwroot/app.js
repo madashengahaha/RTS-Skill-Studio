@@ -55,6 +55,9 @@ const elements = {
   reasoningSelect: document.querySelector("#reasoningSelect"),
   providerStatus: document.querySelector("#providerStatus"),
   refreshProviders: document.querySelector("#refreshProviders"),
+  settingsToggle: document.querySelector("#settingsToggle"),
+  settingsPanel: document.querySelector("#settingsPanel"),
+  settingsTabs: document.querySelector("#settingsTabs"),
   newConversation: document.querySelector("#newConversation"),
   conversationList: document.querySelector("#conversationList"),
   messages: document.querySelector("#messages"),
@@ -206,6 +209,182 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function renderInlineMarkdown(value) {
+  const codeTokens = [];
+  let html = escapeHtml(value).replace(/`([^`]+)`/g, (_, code) => {
+    const token = `\u0000${codeTokens.length}\u0000`;
+    codeTokens.push(`<code>${code}</code>`);
+    return token;
+  });
+  html = html
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/__([^_]+)__/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
+  return html.replace(/\u0000(\d+)\u0000/g, (_, index) => codeTokens[index]);
+}
+
+function splitMarkdownTableRow(line) {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
+}
+
+function isMarkdownTableSeparator(line) {
+  const cells = splitMarkdownTableRow(line);
+  return (
+    cells.length > 0 &&
+    cells.every((cell) => /^:?-{3,}:?$/.test(cell))
+  );
+}
+
+function renderMarkdown(content) {
+  const lines = String(content).replace(/\r\n?/g, "\n").split("\n");
+  const output = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    if (!line.trim()) {
+      index += 1;
+      continue;
+    }
+
+    const fence = line.match(/^```[A-Za-z0-9_-]*\s*$/);
+    if (fence) {
+      const code = [];
+      index += 1;
+      while (index < lines.length && !lines[index].startsWith("```")) {
+        code.push(lines[index]);
+        index += 1;
+      }
+      if (index < lines.length) {
+        index += 1;
+      }
+      output.push(`<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`);
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,6})\s*(.+)$/);
+    if (heading) {
+      const level = heading[1].length;
+      output.push(
+        `<h${level}>${renderInlineMarkdown(heading[2].trim())}</h${level}>`,
+      );
+      index += 1;
+      continue;
+    }
+
+    if (/^\s*(?:-{3,}|\*{3,})\s*$/.test(line)) {
+      output.push("<hr />");
+      index += 1;
+      continue;
+    }
+
+    if (
+      index + 1 < lines.length &&
+      line.includes("|") &&
+      isMarkdownTableSeparator(lines[index + 1])
+    ) {
+      const headers = splitMarkdownTableRow(line);
+      index += 2;
+      const rows = [];
+      while (
+        index < lines.length &&
+        lines[index].trim() &&
+        lines[index].includes("|")
+      ) {
+        rows.push(splitMarkdownTableRow(lines[index]));
+        index += 1;
+      }
+      output.push(`
+        <div class="message-table-wrap">
+          <table>
+            <thead>
+              <tr>${headers
+                .map((cell) => `<th>${renderInlineMarkdown(cell)}</th>`)
+                .join("")}</tr>
+            </thead>
+            <tbody>
+              ${rows
+                .map(
+                  (row) => `<tr>${headers
+                    .map(
+                      (_, cellIndex) =>
+                        `<td>${renderInlineMarkdown(row[cellIndex] || "")}</td>`,
+                    )
+                    .join("")}</tr>`,
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+      `);
+      continue;
+    }
+
+    if (/^\s*[-*+]\s+/.test(line)) {
+      const items = [];
+      while (index < lines.length && /^\s*[-*+]\s+/.test(lines[index])) {
+        items.push(
+          renderInlineMarkdown(lines[index].replace(/^\s*[-*+]\s+/, "")),
+        );
+        index += 1;
+      }
+      output.push(
+        `<ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`,
+      );
+      continue;
+    }
+
+    if (/^\s*\d+[.)]\s+/.test(line)) {
+      const items = [];
+      while (index < lines.length && /^\s*\d+[.)]\s+/.test(lines[index])) {
+        items.push(
+          renderInlineMarkdown(lines[index].replace(/^\s*\d+[.)]\s+/, "")),
+        );
+        index += 1;
+      }
+      output.push(
+        `<ol>${items.map((item) => `<li>${item}</li>`).join("")}</ol>`,
+      );
+      continue;
+    }
+
+    if (/^\s*>\s?/.test(line)) {
+      const quoted = [];
+      while (index < lines.length && /^\s*>\s?/.test(lines[index])) {
+        quoted.push(lines[index].replace(/^\s*>\s?/, ""));
+        index += 1;
+      }
+      output.push(`<blockquote>${renderMarkdown(quoted.join("\n"))}</blockquote>`);
+      continue;
+    }
+
+    const paragraph = [line];
+    index += 1;
+    while (
+      index < lines.length &&
+      lines[index].trim() &&
+      !/^(#{1,6})\s*/.test(lines[index]) &&
+      !/^\s*[-*+]\s+/.test(lines[index]) &&
+      !/^\s*\d+[.)]\s+/.test(lines[index]) &&
+      !/^\s*>\s?/.test(lines[index]) &&
+      !lines[index].startsWith("```")
+    ) {
+      paragraph.push(lines[index]);
+      index += 1;
+    }
+    output.push(
+      `<p>${paragraph.map(renderInlineMarkdown).join("<br />")}</p>`,
+    );
+  }
+
+  return output.join("");
 }
 
 function showToast(message, kind = "info") {
@@ -389,9 +568,11 @@ function appendMessage({ role, content, latencyMs, error = false }) {
         <span>${roleName}</span>
         ${latency}
       </div>
-      <div class="message-content">${escapeHtml(
-        role === "assistant" ? stripPlanBlock(content) : content,
-      )}</div>
+      <div class="message-content">${
+        role === "assistant" && !error
+          ? renderMarkdown(stripPlanBlock(content))
+          : escapeHtml(content)
+      }</div>
     </div>
   `;
 
@@ -1509,7 +1690,7 @@ function renderConversationList() {
 function renderAssetSearchResults(results) {
   if (!results.length) {
     elements.assetSearchResults.innerHTML =
-      '<div class="asset-search-empty">没有匹配资产</div>';
+      '<div class="asset-search-empty">没有匹配的资产ID</div>';
     return;
   }
 
@@ -1531,12 +1712,12 @@ function renderAssetSearchResults(results) {
     .join("");
 }
 
-async function searchAssets(query) {
+async function searchAssetIds(query) {
   const response = await fetch(
     `/api/v1/assets/search?query=${encodeURIComponent(query)}&limit=20`,
   );
   if (!response.ok) {
-    throw new Error(`资产检索失败：HTTP ${response.status}`);
+    throw new Error(`资产ID检索失败：HTTP ${response.status}`);
   }
 
   renderAssetSearchResults(await response.json());
@@ -1949,6 +2130,59 @@ elements.reasoningSelect.addEventListener("change", (event) => {
 
 elements.refreshProviders.addEventListener("click", loadProviders);
 
+function setModelSettingsOpen(open) {
+  elements.settingsPanel.hidden = !open;
+  elements.settingsToggle.classList.toggle("is-active", open);
+  elements.settingsToggle.setAttribute("aria-expanded", String(open));
+}
+
+elements.settingsToggle.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setModelSettingsOpen(elements.settingsPanel.hidden);
+});
+
+document.addEventListener("click", (event) => {
+  if (
+    elements.settingsPanel.hidden ||
+    elements.settingsPanel.contains(event.target) ||
+    elements.settingsToggle.contains(event.target)
+  ) {
+    return;
+  }
+
+  setModelSettingsOpen(false);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !elements.settingsPanel.hidden) {
+    setModelSettingsOpen(false);
+    elements.settingsToggle.focus();
+  }
+});
+
+elements.settingsTabs.addEventListener("click", (event) => {
+  const tab = event.target.closest("[data-settings-tab]");
+  if (!tab || tab.getAttribute("aria-selected") === "true") {
+    return;
+  }
+
+  const selected = tab.dataset.settingsTab;
+  elements.settingsTabs
+    .querySelectorAll("[data-settings-tab]")
+    .forEach((candidate) => {
+      candidate.classList.toggle("is-active", candidate === tab);
+      candidate.setAttribute(
+        "aria-selected",
+        String(candidate === tab),
+      );
+    });
+  elements.settingsPanel
+    .querySelectorAll("[data-settings-content]")
+    .forEach((section) => {
+      section.hidden = section.dataset.settingsContent !== selected;
+    });
+});
+
 elements.newConversation.addEventListener("click", async () => {
   try {
     await createConversation();
@@ -2014,7 +2248,11 @@ async function deleteConversation(conversationId) {
 }
 
 elements.assetSearch.addEventListener("input", (event) => {
-  if (!event.target.value.trim()) {
+  const digitsOnly = event.target.value.replace(/\D+/g, "");
+  if (digitsOnly !== event.target.value) {
+    event.target.value = digitsOnly;
+  }
+  if (!digitsOnly) {
     elements.assetSearchResults.innerHTML = "";
   }
 });
@@ -2024,26 +2262,13 @@ elements.assetSearch.addEventListener("keydown", (event) => {
     return;
   }
 
-  const value = event.target.value.trim();
+  const value = event.target.value.replace(/\D+/g, "");
   if (!value) {
     return;
   }
 
-  const match = value
-    .match(
-      /^(Tb[A-Za-z]+|EffectGroup|ConditionGroup|Skill|Item|Effect|Buff|Bullet|Search|Trap|Equipment)\s*[:：]\s*(\d+)$/i,
-    );
-  if (match) {
-    event.preventDefault();
-    loadAssetChain(match[1], Number(match[2]), true).catch((error) =>
-      showToast(error.message, "error"),
-    );
-    elements.assetSearchResults.innerHTML = "";
-    return;
-  }
-
   event.preventDefault();
-  searchAssets(value).catch((error) =>
+  searchAssetIds(value).catch((error) =>
     showToast(error.message, "error"),
   );
 });

@@ -223,6 +223,17 @@
           "type": "string",
           "minLength": 1
         },
+        "conversionStatus": {
+          "$ref": "#/$defs/ConversionStatus"
+        },
+        "conversionEvidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
         "minimum": {
           "type": "number"
         },
@@ -346,6 +357,20 @@
         },
         "scale": {
           "type": ["integer", "null"]
+        },
+        "unit": {
+          "type": ["string", "null"]
+        },
+        "conversionStatus": {
+          "$ref": "#/$defs/ConversionStatus"
+        },
+        "conversionEvidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
         },
         "repeating": {
           "type": "boolean"
@@ -695,6 +720,14 @@
           "type": "string"
         }
       }
+    },
+    "ConversionStatus": {
+      "enum": [
+        "WorkbookRoundTrip",
+        "RuntimeCodeVerified",
+        "ConfigDeclared",
+        "Unverified"
+      ]
     }
   }
 }

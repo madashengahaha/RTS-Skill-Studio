@@ -20,6 +20,7 @@ const requiredFiles = [
   "config/default-value-contract.v0.json",
   "config/default-mechanism-contract.v0.json",
   "config/read-only-tools.v0.json",
+  "config/value-conversion-audit.v0.json",
   "config/workbook-patch-errors.v0.json",
   "evals/golden-cases.schema.json",
   "evals/golden-cases.v0.json",
@@ -41,6 +42,8 @@ const planSchema = loaded["contracts/skill-config-plan.schema.json"];
 const patchSchema = loaded["contracts/workbook-patch.schema.json"];
 const patchValidationSchema =
   loaded["contracts/workbook-patch-validation.schema.json"];
+const valueConversionAudit =
+  loaded["config/value-conversion-audit.v0.json"];
 
 assert(registry.schemaVersion === 0, "Registry schemaVersion must be 0.");
 assert(
@@ -121,8 +124,83 @@ for (const field of registry.entityFields) {
       Number.isInteger(field.scale) && field.scale > 0,
       `Entity field ${field.path} scale must be a positive integer.`
     );
+    assert(
+      typeof field.conversionStatus === "string",
+      `Entity field ${field.path} must declare conversionStatus.`
+    );
   }
 }
+
+assert(
+  valueConversionAudit.schemaVersion === 0,
+  "Value conversion audit schemaVersion must be 0."
+);
+const conversionStatuses = new Set(valueConversionAudit.statuses);
+assert(
+  conversionStatuses.has(valueConversionAudit.defaultStatus),
+  "Value conversion audit defaultStatus is invalid."
+);
+const conversionAuditKeys = new Set();
+for (const entry of valueConversionAudit.entries) {
+  assert(
+    conversionStatuses.has(entry.status),
+    `Value conversion audit has invalid status ${entry.status}.`
+  );
+  assert(
+    Number.isInteger(entry.scale) && entry.scale > 0,
+    "Value conversion audit scale must be a positive integer."
+  );
+  assert(
+    Array.isArray(entry.evidence),
+    "Value conversion audit evidence must be an array."
+  );
+  const key =
+    entry.category === "entity-field"
+      ? `entity-field:${entry.path}`
+      : `${entry.category}:${entry.actionKey}:${entry.parameterKey}`;
+  assert(
+    !conversionAuditKeys.has(key),
+    `Value conversion audit entry is duplicated: ${key}.`
+  );
+  conversionAuditKeys.add(key);
+}
+
+for (const [category, actions] of [
+  ["effect", registry.effects],
+  ["condition", registry.conditions]
+]) {
+  for (const action of actions) {
+    for (const parameter of action.parameters) {
+      if (Number.isInteger(parameter.scale)) {
+        assert(
+          conversionStatuses.has(parameter.conversionStatus),
+          `${category}.${action.key}.${parameter.key} has invalid conversionStatus.`
+        );
+        assert(
+          Array.isArray(parameter.conversionEvidence),
+          `${category}.${action.key}.${parameter.key} conversionEvidence must be an array.`
+        );
+      }
+    }
+  }
+}
+
+const damageFixedDamage = registry.effects
+  .find((action) => action.key === "Damage")
+  ?.parameters.find((parameter) => parameter.key === "fixedDamage");
+assert(
+  damageFixedDamage?.scale === 10000 &&
+    damageFixedDamage.conversionStatus === "ConfigDeclared",
+  "Damage.fixedDamage must remain config-declared until runtime code is audited."
+);
+const skillCooldown = registry.entityFields.find(
+  (field) => field.path === "Skill.cd_time"
+);
+assert(
+  skillCooldown?.scale === 1 &&
+    skillCooldown.conversionStatus === "WorkbookRoundTrip",
+  "Skill.cd_time must be marked WorkbookRoundTrip."
+);
 
 for (const rule of defaults.conversionRules) {
   assert(

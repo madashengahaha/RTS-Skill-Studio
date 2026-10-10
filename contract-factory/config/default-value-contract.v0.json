@@ -1,38 +1,74 @@
 {
   "schemaVersion": 0,
-  "contractVersion": "0.1.0",
+  "contractVersion": "0.2.0",
   "conversionRules": [
     {
       "key": "SecondsToMilliseconds",
       "inputUnit": "second",
       "outputUnit": "millisecond",
       "factor": 1000,
-      "inputAliases": ["s", "sec", "second", "seconds", "秒"],
-      "outputAliases": ["ms", "millisecond", "milliseconds", "毫秒"]
+      "inputAliases": [
+        "s",
+        "sec",
+        "second",
+        "seconds",
+        "秒"
+      ],
+      "outputAliases": [
+        "ms",
+        "millisecond",
+        "milliseconds",
+        "毫秒"
+      ]
     },
     {
       "key": "PercentToBasisPoints",
       "inputUnit": "percent",
       "outputUnit": "basis-point",
       "factor": 100,
-      "inputAliases": ["pct", "percent", "%", "百分比"],
-      "outputAliases": ["bp", "basis-point", "basisPoints", "基点"]
+      "inputAliases": [
+        "pct",
+        "percent",
+        "%",
+        "百分比"
+      ],
+      "outputAliases": [
+        "bp",
+        "basis-point",
+        "basisPoints",
+        "基点"
+      ]
     },
     {
       "key": "RatioToBasisPoints",
       "inputUnit": "ratio",
       "outputUnit": "basis-point",
       "factor": 10000,
-      "inputAliases": ["ratio", "倍率"],
-      "outputAliases": ["bp", "basis-point", "basisPoints", "基点"]
+      "inputAliases": [
+        "ratio",
+        "倍率"
+      ],
+      "outputAliases": [
+        "bp",
+        "basis-point",
+        "basisPoints",
+        "基点"
+      ]
     },
     {
       "key": "WorldUnitToFixed",
       "inputUnit": "world-unit",
       "outputUnit": "fixed",
       "factor": 10000,
-      "inputAliases": ["world-unit", "worldUnit", "世界单位"],
-      "outputAliases": ["fixed", "定点"]
+      "inputAliases": [
+        "world-unit",
+        "worldUnit",
+        "世界单位"
+      ],
+      "outputAliases": [
+        "fixed",
+        "定点"
+      ]
     }
   ],
   "fields": [
@@ -86,7 +122,9 @@
     {
       "path": "Skill.trigger_array",
       "scope": "CreateSkill",
-      "default": [0],
+      "default": [
+        0
+      ],
       "source": "hero-authoring-schema.creationTemplates.hero-skill"
     },
     {
@@ -111,13 +149,17 @@
       "path": "Buff.duration",
       "scope": "PeriodicDamageWithoutExplicitDuration",
       "default": null,
-      "askWhen": ["周期伤害未给持续时间时不得静默套用"]
+      "askWhen": [
+        "周期伤害未给持续时间时不得静默套用"
+      ]
     },
     {
       "path": "Buff.interval",
       "scope": "PeriodicDamageWithoutExplicitInterval",
       "default": null,
-      "askWhen": ["周期伤害未给间隔或每秒频率时不得静默套用"]
+      "askWhen": [
+        "周期伤害未给间隔或每秒频率时不得静默套用"
+      ]
     }
   ],
   "askPolicy": [
@@ -137,5 +179,767 @@
       "when": "字段不在免确认白名单且没有用户输入",
       "action": "LeaveBlankAndMark"
     }
-  ]
+  ],
+  "creation": {
+    "schemaVersion": 0,
+    "maximumNodes": 128,
+    "allocationPolicy": "MaxPlusOne",
+    "cyclePolicy": "Reject",
+    "entities": [
+      {
+        "entityKey": "Skill",
+        "namespace": "TbSkill",
+        "identityField": "Id",
+        "allocation": "MaxPlusOne",
+        "root": true,
+        "fields": [
+          {
+            "key": "Id",
+            "semanticName": "Id",
+            "rawType": "int",
+            "blankAllowed": false
+          },
+          {
+            "key": "first_cd_time",
+            "semanticName": "first_cd_time",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "cd_time",
+            "semanticName": "cooldown",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "probability",
+            "semanticName": "probability",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "skill_type",
+            "semanticName": "skill_type",
+            "rawType": "ESkillType",
+            "blankAllowed": true
+          },
+          {
+            "key": "consume_type",
+            "semanticName": "consume_type",
+            "rawType": "EConsumeType",
+            "blankAllowed": true
+          },
+          {
+            "key": "consume_param",
+            "semanticName": "consume_param",
+            "rawType": "array,int",
+            "blankAllowed": true
+          },
+          {
+            "key": "effect_id",
+            "semanticName": "effect_id",
+            "rawType": "int32",
+            "blankAllowed": true
+          },
+          {
+            "key": "ani_name_pre",
+            "semanticName": "ani_name_pre",
+            "rawType": "string",
+            "blankAllowed": true
+          },
+          {
+            "key": "ani_name",
+            "semanticName": "ani_name",
+            "rawType": "string",
+            "blankAllowed": true
+          },
+          {
+            "key": "ani_name_after",
+            "semanticName": "ani_name_after",
+            "rawType": "string",
+            "blankAllowed": true
+          },
+          {
+            "key": "duration_pre",
+            "semanticName": "duration_pre",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "duration",
+            "semanticName": "duration",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "duration_after",
+            "semanticName": "duration_after",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "trigger_array",
+            "semanticName": "trigger_array",
+            "rawType": "array,int",
+            "blankAllowed": true
+          },
+          {
+            "key": "pre_effect_group_id",
+            "semanticName": "pre_effect_group_id",
+            "rawType": "int",
+            "blankAllowed": true,
+            "referenceTarget": "EffectGroup",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "effect_group_id",
+            "semanticName": "effect_group_id",
+            "rawType": "int",
+            "blankAllowed": true,
+            "referenceTarget": "EffectGroup",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "post_effect_group_id",
+            "semanticName": "post_effect_group_id",
+            "rawType": "int",
+            "blankAllowed": true,
+            "referenceTarget": "EffectGroup",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "release_condition_type",
+            "semanticName": "release_condition_type",
+            "rawType": "EGroupCompletedType",
+            "blankAllowed": true
+          },
+          {
+            "key": "condition_id_array",
+            "semanticName": "condition_id_array",
+            "rawType": "array,int",
+            "blankAllowed": true,
+            "referenceTarget": "TbCondition",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "search_real_time",
+            "semanticName": "search_real_time",
+            "rawType": "bool",
+            "blankAllowed": true
+          },
+          {
+            "key": "search_target",
+            "semanticName": "search_target",
+            "rawType": "int32#ref=TbSearch?",
+            "blankAllowed": true,
+            "referenceTarget": "TbSearch",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          }
+        ],
+        "initialFields": {
+          "skill_type": [
+            "自动"
+          ],
+          "probability": [
+            "10000"
+          ],
+          "first_cd_time": [
+            "0"
+          ],
+          "cd_time": [
+            "0"
+          ],
+          "duration_pre": [
+            "0"
+          ],
+          "duration": [
+            "0"
+          ],
+          "duration_after": [
+            "0"
+          ],
+          "trigger_array": [
+            "0"
+          ],
+          "search_real_time": [
+            "false"
+          ]
+        },
+        "defaultSource": "hero-authoring-schema.creationTemplates.hero-skill",
+        "executionFields": [
+          "pre_effect_group_id",
+          "effect_group_id",
+          "post_effect_group_id"
+        ]
+      },
+      {
+        "entityKey": "Effect",
+        "namespace": "TbEffect",
+        "identityField": "Id",
+        "allocation": "MaxPlusOne",
+        "root": false,
+        "fields": [
+          {
+            "key": "Id",
+            "semanticName": "Id",
+            "rawType": "int",
+            "blankAllowed": false
+          },
+          {
+            "key": "name",
+            "semanticName": "name",
+            "rawType": "string",
+            "blankAllowed": true
+          },
+          {
+            "key": "group_id",
+            "semanticName": "group_id",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "success_conds_group_id",
+            "semanticName": "success_conds_group_id",
+            "rawType": "array,int",
+            "blankAllowed": true,
+            "referenceTarget": "ConditionGroup",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "failure_conds_group_id",
+            "semanticName": "failure_conds_group_id",
+            "rawType": "array,int",
+            "blankAllowed": true,
+            "referenceTarget": "ConditionGroup",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "fx",
+            "semanticName": "fx",
+            "rawType": "int#ref=TbSkillResource?",
+            "blankAllowed": true,
+            "referenceTarget": "TbSkillResource",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "action_type",
+            "semanticName": "action_type",
+            "rawType": "EffectActionType",
+            "blankAllowed": true
+          },
+          {
+            "key": "action_param",
+            "semanticName": "action_param",
+            "rawType": "array,int",
+            "blankAllowed": true
+          }
+        ],
+        "initialFields": {},
+        "defaultSource": "Explicit optional-field blank policy; no behavioral defaults",
+        "actionCategory": "effect",
+        "actionField": "action_type",
+        "parameterField": "action_param",
+        "groupField": "group_id",
+        "groupNamespace": "EffectGroup"
+      },
+      {
+        "entityKey": "Search",
+        "namespace": "TbSearch",
+        "identityField": "Id",
+        "allocation": "MaxPlusOne",
+        "root": false,
+        "fields": [
+          {
+            "key": "Id",
+            "semanticName": "Id",
+            "rawType": "int",
+            "blankAllowed": false
+          },
+          {
+            "key": "shape",
+            "semanticName": "shape",
+            "rawType": "ESearchTargetShape",
+            "blankAllowed": true
+          },
+          {
+            "key": "shape_param",
+            "semanticName": "shape_param",
+            "rawType": "array,ValueSource",
+            "blankAllowed": true
+          },
+          {
+            "key": "team",
+            "semanticName": "team",
+            "rawType": "ESearchTargetTeam",
+            "blankAllowed": true
+          },
+          {
+            "key": "type",
+            "semanticName": "type",
+            "rawType": "EUnitType",
+            "blankAllowed": true
+          },
+          {
+            "key": "included_flag",
+            "semanticName": "included_flag",
+            "rawType": "array,FlagLabel",
+            "blankAllowed": true
+          },
+          {
+            "key": "excluded_flag",
+            "semanticName": "excluded_flag",
+            "rawType": "array,FlagLabel",
+            "blankAllowed": true
+          },
+          {
+            "key": "table_id",
+            "semanticName": "table_id",
+            "rawType": "array,int",
+            "blankAllowed": true
+          },
+          {
+            "key": "count",
+            "semanticName": "count",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "add_count_prop",
+            "semanticName": "add_count_prop",
+            "rawType": "NumericType",
+            "blankAllowed": true
+          },
+          {
+            "key": "prioritys",
+            "semanticName": "prioritys",
+            "rawType": "array, ESearchTargetPriority",
+            "blankAllowed": true
+          }
+        ],
+        "initialFields": {},
+        "defaultSource": "Explicit optional-field blank policy; no behavioral defaults"
+      },
+      {
+        "entityKey": "Buff",
+        "namespace": "TbBuff",
+        "identityField": "Id",
+        "allocation": "MaxPlusOne",
+        "root": false,
+        "fields": [
+          {
+            "key": "Id",
+            "semanticName": "Id",
+            "rawType": "int",
+            "blankAllowed": false
+          },
+          {
+            "key": "name",
+            "semanticName": "name",
+            "rawType": "string",
+            "blankAllowed": true
+          },
+          {
+            "key": "status_effect_type",
+            "semanticName": "status_effect_type",
+            "rawType": "ESkillBuffType",
+            "blankAllowed": true
+          },
+          {
+            "key": "can_dead_clear",
+            "semanticName": "can_dead_clear",
+            "rawType": "bool",
+            "blankAllowed": true
+          },
+          {
+            "key": "can_replace",
+            "semanticName": "can_replace",
+            "rawType": "bool",
+            "blankAllowed": true
+          },
+          {
+            "key": "overlap_type",
+            "semanticName": "overlap_type",
+            "rawType": "ESkillBuffOverlapType",
+            "blankAllowed": true
+          },
+          {
+            "key": "duration",
+            "semanticName": "duration",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "delay",
+            "semanticName": "delay",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "interval",
+            "semanticName": "interval",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "max_layer",
+            "semanticName": "max_layer",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "effect_id",
+            "semanticName": "effect_id",
+            "rawType": "int#ref=TbSkillResource?",
+            "blankAllowed": true,
+            "referenceTarget": "TbSkillResource",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "param",
+            "semanticName": "param",
+            "rawType": "map,string,int",
+            "blankAllowed": true
+          },
+          {
+            "key": "scale",
+            "semanticName": "scale",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "enter_effect",
+            "semanticName": "enter_effect",
+            "rawType": "int",
+            "blankAllowed": true,
+            "referenceTarget": "EffectGroup",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "interval_effect",
+            "semanticName": "interval_effect",
+            "rawType": "int",
+            "blankAllowed": true,
+            "referenceTarget": "EffectGroup",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "finish_effect",
+            "semanticName": "finish_effect",
+            "rawType": "int",
+            "blankAllowed": true,
+            "referenceTarget": "EffectGroup",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          }
+        ],
+        "initialFields": {},
+        "defaultSource": "Explicit optional-field blank policy; no behavioral defaults"
+      },
+      {
+        "entityKey": "Bullet",
+        "namespace": "TbBullet",
+        "identityField": "Id",
+        "allocation": "MaxPlusOne",
+        "root": false,
+        "fields": [
+          {
+            "key": "Id",
+            "semanticName": "Id",
+            "rawType": "int",
+            "blankAllowed": false
+          },
+          {
+            "key": "name",
+            "semanticName": "name",
+            "rawType": "string",
+            "blankAllowed": true
+          },
+          {
+            "key": "collision_radius",
+            "semanticName": "collision_radius",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "hor_speed",
+            "semanticName": "hor_speed",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "control_factor",
+            "semanticName": "control_factor",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "control_height",
+            "semanticName": "control_height",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "life",
+            "semanticName": "life",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "effect_group_id",
+            "semanticName": "effect_group_id",
+            "rawType": "int",
+            "blankAllowed": true,
+            "referenceTarget": "EffectGroup",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "resource_id",
+            "semanticName": "resource_id",
+            "rawType": "int#ref=TbSkillResource",
+            "blankAllowed": true,
+            "referenceTarget": "TbSkillResource",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "finish_effect_id",
+            "semanticName": "finish_effect_id",
+            "rawType": "int",
+            "blankAllowed": true,
+            "referenceTarget": "EffectGroup",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          }
+        ],
+        "initialFields": {},
+        "defaultSource": "Explicit optional-field blank policy; no behavioral defaults"
+      },
+      {
+        "entityKey": "Condition",
+        "namespace": "TbCondition",
+        "identityField": "Id",
+        "allocation": "MaxPlusOne",
+        "root": false,
+        "fields": [
+          {
+            "key": "Id",
+            "semanticName": "Id",
+            "rawType": "int",
+            "blankAllowed": false
+          },
+          {
+            "key": "group_id",
+            "semanticName": "group_id",
+            "rawType": "int",
+            "blankAllowed": true
+          },
+          {
+            "key": "action_type",
+            "semanticName": "action_type",
+            "rawType": "EConditionType",
+            "blankAllowed": true
+          },
+          {
+            "key": "action_param",
+            "semanticName": "action_param",
+            "rawType": "array,int",
+            "blankAllowed": true
+          }
+        ],
+        "initialFields": {},
+        "defaultSource": "Explicit optional-field blank policy; no behavioral defaults",
+        "actionCategory": "condition",
+        "actionField": "action_type",
+        "parameterField": "action_param",
+        "groupField": "group_id",
+        "groupNamespace": "ConditionGroup"
+      },
+      {
+        "entityKey": "Trap",
+        "namespace": "TbTrap",
+        "identityField": "Id",
+        "allocation": "MaxPlusOne",
+        "root": false,
+        "fields": [
+          {
+            "key": "Id",
+            "semanticName": "Id",
+            "rawType": "int",
+            "blankAllowed": false
+          },
+          {
+            "key": "model",
+            "semanticName": "model",
+            "rawType": "int#ref=TbResource",
+            "blankAllowed": true,
+            "referenceTarget": "TbResource",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "props",
+            "semanticName": "props",
+            "rawType": "map,NumericType,int",
+            "blankAllowed": true
+          },
+          {
+            "key": "buffs",
+            "semanticName": "buffs",
+            "rawType": "array,int#ref=TbBuff",
+            "blankAllowed": true,
+            "referenceTarget": "TbBuff",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "function_component",
+            "semanticName": "function_component",
+            "rawType": "array,int#ref=TbFunctionComponent?",
+            "blankAllowed": true,
+            "referenceTarget": "TbFunctionComponent",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "viewfunction_component",
+            "semanticName": "viewfunction_component",
+            "rawType": "array,int#ref=TbViewFunctionComponent?",
+            "blankAllowed": true,
+            "referenceTarget": "TbViewFunctionComponent",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "ai_name",
+            "semanticName": "ai_name",
+            "rawType": "string",
+            "blankAllowed": true
+          },
+          {
+            "key": "skills",
+            "semanticName": "skills",
+            "rawType": "array,int#ref=TbSkill",
+            "blankAllowed": true,
+            "referenceTarget": "TbSkill",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          },
+          {
+            "key": "search_target",
+            "semanticName": "search_target",
+            "rawType": "int32#ref=TbSearch?",
+            "blankAllowed": true,
+            "referenceTarget": "TbSearch",
+            "emptyReferenceValues": [
+              "",
+              "0",
+              "null"
+            ]
+          }
+        ],
+        "initialFields": {},
+        "defaultSource": "Explicit optional-field blank policy; no behavioral defaults"
+      }
+    ]
+  },
+  "editing": {
+    "schemaVersion": 0,
+    "sequencePolicy": "Replace",
+    "repeatingPolicy": "ParallelArrays",
+    "batchPolicy": "Atomic",
+    "localKeyScope": "Operation",
+    "conflictPolicy": "RejectOverlappingFields",
+    "rebasePolicy": "CompareReviewedBeforeValues",
+    "deletionPolicy": "UnreferencedGroupMemberOnly",
+    "groupOrderPolicy": "WorksheetRowOrder",
+    "sharedAssetPolicy": "RequireAcknowledgement",
+    "rowCommandBindings": {
+      "DeleteOwnedMember": {
+        "tableKey": "Table key",
+        "before": "Full previous record field values"
+      },
+      "ReorderGroupMembers": {
+        "tableKey": "Table key",
+        "before": "Previous member IDs in worksheet order",
+        "orderedIds": "Complete permutation of member IDs"
+      }
+    },
+    "orderEvidence": [
+      "Unity/Assets/Scripts/Model/Share/LockStep/Battle/Effect/TbEffect.cs:PostInit consumes DataList order",
+      "Unity/Assets/Scripts/Model/Share/LockStep/Battle/Condition/TbCondition.cs:PostInit consumes DataList order"
+    ],
+    "mapEncoding": "AlternatingColumns"
+  }
 }

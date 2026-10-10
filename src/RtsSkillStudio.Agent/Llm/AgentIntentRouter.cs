@@ -90,6 +90,16 @@ public static partial class AgentIntentRouter
         "么"
     ];
 
+    public static string ConfigurationTargetText(string message)
+    {
+        int boundary = StrongMutationPhrases
+            .Select(phrase => message.IndexOf(phrase, StringComparison.OrdinalIgnoreCase))
+            .Where(index => index >= 0)
+            .DefaultIfEmpty(message.Length)
+            .Min();
+        return message[..boundary];
+    }
+
     public static AgentRoute Route(string message)
     {
         if (string.IsNullOrWhiteSpace(message))
@@ -116,6 +126,10 @@ public static partial class AgentIntentRouter
                 "请求绕过受控配置流程或超出当前能力边界。"
             );
         }
+
+        if (IsCapabilityAssessment(normalized))
+            return new AgentRoute(AgentIntentKind.Query, false,
+                ["get_capability_context"], "评估机制配置能力，不绑定既有资产或生成修改计划。");
 
         if (ParameterQuestionRegex().IsMatch(normalized))
         {
@@ -203,6 +217,12 @@ public static partial class AgentIntentRouter
     {
         return Route(message).ExpectsPlan;
     }
+
+    public static bool IsCapabilityAssessment(string message) =>
+        !ExplicitAssetIdRegex().IsMatch(message)
+        && Regex.IsMatch(message, @"配置可行性|机制支持情况|能力边界评估")
+        && Regex.IsMatch(message, @"分析|评估|判断|检查")
+        && !CreatePhrases.Any(phrase => message.Contains(phrase, StringComparison.Ordinal));
 
     public static bool IsCapabilityQuestion(string message)
     {

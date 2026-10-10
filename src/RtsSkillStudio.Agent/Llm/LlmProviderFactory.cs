@@ -17,7 +17,7 @@ public sealed class LlmProviderFactory
     public IReadOnlyList<LlmProviderDescriptor> ListProviders()
     {
         return _options
-            .Providers.Select(pair => Create(pair.Key, pair.Value).Descriptor)
+            .Providers.Select(pair => Create(pair.Key, pair.Value).Descriptor with { ReasoningEffort = pair.Value.ReasoningEffort, ReasoningEfforts = pair.Value.GetReasoningEfforts(), RequiresApiKey = pair.Value.RequiresApiKey, ApiKeySource = pair.Value.ApiKeySource, ApiKeyLength = pair.Value.ResolveApiKey().Length })
             .OrderByDescending(provider => provider.IsDefault)
             .ThenBy(provider => provider.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -63,6 +63,7 @@ public sealed class LlmProviderFactory
             );
         }
 
+        providerOptions.ValidateCredentials();
         using var request = new HttpRequestMessage(
             HttpMethod.Get,
             new Uri($"{providerOptions.BaseUrl.TrimEnd('/')}/models")
@@ -76,16 +77,17 @@ public sealed class LlmProviderFactory
             );
         }
 
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(providerOptions.TimeoutSeconds, 5, 600)));
         using HttpResponseMessage response = await _httpClient.SendAsync(
             request,
-            cancellationToken
+            timeout.Token
         );
         string body = await response.Content.ReadAsStringAsync(cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             throw new LlmProviderException(
-                $"Model list request failed with {(int)response.StatusCode}: "
-                    + Truncate(body, 600)
+                $"Model list request failed with HTTP {(int)response.StatusCode}. Check endpoint and API key."
             );
         }
 

@@ -32,7 +32,9 @@ public sealed record WorkbookPatchRegistryField(
     decimal? Minimum,
     decimal? Maximum,
     string? EnumName,
-    IReadOnlyList<string> Aliases
+    IReadOnlyList<string> Aliases,
+    string? ReferenceTarget = null,
+    string? ReferenceRemoval = null
 );
 
 public sealed record WorkbookPatchActionParameter(
@@ -51,7 +53,9 @@ public sealed record WorkbookPatchActionParameter(
     decimal? Maximum,
     bool Repeating,
     int RepeatStep,
-    IReadOnlyList<GameDataOption> Options
+    IReadOnlyList<GameDataOption> Options,
+    JsonElement? DefaultValue = null,
+    bool AllowsMultipleEnumValues = false
 );
 
 public sealed record WorkbookPatchAction(
@@ -69,7 +73,8 @@ public sealed record WorkbookPatchRegistry(
     IReadOnlyList<WorkbookPatchRegistryEntity> Entities,
     IReadOnlyList<WorkbookPatchRegistryField> EntityFields,
     IReadOnlyList<WorkbookPatchConversionRule> ConversionRules,
-    IReadOnlyList<WorkbookPatchAction> Actions
+    IReadOnlyList<WorkbookPatchAction> Actions,
+    JsonObject? Creation = null
 );
 
 public sealed record WorkbookPatchWorkspace(
@@ -109,7 +114,13 @@ public sealed record WorkbookPatchField(
     int? RecordId = null,
     string? ActionKey = null,
     int? ParameterIndex = null,
-    bool Repeating = false
+    bool Repeating = false,
+    string? ReferenceTarget = null,
+    string? ReferenceRemoval = null,
+    int ColumnCount = 1,
+    string? PackingSeparator = null,
+    int RepeatStep = 1,
+    bool AllowsMultipleEnumValues = false
 );
 
 public enum WorkbookPatchFieldBindingKind
@@ -120,7 +131,8 @@ public enum WorkbookPatchFieldBindingKind
 
 public sealed record WorkbookPatchRecord(
     int Id,
-    IReadOnlyDictionary<string, IReadOnlyList<string>> Fields
+    IReadOnlyDictionary<string, IReadOnlyList<string>> Fields,
+    int SourceOrder = 0
 );
 
 public sealed record WorkbookPatchBase(
@@ -309,6 +321,89 @@ public static class WorkbookPatchRecordValue
     }
 }
 
+public static class WorkbookPatchReference
+{
+    /// <summary>
+    /// Namespace a scalar reference field must point at. The registry contract
+    /// owns this decision: a field whose reference kind the registry did not
+    /// declare has no executable target, even when the workbook type annotation
+    /// suggests one. Action parameters carry their registry target in
+    /// <see cref="WorkbookPatchField.ReferenceNamespace"/> because they have no
+    /// workbook annotation; entity fields carry it in
+    /// <see cref="WorkbookPatchField.ReferenceTarget"/>, and their
+    /// <see cref="WorkbookPatchField.ReferenceNamespace"/> may instead hold the
+    /// workbook annotation, which is cross-checked but never authoritative.
+    /// </summary>
+    public static bool TryResolveTarget(
+        WorkbookPatchField field,
+        out string targetNamespace,
+        out bool contractMismatch
+    )
+    {
+        string? declaredTarget =
+            field.BindingKind == WorkbookPatchFieldBindingKind.ActionParameter
+                ? field.ReferenceTarget ?? field.ReferenceNamespace
+                : field.ReferenceTarget;
+        targetNamespace = declaredTarget ?? "";
+        contractMismatch =
+            field.ReferenceTarget is { Length: > 0 } declared
+            && field.ReferenceNamespace is { Length: > 0 } resolved
+            && !NamespaceMatches(declared, resolved);
+        return declaredTarget is { Length: > 0 } && !contractMismatch;
+    }
+
+    /// <summary>
+    /// Namespace used to validate a resolved reference value. The registry
+    /// target wins; the workbook annotation is only a fallback for fields whose
+    /// registry entry does not declare a target.
+    /// </summary>
+    public static string? ResolvedNamespace(WorkbookPatchField field)
+    {
+        return field.ReferenceTarget is { Length: > 0 } declared
+            ? declared
+            : field.ReferenceNamespace is { Length: > 0 } resolved
+                ? resolved
+                : null;
+    }
+
+    /// <summary>
+    /// Workbook encoding of "no link" for a reference field. The registry
+    /// declares it through <c>entityFields.referenceRemoval</c>; a reference
+    /// field without a declaration cannot be unlinked, so there is no invented
+    /// default. <c>Null</c> writes the literal text <c>null</c>, <c>Empty</c>
+    /// writes a blank cell, and <c>Zero</c> writes <c>0</c>.
+    /// </summary>
+    public static bool TryResolveRemoval(
+        WorkbookPatchField field,
+        out WorkbookPatchReferenceRemoval? removal
+    )
+    {
+        removal = field.ReferenceRemoval switch
+        {
+            "Null" => new WorkbookPatchReferenceRemoval("Null", "null"),
+            "Empty" => new WorkbookPatchReferenceRemoval("Empty", ""),
+            "Zero" => new WorkbookPatchReferenceRemoval("Zero", "0"),
+            _ => null
+        };
+        return removal is not null;
+    }
+
+    public static bool NamespaceMatches(string left, string right)
+    {
+        return string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+/// <summary>
+/// Declared workbook encoding of a removed link. <see cref="Kind"/> is the
+/// versioned metadata value; <see cref="RawValue"/> is the cell text the
+/// compiler writes deterministically for it.
+/// </summary>
+public sealed record WorkbookPatchReferenceRemoval(
+    string Kind,
+    string RawValue
+);
+
 public static class WorkbookFieldChangeJson
 {
     public static string RawText(JsonElement value)
@@ -492,6 +587,24 @@ internal static class WorkbookPatchValueConverter
         WorkbookPatchField field
     )
     {
+        // A declared removal encoding is a legal cell value for that field even
+        // when it does not look numeric, because the registry contract defines it.
+        if (
+            field.Kind == GameDataFieldKind.Reference
+            && WorkbookPatchReference.TryResolveRemoval(
+                field,
+                out WorkbookPatchReferenceRemoval? removal
+            )
+            && string.Equals(
+                removal!.RawValue,
+                rawValue,
+                StringComparison.Ordinal
+            )
+        )
+        {
+            return true;
+        }
+
         if (string.IsNullOrWhiteSpace(rawValue))
         {
             return !field.Required;
@@ -553,6 +666,23 @@ internal static class WorkbookPatchValueConverter
     {
         rawValue = "";
         failure = null;
+        if (field.AllowsMultipleEnumValues && value.ValueKind == JsonValueKind.Array)
+        {
+            if (value.GetArrayLength() == 0)
+            {
+                failure = new(WorkbookPatchValueFailureKind.Enum, "位标记数组不能为空。");
+                return false;
+            }
+            int mask = 0;
+            foreach (JsonElement item in value.EnumerateArray())
+            {
+                if (!TryConvertEnum(item, field with { AllowsMultipleEnumValues = false }, out string part, out failure)
+                    || !int.TryParse(part, out int number)) return false;
+                mask |= number;
+            }
+            rawValue = mask.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return true;
+        }
         string? candidate = value.ValueKind switch
         {
             JsonValueKind.String => value.GetString(),
@@ -592,6 +722,11 @@ internal static class WorkbookPatchValueConverter
         );
         if (option is null)
         {
+            if (field.AllowsMultipleEnumValues && int.TryParse(candidate, out int mask) && FlagMaskMatches(field, mask))
+            {
+                rawValue = mask.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                return true;
+            }
             failure = new WorkbookPatchValueFailure(
                 WorkbookPatchValueFailureKind.Enum,
                 $"字段 {field.Path} 不接受枚举值 {candidate}。"
@@ -692,7 +827,8 @@ internal static class WorkbookPatchValueConverter
             return true;
         }
 
-        return field.Options.Any(
+        return field.AllowsMultipleEnumValues && int.TryParse(rawValue, out int mask) && FlagMaskMatches(field, mask)
+            || field.Options.Any(
             option =>
                 string.Equals(option.Value, rawValue, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(option.Label, rawValue, StringComparison.OrdinalIgnoreCase)
@@ -708,6 +844,14 @@ internal static class WorkbookPatchValueConverter
                     )
                 )
         );
+    }
+
+    private static bool FlagMaskMatches(WorkbookPatchField field, int mask)
+    {
+        int known = 0;
+        foreach (GameDataOption option in field.Options)
+            if (int.TryParse(option.Value, out int value)) known |= value;
+        return field.Options.Count > 0 && (mask & ~known) == 0;
     }
 
     private static string NormalizeUnit(string value)

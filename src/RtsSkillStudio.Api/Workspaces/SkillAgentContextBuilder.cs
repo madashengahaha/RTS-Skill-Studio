@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using RtsSkillStudio.Agent;
 using RtsSkillStudio.Agent.Patch;
+using RtsSkillStudio.Agent.Llm;
 using RtsSkillStudio.Agent.Workspaces;
 
 namespace RtsSkillStudio.Api.Workspaces;
@@ -82,6 +83,7 @@ public sealed partial class SkillAgentContextBuilder(
             var builder = new StringBuilder();
             builder.AppendLine($"工作区 revision: {status.Revision ?? "unknown"}");
             builder.AppendLine($"工作区 ID: {status.WorkspaceId}");
+            builder.AppendLine($"capabilityRegistryVersion: {patchRegistry.CapabilityRegistryVersion}; defaultValueContractVersion: {patchRegistry.DefaultValueContractVersion}; defaultMechanismContractVersion: {patchRegistry.DefaultMechanismContractVersion}");
             builder.AppendLine(
                 $"源数据根 sourceHash: {status.SourceHash ?? "unknown"}"
             );
@@ -321,6 +323,11 @@ public sealed partial class SkillAgentContextBuilder(
         CancellationToken cancellationToken
     )
     {
+        // A creation request has no existing mutation root. Numeric parameters
+        // and asset references belong to the Plan and are resolved by tools.
+        if (AgentIntentRouter.Route(userMessage).Kind == AgentIntentKind.Create
+            || AgentIntentRouter.IsCapabilityAssessment(userMessage))
+            return new AssetResolution(null, [], [], false);
         bool parameterContext = ParameterContextRegex().IsMatch(userMessage);
         IReadOnlySet<string> namespaceConstraints =
             ResolveNamespaceConstraints(userMessage);
@@ -444,6 +451,9 @@ public sealed partial class SkillAgentContextBuilder(
                     cancellationToken
                 );
             IReadOnlyList<StudioAssetRef> namedCandidates = namedMatches
+                .Where(match => ShouldUseMentionCandidate(
+                    selectedAsset, userMessage, match.IsExactName,
+                    match.Result.Label))
                 .Select(match => match.Result.Ref)
                 .Distinct()
                 .ToArray();
@@ -483,7 +493,7 @@ public sealed partial class SkillAgentContextBuilder(
         bool explicitMode =
             explicitCandidates.Count > 0
             || numericMode
-            || namespaceConstraints.Count > 0;
+            || HasConflictingNamespaceConstraint(selectedAsset, namespaceConstraints);
         candidates = candidates.Distinct().ToList();
         if (candidates.Count == 0)
         {
@@ -699,6 +709,27 @@ public sealed partial class SkillAgentContextBuilder(
     {
         return !SelfIntroductionRegex().IsMatch(message);
     }
+
+    public static bool HasConflictingNamespaceConstraint(
+        StudioAssetRef? selectedAsset,
+        IReadOnlySet<string> namespaceConstraints
+    ) => namespaceConstraints.Count > 0
+        && (selectedAsset is null || !namespaceConstraints.Contains(selectedAsset.Namespace));
+
+    // A configuration follow-up already has an authoritative target. Partial
+    // matches in arbitrary workbook fields are search hints, not a target switch.
+    // Explicit IDs are handled before this gate; complete names and quoted targets
+    // still participate in clarification rather than silently changing the target.
+    public static bool ShouldUseMentionCandidate(
+        StudioAssetRef? selectedAsset,
+        string message,
+        bool isExactName,
+        string label = ""
+    ) => selectedAsset is null
+        || AgentIntentRouter.Route(message).Kind != AgentIntentKind.Configuration
+        || (isExactName && AgentIntentRouter.ConfigurationTargetText(message).Contains(
+            label, StringComparison.OrdinalIgnoreCase) && label.Length > 0)
+        || LooksLikeExplicitTargetMention(AgentIntentRouter.ConfigurationTargetText(message));
 
     private static Regex SelfIntroductionRegex() =>
         SelfIntroductionRegexHolder.Value;

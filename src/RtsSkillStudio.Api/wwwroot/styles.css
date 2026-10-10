@@ -1773,3 +1773,21 @@ details[open] > summary .tree-toggle::before {
     justify-content: center;
   }
 }
+
+.plan-editor { display: grid; gap: 12px; margin-bottom: 20px; }
+.plan-editor p { color: var(--text-secondary, #777); font-size: 13px; }
+.plan-operation { display: flex; align-items: center; gap: 8px; }
+.plan-value { display: grid; gap: 5px; font-size: 13px; }
+.plan-value small, .plan-operation small { opacity: .6; }
+.plan-value textarea, .plan-value input { width: 100%; box-sizing: border-box; border: 1px solid var(--border, #ddd); border-radius: 6px; padding: 8px; background: var(--surface, #fff); color: inherit; font-family: inherit; resize: vertical; }
+.plan-editor-error { color: #c94040 !important; }
+
+.model-settings-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.model-settings-actions button { background:#414d56; color:inherit; border:1px solid #63717c; border-radius:5px; padding:7px 9px; cursor:pointer; }
+.model-settings-note { font-size:11px; color:#98a3ad; line-height:1.6; }
+.settings-section input.select-control { box-sizing:border-box; width:100%; }
+
+.sidebar-settings-panel { max-height: min(740px, calc(100vh - 95px)); overflow-y:auto; }
+
+.message-model { font-size:11px; font-weight:normal; color:var(--rail-muted); overflow-wrap:anywhere; }
+.message-role { flex-wrap:wrap; }

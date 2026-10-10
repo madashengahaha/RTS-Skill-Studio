@@ -25,7 +25,9 @@ public sealed class OpenAiCompatibleChatProvider : ILlmProvider
             options.BaseUrl,
             options.Model,
             !string.IsNullOrWhiteSpace(options.ResolveApiKey()),
-            isDefault
+            isDefault,
+            options.SupportsJsonSchema,
+            options.DisplayName
         );
     }
 
@@ -36,6 +38,7 @@ public sealed class OpenAiCompatibleChatProvider : ILlmProvider
         CancellationToken cancellationToken
     )
     {
+        _options.ValidateCredentials();
         var model = string.IsNullOrWhiteSpace(request.Model)
             ? _options.Model
             : request.Model;
@@ -102,7 +105,21 @@ public sealed class OpenAiCompatibleChatProvider : ILlmProvider
             : request.ReasoningEffort;
         if (!string.IsNullOrWhiteSpace(reasoningEffort))
         {
-            payload["reasoning_effort"] = reasoningEffort;
+            if (_options.ReasoningMode == "ThinkingAndEffort")
+            {
+                payload["thinking"] = new { type = reasoningEffort == "none" ? "disabled" : "enabled" };
+                if (reasoningEffort != "none") payload["reasoning_effort"] = reasoningEffort;
+            }
+            else payload["reasoning_effort"] = reasoningEffort;
+        }
+        if (_options.SupportsJsonSchema && request.ResponseSchema is not null)
+        {
+            payload["response_format"] = new
+            {
+                type = "json_schema",
+                json_schema = new { name = "skill_config_plan", schema = JsonSerializer.Deserialize<JsonElement>(request.ResponseSchema) }
+            };
+            payload["temperature"] = 0;
         }
 
         using var cancellation = CreateTimeoutToken(cancellationToken);

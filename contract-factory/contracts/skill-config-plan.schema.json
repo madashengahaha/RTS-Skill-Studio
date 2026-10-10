@@ -28,7 +28,11 @@
       "$ref": "#/$defs/Request"
     },
     "status": {
-      "enum": ["Ready", "NeedsClarification", "Unsupported"]
+      "enum": [
+        "Ready",
+        "NeedsClarification",
+        "Unsupported"
+      ]
     },
     "summary": {
       "type": "string"
@@ -59,6 +63,13 @@
       "items": {
         "$ref": "#/$defs/Operation"
       }
+    },
+    "sharedAssetPolicy": {
+      "enum": [
+        "RequireExclusive",
+        "AcknowledgeShared"
+      ],
+      "description": "Shared edits require explicit acknowledgement and display the affected references."
     }
   },
   "allOf": [
@@ -69,7 +80,9 @@
             "const": "Ready"
           }
         },
-        "required": ["status"]
+        "required": [
+          "status"
+        ]
       },
       "then": {
         "properties": {
@@ -92,7 +105,9 @@
             "const": "NeedsClarification"
           }
         },
-        "required": ["status"]
+        "required": [
+          "status"
+        ]
       },
       "then": {
         "properties": {
@@ -109,7 +124,9 @@
             "const": "Unsupported"
           }
         },
-        "required": ["status"]
+        "required": [
+          "status"
+        ]
       },
       "then": {
         "properties": {
@@ -157,7 +174,9 @@
     "Request": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["text"],
+      "required": [
+        "text"
+      ],
       "properties": {
         "text": {
           "type": "string",
@@ -174,7 +193,10 @@
     "Value": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["value", "source"],
+      "required": [
+        "value",
+        "source"
+      ],
       "properties": {
         "value": true,
         "unit": {
@@ -182,7 +204,11 @@
           "description": "Optional semantic unit requested in the Plan. The compiler converts it to the workbook cell unit."
         },
         "source": {
-          "enum": ["ModelProposed", "UserEdited", "Default"]
+          "enum": [
+            "ModelProposed",
+            "UserEdited",
+            "Default"
+          ]
         },
         "evidence": {
           "type": "array",
@@ -201,10 +227,20 @@
     "Evidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["kind", "ref"],
+      "required": [
+        "kind",
+        "ref"
+      ],
       "properties": {
         "kind": {
-          "enum": ["Capability", "Schema", "RuntimeBinding", "ExistingConfig", "DefaultContract", "UserInput"]
+          "enum": [
+            "Capability",
+            "Schema",
+            "RuntimeBinding",
+            "ExistingConfig",
+            "DefaultContract",
+            "UserInput"
+          ]
         },
         "ref": {
           "type": "string"
@@ -217,7 +253,11 @@
     "Assumption": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["key", "value", "reason"],
+      "required": [
+        "key",
+        "value",
+        "reason"
+      ],
       "properties": {
         "key": {
           "type": "string"
@@ -237,7 +277,11 @@
     "Clarification": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["key", "question", "fieldPath"],
+      "required": [
+        "key",
+        "question",
+        "fieldPath"
+      ],
       "properties": {
         "key": {
           "type": "string"
@@ -264,7 +308,11 @@
     "Unsupported": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["code", "message", "manualPath"],
+      "required": [
+        "code",
+        "message",
+        "manualPath"
+      ],
       "properties": {
         "code": {
           "type": "string"
@@ -286,7 +334,10 @@
     "Candidate": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["key", "label"],
+      "required": [
+        "key",
+        "label"
+      ],
       "properties": {
         "key": {
           "type": "string"
@@ -315,7 +366,10 @@
     "ExistingAssetRef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["binding", "namespace", "id"],
+      "required": [
+        "binding",
+        "namespace"
+      ],
       "properties": {
         "binding": {
           "const": "Existing"
@@ -325,13 +379,34 @@
         },
         "id": {
           "type": "integer"
+        },
+        "groupKey": {
+          "type": "integer",
+          "minimum": 1
         }
-      }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "id"
+          ]
+        },
+        {
+          "required": [
+            "groupKey"
+          ]
+        }
+      ]
     },
     "ProposedAssetRef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["binding", "localKey", "namespace", "operationId"],
+      "required": [
+        "binding",
+        "localKey",
+        "namespace",
+        "operationId"
+      ],
       "properties": {
         "binding": {
           "const": "Proposed"
@@ -350,7 +425,11 @@
     "UnresolvedAssetRef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["binding", "namespace", "candidates"],
+      "required": [
+        "binding",
+        "namespace",
+        "candidates"
+      ],
       "properties": {
         "binding": {
           "const": "Unresolved"
@@ -369,7 +448,10 @@
     },
     "OperationBase": {
       "type": "object",
-      "required": ["operationId", "kind"],
+      "required": [
+        "operationId",
+        "kind"
+      ],
       "properties": {
         "operationId": {
           "type": "string",
@@ -420,6 +502,15 @@
         },
         {
           "$ref": "#/$defs/ReorderMembersOperation"
+        },
+        {
+          "$ref": "#/$defs/CreateSkillChainOperation"
+        },
+        {
+          "$ref": "#/$defs/DeleteAssetOperation"
+        },
+        {
+          "$ref": "#/$defs/ExtendAssetChainOperation"
         }
       ]
     },
@@ -902,7 +993,9 @@
     "TargetPlan": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["team"],
+      "required": [
+        "team"
+      ],
       "properties": {
         "team": {
           "$ref": "#/$defs/Value"
@@ -946,12 +1039,260 @@
       },
       "oneOf": [
         {
-          "required": ["existing"]
+          "required": [
+            "existing"
+          ]
         },
         {
-          "required": ["intent"]
+          "required": [
+            "intent"
+          ]
         }
       ]
+    },
+    "ChainRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding",
+        "namespace"
+      ],
+      "properties": {
+        "binding": {
+          "enum": [
+            "Existing",
+            "Local"
+          ]
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "groupKey": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "localKey": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "CreateSkillChainOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operationId",
+        "kind",
+        "root",
+        "nodes"
+      ],
+      "properties": {
+        "operationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "const": "CreateSkillChain"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "localKey",
+              "namespace",
+              "fields"
+            ],
+            "properties": {
+              "localKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "namespace": {
+                "type": "string",
+                "minLength": 1
+              },
+              "fields": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/$defs/Value"
+                }
+              },
+              "actionKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/$defs/Value"
+                }
+              },
+              "group": {
+                "$ref": "#/$defs/ChainRef"
+              }
+            }
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "localKey",
+              "namespace"
+            ],
+            "properties": {
+              "localKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "namespace": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "DeleteAssetOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operationId",
+        "kind",
+        "asset"
+      ],
+      "properties": {
+        "operationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "const": "DeleteAsset"
+        },
+        "asset": {
+          "$ref": "#/$defs/ExistingAssetRef"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "ExtendAssetChainOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operationId",
+        "kind",
+        "parent",
+        "entry",
+        "nodes"
+      ],
+      "properties": {
+        "operationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "const": "ExtendAssetChain"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "localKey",
+              "namespace",
+              "fields"
+            ],
+            "properties": {
+              "localKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "namespace": {
+                "type": "string",
+                "minLength": 1
+              },
+              "fields": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/$defs/Value"
+                }
+              },
+              "actionKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/$defs/Value"
+                }
+              },
+              "group": {
+                "$ref": "#/$defs/ChainRef"
+              }
+            }
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "localKey",
+              "namespace"
+            ],
+            "properties": {
+              "localKey": {
+                "type": "string",
+                "minLength": 1
+              },
+              "namespace": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "parent": {
+          "$ref": "#/$defs/ExistingAssetRef"
+        },
+        "entry": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     }
   }
 }

@@ -757,7 +757,8 @@ public static partial class AgentToolProtocol
             + Environment.NewLine
             + JsonSerializer.Serialize(
                 rows,
-                new JsonSerializerOptions { WriteIndented = false }
+                new JsonSerializerOptions { WriteIndented = false,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(System.Text.Unicode.UnicodeRanges.All) }
             );
     }
 

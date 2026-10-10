@@ -10,11 +10,28 @@ public sealed class LlmOptions
 
 public sealed class LlmProviderOptions
 {
+    public string ReasoningMode { get; set; } = "Effort";
+    public string[] ReasoningEfforts { get; set; } = [];
+    public IReadOnlyList<string> GetReasoningEfforts() => ReasoningEfforts.Length > 0
+        ? ReasoningEfforts : ["none", "low", "medium", "high"];
+
+    public string? DisplayName { get; set; }
+    public bool SupportsJsonSchema { get; set; }
     public string Kind { get; set; } = "OpenAiCompatibleChat";
 
     public string BaseUrl { get; set; } = "";
 
     public string Model { get; set; } = "";
+
+    public bool RequiresApiKey { get; set; }
+    public string ApiKeySource => !string.IsNullOrWhiteSpace(ApiKey) ? "Studio"
+        : !string.IsNullOrWhiteSpace(ResolveApiKey()) ? "Environment" : "None";
+
+    public void ValidateCredentials()
+    {
+        if (RequiresApiKey && string.IsNullOrWhiteSpace(ResolveApiKey()))
+            throw new LlmProviderException("当前供应商尚未配置 API Key，请在模型设置中填写并保存。");
+    }
 
     public string ApiKey { get; set; } = "";
 

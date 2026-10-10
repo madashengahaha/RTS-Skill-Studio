@@ -18,6 +18,7 @@ const state = {
     compileStatus: null,
     compileErrors: [],
     patchJson: null,
+    reviewedPatchJson: null,
     patchValidation: null,
     patchDiff: [],
     applyResult: null,
@@ -51,7 +52,6 @@ const elements = {
   sidebar: document.querySelector(".sidebar"),
   inspectorPane: document.querySelector(".inspector-pane"),
   providerSelect: document.querySelector("#providerSelect"),
-  modelSelect: document.querySelector("#modelSelect"),
   reasoningSelect: document.querySelector("#reasoningSelect"),
   providerStatus: document.querySelector("#providerStatus"),
   refreshProviders: document.querySelector("#refreshProviders"),
@@ -79,7 +79,7 @@ const elements = {
 
 const providerLabels = {
   ollama: "Ollama 本地",
-  ccswitch: "CC Switch",
+  deepseek: "DeepSeek",
   openai: "OpenAI",
 };
 
@@ -398,7 +398,7 @@ function showToast(message, kind = "info") {
 }
 
 function providerLabel(provider) {
-  return providerLabels[provider.name] || provider.name;
+  return provider.displayName || providerLabels[provider.name] || provider.name;
 }
 
 function setProviderStatus(provider, kind, text) {
@@ -451,6 +451,7 @@ async function loadProviders() {
         "ready",
         defaultProvider.model || "未配置模型",
       );
+      fillModelSettings(defaultProvider);
       await loadModels(defaultProvider.name);
     }
 
@@ -461,46 +462,100 @@ async function loadProviders() {
   }
 }
 
+let modelListRequest = 0;
 async function loadModels(providerName) {
-  elements.modelSelect.disabled = true;
-  elements.modelSelect.innerHTML = "<option>正在读取...</option>";
-  const provider = state.providers.find((item) => item.name === providerName);
-
-  try {
-    const response = await fetch(
-      `/api/v1/llm/providers/${encodeURIComponent(providerName)}/models`,
-    );
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const models = await response.json();
-    const saved = window.localStorage.getItem(`studio.model.${providerName}`);
-    const defaultModel = provider?.model || "";
-    const selected =
-      models.find((model) => model.name === saved) ||
-      models.find((model) => model.name === defaultModel) ||
-      models[0];
-
-    elements.modelSelect.innerHTML = [
-      defaultModel
-        ? `<option value="">Provider 默认（${escapeHtml(defaultModel)}）</option>`
-        : '<option value="">Provider 默认</option>',
-      ...models.map(
-        (model) =>
-          `<option value="${escapeHtml(model.name)}">${escapeHtml(
-            model.displayName || model.name,
-          )}</option>`,
-      ),
-    ].join("");
-    state.selectedModel = selected?.name || "";
-    elements.modelSelect.value = state.selectedModel;
-    elements.modelSelect.disabled = false;
-  } catch {
-    elements.modelSelect.innerHTML = '<option value="">Provider 默认</option>';
-    state.selectedModel = "";
-    elements.modelSelect.disabled = false;
+  const requestId = ++modelListRequest;
+  const provider = state.providers.find(item => item.name === providerName);
+  const suggestions = document.querySelector("#modelSuggestions");
+  const status = document.querySelector("#modelListStatus");
+  suggestions.innerHTML = "";
+  if (provider?.requiresApiKey && !provider.apiKeyConfigured) {
+    status.textContent = "填写并保存 API Key 后可获取模型列表，也可直接输入模型 ID。";
+    return;
   }
+  status.textContent = "正在获取模型列表…";
+  try {
+    const response = await fetch(`/api/v1/llm/providers/${encodeURIComponent(providerName)}/models`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const models = await response.json();
+    if (requestId !== modelListRequest || state.selectedProvider !== providerName) return;
+    suggestions.innerHTML = models.map(model => `<option value="${escapeHtml(model.name)}">${escapeHtml(model.displayName || model.name)}</option>`).join("");
+    status.textContent = `已获取 ${models.length} 个模型，可选择或手动输入。`;
+  } catch (error) {
+    if (requestId !== modelListRequest || state.selectedProvider !== providerName) return;
+    status.textContent = `模型列表获取失败（${error.message}），可手动输入 ID。`;
+  }
+}
+
+function updateModelStatus() {
+  const provider = state.providers.find(item => item.name === state.selectedProvider);
+  if (!provider) return;
+  const missingKey = provider.requiresApiKey && !provider.apiKeyConfigured;
+  const detail = state.modelSettingsDirty ? "配置未保存" : missingKey ? "未配置 API Key，无法调用" : !state.selectedModel ? "未配置模型" : "已选择，尚未测试连接";
+  setProviderStatus(provider, missingKey || state.modelSettingsDirty || !state.selectedModel ? "pending" : "ready",
+    `${providerLabel(provider)} · ${state.selectedModel || "未选模型"} · ${detail}`);
+}
+
+function fillModelSettings(provider) {
+  state.selectedModel = provider.model || "";
+  state.modelSettingsDirty = false;
+  document.querySelector("#apiEndpointInput").value = provider.baseUrl || "";
+  document.querySelector("#modelNameInput").value = provider.model || "";
+  document.querySelector("#apiKeyInput").value = "";
+  const keyInput = document.querySelector("#apiKeyInput");
+  keyInput.placeholder = provider.apiKeyConfigured ? "*".repeat(provider.apiKeyLength || 0) : "输入 API Key";
+  keyInput.title = provider.apiKeyConfigured ? `已配置（${provider.apiKeyLength} 位），输入新 Key 可替换` : "尚未配置 API Key";
+  const sources = {Studio:"已保存于 Studio，星号表示已保存的 Key；输入新 Key 可替换", Environment:"已配置：来自服务端环境变量；输入新 Key 可覆盖", None:provider.requiresApiKey ? "未配置，当前无法调用此供应商" : "未配置，此接口允许无 Key"};
+  document.querySelector("#apiKeySource").textContent = sources[provider.apiKeySource] || "未配置";
+  document.querySelector("#clearApiKey").checked = false;
+  document.querySelector("#apiProtocol").value = provider.kind;
+  document.querySelector("#jsonSchemaEnabled").checked = provider.supportsJsonSchema;
+  const labels = {none:"关闭思考", minimal:"最低", low:"低", medium:"中", high:"高", xhigh:"更高", max:"最高"};
+  elements.reasoningSelect.innerHTML = '<option value="">供应商默认</option>' + (provider.reasoningEfforts || []).map(value => `<option value="${escapeHtml(value)}">${escapeHtml(labels[value] || value)}</option>`).join("");
+  elements.reasoningSelect.value = provider.reasoningEffort || "";
+  state.selectedReasoningEffort = provider.reasoningEffort || "";
+  updateModelStatus();
+}
+
+async function saveModelSettings(testConnection = false) {
+  const providerName = state.selectedProvider;
+  const buttons = [document.querySelector("#saveModelSettings"), document.querySelector("#testModelConnection")];
+  buttons.forEach(button => button.disabled = true);
+  elements.providerSelect.disabled = true;
+  try {
+    const response = await fetch(`/api/v1/llm/providers/${encodeURIComponent(providerName)}/settings`, {
+      method:"PUT", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({baseUrl:document.querySelector("#apiEndpointInput").value, model:document.querySelector("#modelNameInput").value,
+        apiKey:document.querySelector("#apiKeyInput").value || null, clearApiKey:document.querySelector("#clearApiKey").checked,
+        kind:document.querySelector("#apiProtocol").value, reasoningEffort:elements.reasoningSelect.value,
+        supportsJsonSchema:document.querySelector("#jsonSchemaEnabled").checked, makeDefault:true})
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "保存失败");
+    state.providers = data;
+    window.localStorage.setItem("studio.provider", providerName);
+    if (state.selectedProvider !== providerName) return;
+    const provider = data.find(item => item.name === providerName);
+    fillModelSettings(provider);
+    state.selectedModel = provider.model;
+    updateModelStatus();
+    if (testConnection) {
+      const check = await fetch(`/api/v1/llm/providers/${encodeURIComponent(providerName)}/models`);
+      if (!check.ok) throw new Error(`配置已保存，连接失败（HTTP ${check.status}），请检查 API 地址和 Key`);
+      await loadModels(providerName);
+      showToast("配置已保存，模型列表连接成功");
+    } else showToast("模型配置已保存并生效");
+  } catch (error) { showToast(error.message, "error"); }
+  finally { buttons.forEach(button => button.disabled = false); elements.providerSelect.disabled = false; }
+}
+
+document.querySelector("#saveModelSettings").addEventListener("click", () => saveModelSettings());
+document.querySelector("#testModelConnection").addEventListener("click", () => saveModelSettings(true));
+for (const id of ["modelNameInput", "apiEndpointInput", "apiKeyInput", "clearApiKey", "apiProtocol", "jsonSchemaEnabled", "reasoningSelect"]) {
+  document.querySelector(`#${id}`).addEventListener("input", () => {
+    state.modelSettingsDirty = true;
+    updateModelStatus();
+  });
 }
 
 async function loadWorkspace() {
@@ -535,6 +590,7 @@ function selectProvider(name) {
   state.selectedProvider = provider.name;
   window.localStorage.setItem("studio.provider", provider.name);
   setProviderStatus(provider, "ready", provider.model || "未配置模型");
+  fillModelSettings(provider);
   loadModels(provider.name);
 }
 
@@ -554,6 +610,8 @@ function appendMessage({
   latencyMs,
   error = false,
   messageId = null,
+  provider = null,
+  model = null,
 }) {
   showEmptyState(false);
 
@@ -564,6 +622,9 @@ function appendMessage({
   }
 
   const roleName = role === "user" ? "你" : error ? "调用失败" : "Skill Agent";
+  const sourceLabel = provider === "studio" ? "Studio 本地处理 · 未调用模型"
+    : provider ? `${providerLabel(state.providers.find(item => item.name === provider) || {name:provider})} · ${model || "未知模型"}` : "";
+  const source = role === "assistant" && sourceLabel ? `<span class="message-model">${escapeHtml(sourceLabel)}</span>` : "";
   const avatar = role === "user" ? "你" : error ? "!" : "AI";
   const latency =
     typeof latencyMs === "number"
@@ -575,6 +636,7 @@ function appendMessage({
     <div class="message-body">
       <div class="message-role">
         <span>${roleName}</span>
+        ${source}
         ${latency}
       </div>
       <div class="message-content">${
@@ -594,7 +656,7 @@ function attachPlanAction(message, compiledPatch) {
   if (
     !message ||
     !state.inspector.planJson ||
-    state.inspector.planDisposition !== "Expected" ||
+    !["Expected", "UserEdited"].includes(state.inspector.planDisposition) ||
     state.inspector.planErrors.length > 0
   ) {
     return;
@@ -1017,7 +1079,7 @@ function renderInspector() {
       ${planStatusHtml}
       ${
         planJson
-          ? `<pre class="inspector-text">${escapeHtml(prettyPlan)}</pre>`
+          ? `${planEditorHtml(planJson)}<details><summary>完整计划</summary><pre class="inspector-text">${escapeHtml(prettyPlan)}</pre></details>`
           : ""
       }
       ${
@@ -1462,6 +1524,8 @@ function diffInspectorHtml(
     (error) => error.code !== "compiler.no_change",
   );
   const rows = patchDiff || [];
+  let allocations = [];
+  try { allocations = JSON.parse(patchJson || "{}").allocations || []; } catch {}
   const failedChecks = checks.filter(
     (check) => check.status === "Failed" || check.status === "NotRun",
   );
@@ -1514,6 +1578,8 @@ function diffInspectorHtml(
     ${
       patchJson
         ? `<section class="evidence-block">
+            ${allocations.length ? `<h3>新增资产与分组</h3>
+              ${allocations.map((item) => `<div class="evidence-row"><span>${escapeHtml(item.namespace)}</span><code>${escapeHtml(item.id)}</code></div>`).join("")}` : ""}
             <div class="patch-change-header">
               <h3>Excel 字段变化</h3>
             </div>
@@ -1799,6 +1865,7 @@ function activateConversation(conversation) {
       : null);
   window.localStorage.setItem("studio.conversation", conversation.id);
   state.inspector.planJson = conversation.planJson || null;
+  state.inspector.reviewedPatchJson = null;
   state.inspector.planErrors = conversation.planErrors || [];
   state.inspector.planDisposition =
     conversation.planDisposition ||
@@ -1842,6 +1909,8 @@ function renderConversationMessages(messages) {
       content: message.content,
       latencyMs: message.latencyMs,
       messageId: message.id,
+      provider: message.provider,
+      model: message.model,
     });
   });
   renderIcons();
@@ -1927,11 +1996,90 @@ async function refreshConversationList() {
   renderConversationList();
 }
 
-async function compilePlan(planJson) {
+function planEditorHtml(planJson) {
+  let plan;
+  try { plan = JSON.parse(planJson); } catch { return ""; }
+  const values = [];
+  function visit(node, path) {
+    if (!node || typeof node !== "object") return;
+    if (!Array.isArray(node) && Object.hasOwn(node, "value") && ["UserEdited", "ModelProposed", "Default"].includes(node.source)) {
+      values.push({ node, path });
+      return;
+    }
+    for (const [key, child] of Object.entries(node)) visit(child, [...path, key]);
+  }
+  visit(plan.operations || [], ["operations"]);
+  const stale = (state.inspector.compileErrors || []).some(error => error.code === "compiler.stale_base");
+  return `<form id="plan-editor" class="plan-editor">
+    <h3>编辑配置计划</h3>
+    <p>调整值后重新编译并审阅 Excel 差异。取消勾选的操作不参与本次写入。</p>
+    <label class="plan-operation"><input type="checkbox" data-shared-policy ${plan.sharedAssetPolicy === "AcknowledgeShared" ? "checked" : ""}>允许修改被多个资产复用的配置（影响所有引用方）</label>
+    ${(plan.operations || []).map((op, i) => `<label class="plan-operation"><input type="checkbox" data-plan-operation="${i}" checked> ${escapeHtml(op.reason || op.operationId)} <small>${escapeHtml(op.kind)}</small></label>`).join("")}
+    ${values.map(({ node, path }, i) => `<label class="plan-value"><span>${escapeHtml(path.filter(key => !["operations", "fields", "parameters"].includes(key)).join(" / "))} <small>${escapeHtml(node.source)}</small></span>
+      <textarea data-plan-path="${escapeHtml(JSON.stringify(path))}" data-plan-original="${escapeHtml(JSON.stringify(node.value))}" rows="${typeof node.value === "object" ? 3 : 1}">${escapeHtml(JSON.stringify(node.value))}</textarea>
+      ${node.unit !== undefined ? `<input data-plan-unit="${i}" value="${escapeHtml(node.unit)}" aria-label="单位">` : ""}
+    </label>`).join("")}
+    <button type="submit" class="primary-button">保存并重新编译</button>
+    ${stale && state.inspector.reviewedPatchJson ? '<button type="button" data-plan-rebase>检查冲突并重基</button>' : ""}
+    <p class="plan-editor-error" role="alert"></p>
+  </form>`;
+}
+
+function clearReviewedPlanPatch() {
+  state.inspector.patchJson = null;
+  state.inspector.patchValidation = null;
+  state.inspector.patchDiff = [];
+  attachLatestPlanAction(false);
+}
+
+elements.inspectorContent.addEventListener("input", event => {
+  if (event.target.closest("#plan-editor")) clearReviewedPlanPatch();
+});
+elements.inspectorContent.addEventListener("change", event => {
+  if (event.target.matches("[data-plan-operation]")) clearReviewedPlanPatch();
+});
+elements.inspectorContent.addEventListener("submit", async event => {
+  if (event.target.id !== "plan-editor") return;
+  event.preventDefault();
+  const form = event.target;
+  try {
+    const plan = JSON.parse(state.inspector.planJson);
+    form.querySelectorAll("[data-plan-path]").forEach((input, i) => {
+      const path = JSON.parse(input.dataset.planPath);
+      const value = path.reduce((node, key) => node[key], plan);
+      const next = JSON.parse(input.value);
+      const unit = form.querySelector(`[data-plan-unit="${i}"]`);
+      if (JSON.stringify(next) !== input.dataset.planOriginal || unit && unit.value !== value.unit) {
+        value.value = next;
+        if (unit) value.unit = unit.value;
+        value.source = "UserEdited";
+      }
+    });
+    plan.sharedAssetPolicy = form.querySelector("[data-shared-policy]").checked ? "AcknowledgeShared" : "RequireExclusive";
+    const selected = new Set([...form.querySelectorAll("[data-plan-operation]:checked")].map(input => Number(input.dataset.planOperation)));
+    plan.operations = plan.operations.filter((_, i) => selected.has(i));
+    if (!plan.operations.length) throw new Error("至少选择一个操作。");
+    state.inspector.planJson = JSON.stringify(plan);
+    const compiled = await compilePlan(state.inspector.planJson, { save: true });
+    attachLatestPlanAction(compiled);
+    showInspectorTab(compiled ? "diff" : "plan");
+  } catch (error) {
+    form.querySelector(".plan-editor-error").textContent = error.message;
+  }
+});
+elements.inspectorContent.addEventListener("click", async event => {
+  if (!event.target.closest("[data-plan-rebase]")) return;
+  const compiled = await compilePlan(state.inspector.planJson, { save: true, rebase: true });
+  attachLatestPlanAction(compiled);
+  showInspectorTab(compiled ? "diff" : "plan");
+});
+
+async function compilePlan(planJson, options = {}) {
   if (!planJson) {
     return false;
   }
 
+  const reviewedPatchJson = state.inspector.reviewedPatchJson;
   state.inspector.compileStatus = "Compiling";
   state.inspector.compileErrors = [];
   state.inspector.patchJson = null;
@@ -1940,10 +2088,13 @@ async function compilePlan(planJson) {
   state.inspector.applyResult = null;
   renderInspector();
   try {
-    const response = await fetch("/api/v1/workbook-patches/compile", {
-      method: "POST",
+    const endpoint = options.save && state.activeConversationId
+      ? `/api/v1/conversations/${encodeURIComponent(state.activeConversationId)}/plan`
+      : "/api/v1/workbook-patches/compile";
+    const response = await fetch(endpoint, {
+      method: options.save ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planJson }),
+      body: JSON.stringify({ planJson, reviewedPatchJson: options.rebase ? reviewedPatchJson : null, rebase: Boolean(options.rebase) }),
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -1955,6 +2106,8 @@ async function compilePlan(planJson) {
     state.inspector.compileStatus = payload.status || "Invalid";
     state.inspector.compileErrors = payload.errors || [];
     state.inspector.patchJson = payload.patchJson || null;
+    if (payload.patchJson) state.inspector.reviewedPatchJson = payload.patchJson;
+    if (payload.planJson) state.inspector.planJson = payload.planJson;
     state.inspector.patchValidation = payload.validation || null;
     state.inspector.patchDiff = payload.diff || [];
     renderInspector();
@@ -2134,6 +2287,21 @@ async function sendMessage(message) {
     return;
   }
 
+  const selectedConfig = state.providers.find(item => item.name === provider);
+  if (state.modelSettingsDirty) {
+    showToast("模型配置有未保存的修改，请先点击“保存并使用”。", "error");
+    return;
+  }
+  if (selectedConfig?.requiresApiKey && !selectedConfig.apiKeyConfigured) {
+    showToast("此供应商尚未配置 API Key，请填写并保存后再发送。", "error");
+    return;
+  }
+  if (!state.selectedModel) {
+    showToast("请先配置模型 ID 并保存。", "error");
+    return;
+  }
+  const model = state.selectedModel;
+  const reasoningEffort = state.selectedReasoningEffort;
   if (!state.activeConversationId) {
     try {
       await createConversation();
@@ -2161,8 +2329,8 @@ async function sendMessage(message) {
           skillId: state.selectedSkillId,
           assetNamespace: state.selectedAsset?.namespace || null,
           assetId: state.selectedAsset?.id || null,
-          model: state.selectedModel || null,
-          reasoningEffort: state.selectedReasoningEffort || null,
+          model,
+          reasoningEffort: reasoningEffort || null,
         }),
       },
     );
@@ -2184,8 +2352,11 @@ async function sendMessage(message) {
       role: "assistant",
       content: assistantText,
       latencyMs: payload.latencyMs,
+      provider: payload.provider,
+      model: payload.model,
     });
     state.inspector.planJson = payload.planJson || null;
+    state.inspector.reviewedPatchJson = null;
     state.inspector.planErrors = payload.planErrors || [];
     state.inspector.planDisposition = payload.planDisposition || "None";
     state.inspector.clarifications = payload.clarifications || [];
@@ -2296,16 +2467,6 @@ elements.inspectorContent.addEventListener("click", (event) => {
 
 elements.providerSelect.addEventListener("change", (event) => {
   selectProvider(event.target.value);
-});
-
-elements.modelSelect.addEventListener("change", (event) => {
-  state.selectedModel = event.target.value;
-  if (state.selectedProvider) {
-    window.localStorage.setItem(
-      `studio.model.${state.selectedProvider}`,
-      state.selectedModel,
-    );
-  }
 });
 
 elements.reasoningSelect.addEventListener("change", (event) => {

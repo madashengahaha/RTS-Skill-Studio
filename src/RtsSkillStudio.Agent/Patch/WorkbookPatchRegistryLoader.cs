@@ -44,8 +44,21 @@ public static class WorkbookPatchRegistryLoader
             ReadEntities(capability),
             ReadEntityFields(capability),
             ReadConversionRules(defaults),
-            ReadActions(capability)
+            ReadActions(capability),
+            ReadCreation(defaults, capability)
         );
+    }
+
+    private static System.Text.Json.Nodes.JsonObject? ReadCreation(JsonElement defaults, JsonElement capability)
+    {
+        if (!defaults.TryGetProperty("creation", out JsonElement creation)) return null;
+        var result = System.Text.Json.Nodes.JsonNode.Parse(creation.GetRawText())!.AsObject();
+        if (defaults.TryGetProperty("editing", out JsonElement editing))
+            result["editing"] = System.Text.Json.Nodes.JsonNode.Parse(editing.GetRawText());
+        foreach (string key in new[] { "nestedTypes", "enums" })
+            if (capability.TryGetProperty(key, out JsonElement data))
+                result[key] = System.Text.Json.Nodes.JsonNode.Parse(data.GetRawText());
+        return result;
     }
 
     private static IReadOnlyList<WorkbookPatchRegistryEntity> ReadEntities(
@@ -104,7 +117,9 @@ public static class WorkbookPatchRegistryLoader
                     GetDecimal(item, "minimum"),
                     GetDecimal(item, "maximum"),
                     GetString(item, "enumName"),
-                    GetStringArray(item, "aliases")
+                    GetStringArray(item, "aliases"),
+                    GetString(item, "referenceTarget"),
+                    GetString(item, "referenceRemoval")
                 )
             )
             .ToArray();
@@ -210,7 +225,10 @@ public static class WorkbookPatchRegistryLoader
                                     out IReadOnlyList<GameDataOption>? options
                                 )
                                     ? options
-                                    : []
+                                    : [],
+                                parameter.TryGetProperty("defaultValue", out JsonElement defaultValue)
+                                    ? defaultValue.Clone() : null,
+                                GetBoolean(parameter, "allowsMultipleEnumValues")
                             )
                         );
                     }

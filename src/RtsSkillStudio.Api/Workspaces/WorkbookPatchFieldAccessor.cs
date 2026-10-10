@@ -10,9 +10,9 @@ public static class WorkbookPatchFieldAccessor
     )
     {
         if (
-            TryGetActionParameterIndex(field, out int parameterIndex)
+            TryGetIndex(field, out string baseField, out int parameterIndex)
             && fields.TryGetValue(
-                "action_param",
+                baseField,
                 out IReadOnlyList<string>? parameters
             )
             && parameterIndex >= 0
@@ -36,14 +36,14 @@ public static class WorkbookPatchFieldAccessor
         string value
     )
     {
-        if (!TryGetActionParameterIndex(field, out int parameterIndex))
+        if (!TryGetIndex(field, out string baseField, out int parameterIndex))
         {
             fields[field] = [value];
             return;
         }
 
         List<string> parameters = fields.TryGetValue(
-            "action_param",
+            baseField,
             out IReadOnlyList<string>? existing
         )
             ? existing.ToList()
@@ -54,23 +54,25 @@ public static class WorkbookPatchFieldAccessor
         }
 
         parameters[parameterIndex] = value;
-        fields["action_param"] = parameters;
+        fields[baseField] = parameters;
     }
 
-    private static bool TryGetActionParameterIndex(
+    public static bool TryGetIndex(
         string field,
+        out string baseField,
         out int parameterIndex
     )
     {
-        const string prefix = "action_param[";
+        int bracket = field.LastIndexOf('[');
+        baseField = bracket > 0 ? field[..bracket] : field;
         parameterIndex = -1;
-        return field.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+        return bracket > 0
             && field.EndsWith(']')
             && int.TryParse(
-                field[prefix.Length..^1],
+                field[(bracket + 1)..^1],
                 NumberStyles.Integer,
                 CultureInfo.InvariantCulture,
                 out parameterIndex
-            );
+            ) && parameterIndex >= 0;
     }
 }

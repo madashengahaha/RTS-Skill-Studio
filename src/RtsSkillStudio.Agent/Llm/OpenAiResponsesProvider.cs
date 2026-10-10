@@ -25,7 +25,8 @@ public sealed class OpenAiResponsesProvider : ILlmProvider
             options.BaseUrl,
             options.Model,
             !string.IsNullOrWhiteSpace(options.ResolveApiKey()),
-            isDefault
+            isDefault,
+            DisplayName: options.DisplayName
         );
     }
 
@@ -36,6 +37,7 @@ public sealed class OpenAiResponsesProvider : ILlmProvider
         CancellationToken cancellationToken
     )
     {
+        _options.ValidateCredentials();
         var model = string.IsNullOrWhiteSpace(request.Model)
             ? _options.Model
             : request.Model;

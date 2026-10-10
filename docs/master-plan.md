@@ -29,6 +29,8 @@ The product goal is a natural-language skill configuration Agent that can:
 
 - [x] `ModifySkill` scalar field slice.
 - [x] `ModifyAsset` for non-repeating Effect/Condition `action_param`.
+- [x] Retargeting an existing scalar reference through registry metadata.
+- [x] Removing an existing scalar reference link with declared removal metadata.
 - [x] Semantic parameter names map to `action_param[index]`.
 - [x] Scale, unit, enum, and reference conversion.
 - [x] WorkbookPatch compilation.
@@ -58,9 +60,13 @@ test source workbook, re-read, and undone in automated tests.
 
 - [ ] Repeating and paired action parameters.
 - [ ] Adding, deleting, and reordering Effect/Condition nodes.
-- [ ] Modifying existing links.
+- [x] Retargeting an existing scalar reference (first B3 slice).
+- [x] Removing a scalar reference link (second B3 slice).
+- [ ] List-valued references and `action_param` references.
 - [ ] Shared-asset ownership and edit-lock policy.
-- [ ] Multiple operations in one Plan.
+- [x] Multiple supported modify operations in one Plan, compiled against one base
+  revision and applied/undone as one transaction. Duplicate operation IDs and
+  overlapping field writes are rejected; an invalid operation rejects the batch.
 - [ ] Plan editing, recompilation, and revision rebase.
 - [ ] Final confirmation placement decision: chat message versus diff/form.
 
@@ -79,15 +85,56 @@ Scope:
 
 ### B3: Modify Existing Skill Structure
 
-Status: next after B2 validation.
+Status: three slices implemented, waiting for user validation. The rest of B3 is
+not started.
 
-Scope:
+Implemented slice 1: retargeting one existing scalar reference.
 
-- modify existing references;
-- add and remove Effect/Condition members;
-- preserve group order where required;
-- respect shared ownership and edit locks;
-- prepare multi-operation Plan transactions.
+- the Plan writes an Existing `namespace` + `id` value into a reference field;
+- the field is addressed by its registry `entityFields` semantic name;
+- the registry declares the reference kind and its target namespace
+  (`Skill.search_target` -> `TbSearch`);
+- the compiler requires the declared target, cross-checks it against the
+  workbook `#ref=` annotation, and rejects a target that is absent, has the
+  wrong namespace, or is not an existing asset;
+- a reference field whose registry entry does not declare `referenceTarget` is
+  rejected even when the workbook annotation names one, so the registry stays
+  authoritative;
+- link changes travel through the same immutable `WorkbookPatch`, validation,
+  diff, temporary apply, working-copy apply, and undo path as B2.
+
+Implemented slice 2: `RemoveLink` for one existing scalar reference.
+
+- the Plan uses the schema `RemoveLink` operation with `parent`, semantic
+  `field`, and the `target` link it expects to remove;
+- the compiler only unlinks when the field's current cell value is exactly that
+  target, so a stale or mismatched plan fails closed with
+  `compiler.remove_link_target_mismatch`;
+- the workbook encoding of "no link" is the versioned
+  `entityFields.referenceRemoval` metadata (`Null`, `Empty`, or `Zero`); a
+  reference field without that declaration fails closed with
+  `compiler.reference_removal_undeclared` instead of guessing;
+- list-valued and `action_param` links fail closed with dedicated codes;
+- removal travels through the same immutable `WorkbookPatch`, validation, diff,
+  temporary apply, working-copy apply, and undo path as B2.
+
+Still missing in B3:
+
+- list-valued reference fields such as `condition_id_array`;
+- `action_param` references;
+- add, delete, and reorder Effect/Condition members;
+- shared ownership and edit locks for linked assets;
+
+Implemented slice 3: multi-operation modify transactions.
+
+- combines supported `ModifySkill`, `ModifyAsset`, and `RemoveLink` operations;
+- every operation resolves against the same immutable base revision;
+- duplicate operation IDs and overlapping changed-field writes fail closed;
+- any invalid operation rejects the entire Plan without emitting a Patch;
+- no-change operations are omitted; an entirely unchanged Plan is `NoChange`;
+- the full Plan hash and contiguous command sequence identify one immutable Patch;
+- automated tests cover deterministic compilation, validation, failure isolation,
+  temporary apply, final apply, and undo of multiple records.
 
 ### B4: Plan Editing And Recompilation
 
@@ -102,7 +149,11 @@ Scope:
 
 ### MVP-C1: Create One Complete Skill From Scratch
 
-Status: after B4.
+Status: generic creation compiler and Excel transaction pipeline implemented;
+synthetic tests pass. One cloud-generated Skill/Search/Damage chain passed real
+workbook-copy write/readback and undo after one semantic correction. Broader
+mechanism coverage and first-pass generation reliability remain to be evaluated.
+See `docs/skill-chain-creation.md`.
 
 Scope:
 
@@ -130,8 +181,9 @@ Scope:
 The following interfaces must remain generic:
 
 - `WorkbookPatchRegistry` action and parameter contracts.
-- `WorkbookPatchField` binding kind and parameter index.
+- `WorkbookPatchField` binding kind, parameter index, and reference contract.
 - `WorkbookPatchRecordValue` and `WorkbookPatchFieldAccessor`.
+- `WorkbookPatchReference` target resolution by declared namespace, not asset ID.
 - target resolution by namespace and record, not asset ID.
 - transaction journal and undo keyed by transaction ID.
 
@@ -150,9 +202,22 @@ Use the current Studio at `http://localhost:5257/`.
 - [ ] Re-read the workbook and confirm the values.
 - [ ] Click `撤销写入` and confirm the original values return.
 - [ ] Confirm the transaction record exists under `.studio-work/transactions`.
+- [ ] Request a change to a skill's `search_target` reference and confirm the
+  diff targets the reference field of `skill`.
+- [ ] Confirm the target namespace and ID in the diff evidence resolve to a real
+  `TbSearch` asset, and that an unknown ID is rejected before any write.
+- [ ] Request a `RemoveLink` for a skill's `search_target` and confirm the diff
+  writes the declared `referenceRemoval` encoding (`0` for `Skill.search_target`)
+  and that a mismatched current target is rejected before any write.
+- [ ] Request multiple supported changes and verify one combined diff, one
+  confirmation, and one transaction undo restores all changed records.
 
 ## Related Documents
 
 - `docs/phase-b2-generic-action-parameters.md`
 - `docs/phase-b-modify-skill-vertical-slice.md`
 - `docs/architecture.md`
+
+## Capability acceptance boundary
+
+Agent completeness is measured against runtime-supported, contract-expressible requirements, not existing examples or every design request. Runtime support, Studio contract/compiler support, and example/verification coverage must be assessed separately. See [agent-capability-acceptance.md](agent-capability-acceptance.md).

@@ -263,7 +263,10 @@
     "DeleteConditionIntent",
     "LinkExisting",
     "RemoveLink",
-    "ReorderMembers"
+    "ReorderMembers",
+    "CreateSkillChain",
+    "DeleteAsset",
+    "ExtendAssetChain"
   ],
   "readOnlyTools": [
     "get_capability_context",
@@ -294,7 +297,11 @@
       "encoding": {
         "kind": "Delimited",
         "separator": ",",
-        "fields": ["PropId", "Scale", "Fix"]
+        "fields": [
+          "PropId",
+          "Scale",
+          "Fix"
+        ]
       },
       "resolution": {
         "expression": "(owner.Property(PropId) × Scale + Fix) / 10000",
@@ -363,7 +370,13 @@
       "scale": 1,
       "unit": "ms",
       "minimum": 0,
-      "aliases": ["cd", "cd_time", "cooldown_ms", "冷却", "冷却时间"],
+      "aliases": [
+        "cd",
+        "cd_time",
+        "cooldown_ms",
+        "冷却",
+        "冷却时间"
+      ],
       "description": "技能冷却时间，Plan uses semantic seconds or milliseconds with an explicit unit and the compiler writes milliseconds."
     },
     {
@@ -375,7 +388,10 @@
       "scale": 1,
       "unit": "ms",
       "minimum": 0,
-      "aliases": ["持续时间", "duration_ms"],
+      "aliases": [
+        "持续时间",
+        "duration_ms"
+      ],
       "description": "技能持续时间，Plan uses semantic seconds or milliseconds with an explicit unit and the compiler writes milliseconds."
     },
     {
@@ -425,6 +441,21 @@
     {
       "path": "DamagePipeline.PipelineStage_param",
       "enumName": "DamageStageType"
+    },
+    {
+      "path": "Skill.search_target",
+      "semanticName": "search_target",
+      "kind": "Reference",
+      "rawType": "int#ref=search",
+      "required": false,
+      "referenceTarget": "TbSearch",
+      "referenceRemoval": "Zero",
+      "aliases": [
+        "searchTarget",
+        "目标搜索",
+        "搜索配置"
+      ],
+      "description": "技能的目标搜索链接。Plan 用 Existing namespace + id 指向 TbSearch 中的既有资产；编译器写回引用目标的主 ID，RemoveLink 按 referenceRemoval 写回无链接编码。"
     }
   ],
   "intents": [

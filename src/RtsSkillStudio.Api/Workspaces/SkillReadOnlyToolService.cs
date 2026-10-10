@@ -20,6 +20,20 @@ public sealed class SkillReadOnlyToolService(
     private readonly Lazy<Task<JsonObject>> _registry = new(
         () => LoadRegistryAsync(environment)
     );
+    private readonly Lazy<Task<JsonObject>> _creation = new(async () =>
+    {
+        string json = await File.ReadAllTextAsync(ContractPath(environment, "config", "default-value-contract.v0.json"));
+        JsonObject defaults = JsonNode.Parse(json)!.AsObject();
+        JsonObject creation = defaults["creation"]?.DeepClone().AsObject() ?? new JsonObject();
+        creation["editing"] = defaults["editing"]?.DeepClone();
+        return creation;
+    });
+    private readonly Lazy<Task<JsonObject>> _mechanisms = new(async () =>
+    {
+        JsonNode? document = JsonNode.Parse(await File.ReadAllTextAsync(
+            ContractPath(environment, "config", "default-mechanism-contract.v0.json")));
+        return document!.AsObject();
+    });
 
     private static readonly IReadOnlyDictionary<string, string>
         ToolDescriptions = new Dictionary<string, string>(
@@ -582,14 +596,17 @@ public sealed class SkillReadOnlyToolService(
         JsonArray entities = registry["entities"]?.AsArray() ?? [];
         JsonArray entityFields = registry["entityFields"]?.AsArray() ?? [];
         JsonArray enums = registry["enums"]?.AsArray() ?? [];
+        if (!string.IsNullOrWhiteSpace(intent) && !intents.OfType<JsonObject>().Any(item => item["key"]?.GetValue<string>() == intent))
+            throw new ArgumentException("intent 必须使用已发布的 key：" + string.Join(", ", intents.OfType<JsonObject>().Select(item => item["key"]?.GetValue<string>())) + "。查询动作应使用 actionKey，查询实体应使用单个实体 key。不要把创建请求正文放入 intent。");
 
-        JsonArray selectedEffects = FilterActions(
+        bool enumScoped = !string.IsNullOrWhiteSpace(enumName);
+        JsonArray selectedEffects = enumScoped ? [] : FilterActions(
             effects,
             query,
             actionKey,
             intent
         );
-        JsonArray selectedConditions = FilterActions(
+        JsonArray selectedConditions = enumScoped ? [] : FilterActions(
             conditions,
             query,
             actionKey,
@@ -598,10 +615,11 @@ public sealed class SkillReadOnlyToolService(
         bool actionScoped =
             !string.IsNullOrWhiteSpace(actionKey)
             || !string.IsNullOrWhiteSpace(intent);
-        JsonArray selectedIntents = actionScoped
+        bool contextScoped = actionScoped || enumScoped;
+        JsonArray selectedIntents = contextScoped
             ? []
             : FilterByText(intents, query, ["key", "label"]);
-        JsonArray selectedEntities = actionScoped
+        JsonArray selectedEntities = contextScoped
             ? []
             : FilterByText(
                 entities,
@@ -609,7 +627,7 @@ public sealed class SkillReadOnlyToolService(
                 ["key", "namespace", "role"]
             );
         IReadOnlyList<AssetTableFieldSummary> allTableFields =
-            actionScoped
+            contextScoped
                 ? []
                 : (
                     await workspace.GetTableFieldsAsync(
@@ -631,7 +649,7 @@ public sealed class SkillReadOnlyToolService(
                 .Where(field => TableFieldMatches(field, query))
                 .Select(field => field.EntityKey)
         );
-        JsonArray selectedFields = actionScoped
+        JsonArray selectedFields = contextScoped
             ? []
             : MergeEntityFields(
                 FilterByText(
@@ -643,7 +661,7 @@ public sealed class SkillReadOnlyToolService(
                 selectedEntities
             );
         IReadOnlyList<AssetTableFieldSummary> tableFieldDefinitions =
-            actionScoped
+            contextScoped
                 ? []
                 : allTableFields
                     .Where(
@@ -770,6 +788,19 @@ public sealed class SkillReadOnlyToolService(
                 .ToArray()
         );
 
+        bool directoryRequest = string.IsNullOrWhiteSpace(query) && !actionScoped && string.IsNullOrWhiteSpace(enumName);
+        JsonObject? creationSlice = null;
+        if (!actionScoped && string.IsNullOrWhiteSpace(enumName))
+        {
+            creationSlice = (await _creation.Value).DeepClone().AsObject();
+            if (!directoryRequest)
+                creationSlice["entities"] = new JsonArray(creationSlice["entities"]!.AsArray().OfType<JsonObject>()
+                    .Where(entity => string.Equals(query, entity["entityKey"]?.GetValue<string>(), StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(query, entity["namespace"]?.GetValue<string>(), StringComparison.OrdinalIgnoreCase))
+                    .Select(entity => (JsonNode?)entity.DeepClone()).ToArray());
+            creationSlice["nestedTypes"] = registry["nestedTypes"]?.DeepClone();
+        }
+
         return new JsonObject
         {
             ["status"] =
@@ -809,6 +840,12 @@ public sealed class SkillReadOnlyToolService(
             ["intents"] = Take(selectedIntents, limit),
             ["entities"] = Take(selectedEntities, limit),
             ["entityFields"] = Take(selectedFields, limit),
+            ["creationContract"] = creationSlice,
+            ["editingContract"] = (await _creation.Value)["editing"]?.DeepClone(),
+            ["planOperations"] = registry["planOperations"]?.DeepClone(),
+            ["mechanismContract"] = directoryRequest ? (await _mechanisms.Value).DeepClone() : null,
+            ["actionDirectory"] = directoryRequest ? new JsonArray(effects.OfType<JsonObject>().Concat(conditions.OfType<JsonObject>()).Take(128)
+                .Select(action => (JsonNode?)new JsonObject { ["key"] = action["key"]?.DeepClone(), ["label"] = action["label"]?.DeepClone(), ["semantic"] = action["semantic"]?.DeepClone() }).ToArray()) : null,
             ["tableFields"] = Take(tableFields, limit),
             ["nestedTypes"] = Take(nestedTypes, limit),
             ["enums"] = Take(selectedEnums, limit)

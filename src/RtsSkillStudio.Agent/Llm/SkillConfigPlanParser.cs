@@ -9,6 +9,7 @@ public static partial class SkillConfigPlanParser
         new(StringComparer.Ordinal)
         {
             "CreateSkill",
+            "CreateSkillChain",
             "ModifySkill",
             "ModifyAsset",
             "AddEffectIntent",
@@ -24,6 +25,21 @@ public static partial class SkillConfigPlanParser
 
     public static SkillConfigPlanExtraction Extract(string text)
     {
+        // Structured-output providers may return the object without a fence.
+        if (text.TrimStart().StartsWith('{'))
+        {
+            try
+            {
+                using JsonDocument raw = JsonDocument.Parse(text);
+                if (IsPlanCandidate(raw.RootElement))
+                {
+                    var errors = new List<string>();
+                    ValidateRoot(raw.RootElement, errors);
+                    return new(raw.RootElement.GetRawText(), errors);
+                }
+            }
+            catch (JsonException) { }
+        }
         foreach (Match match in JsonFenceRegex().Matches(text).Reverse())
         {
             string json = match.Groups["json"].Value.Trim();
@@ -214,6 +230,11 @@ public static partial class SkillConfigPlanParser
 
         switch (kind)
         {
+            case "CreateSkillChain":
+                RequireNonEmptyString(operation, "root", errors, prefix);
+                if (!HasNonEmptyArray(operation, "nodes"))
+                    errors.Add($"{prefix}.nodes 必须是非空数组。");
+                break;
             case "ModifySkill":
                 RequireObject(operation, "skill", errors, prefix);
                 RequireObject(operation, "fields", errors, prefix);

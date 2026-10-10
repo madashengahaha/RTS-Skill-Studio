@@ -112,10 +112,10 @@
               <select id="providerSelect" class="select-control" disabled>
                 <option>正在读取...</option>
               </select>
-              <label class="field-label provider-field-label" for="modelSelect">Model</label>
-              <select id="modelSelect" class="select-control" disabled>
-                <option>跟随 Provider</option>
-              </select>
+              <label class="field-label provider-field-label" for="modelNameInput">模型（选择或输入 ID）</label>
+              <input id="modelNameInput" class="select-control" list="modelSuggestions" autocomplete="off" placeholder="选择或输入模型 ID">
+              <datalist id="modelSuggestions"></datalist>
+              <p id="modelListStatus" class="model-settings-note"></p>
               <label class="field-label provider-field-label" for="reasoningSelect">Reasoning</label>
               <select id="reasoningSelect" class="select-control">
                 <option value="">Provider 默认</option>
@@ -124,6 +124,23 @@
                 <option value="medium">中</option>
                 <option value="high">高</option>
               </select>
+              <label class="field-label provider-field-label" for="apiEndpointInput">API 地址</label>
+              <input id="apiEndpointInput" class="select-control" type="url" autocomplete="off">
+              <label class="field-label provider-field-label" for="apiKeyInput">API Key</label>
+              <input id="apiKeyInput" class="select-control" type="password" autocomplete="new-password" placeholder="输入 API Key">
+              <p id="apiKeySource" class="model-settings-note"></p>
+              <label><input id="clearApiKey" type="checkbox"> 清除已保存的 Key</label>
+              <label class="field-label provider-field-label" for="apiProtocol">API 协议</label>
+              <select id="apiProtocol" class="select-control">
+                <option value="OpenAiCompatibleChat">Chat Completions</option>
+                <option value="OpenAiResponses">Responses</option>
+              </select>
+              <label><input id="jsonSchemaEnabled" type="checkbox"> 支持 JSON Schema 输出</label>
+              <div class="model-settings-actions">
+                <button id="saveModelSettings" type="button">保存并使用</button>
+                <button id="testModelConnection" type="button">测试连接 / 刷新模型</button>
+              </div>
+              <p class="model-settings-note">配置由 Studio 独立保存。Key 留空保留原值，加密存于本机。</p>
               <div id="providerStatus" class="status-row">
                 <span class="status-dot is-pending"></span>
                 <span>检查连接中</span>

@@ -1488,6 +1488,8 @@ public sealed class SkillWorkspaceService(
         CancellationToken cancellationToken
     )
     {
+        if (string.IsNullOrWhiteSpace(options.ExcelDataRoot))
+            throw new InvalidOperationException("尚未配置 Excel 工作区。");
         WorkspaceSnapshot snapshot = await LoadAsync(cancellationToken);
         return new WorkbookPatchWorkspaceSnapshot(
             options.WorkspaceId,

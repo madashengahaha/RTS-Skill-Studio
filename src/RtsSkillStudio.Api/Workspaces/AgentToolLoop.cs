@@ -12,7 +12,8 @@ public sealed class AgentToolLoop(
     SkillConfigPlanValidator planValidator,
     SkillConfigPlanNormalizer planNormalizer,
     SkillWorkspaceService workspace,
-    ILogger<AgentToolLoop> logger
+    ILogger<AgentToolLoop> logger,
+    WorkbookPatchWorkspaceService? patches = null
 )
 {
     private const int MaxRounds = 4;
@@ -201,6 +202,45 @@ public sealed class AgentToolLoop(
             }
         }
 
+        if (route.Kind == AgentIntentKind.Create)
+        {
+            IReadOnlyList<AgentToolExecution> creationContext = await tools.ExecuteAsync(
+                [new AgentToolCall("get_capability_context", new System.Text.Json.Nodes.JsonObject { ["limit"] = 1, ["enumValueLimit"] = 1 })], cancellationToken);
+            executions.AddRange(creationContext);
+            var evidenceCalls = new List<AgentToolCall>();
+            foreach (AgentToolExecution context in creationContext.Where(item => !item.IsError))
+            {
+                var data = System.Text.Json.Nodes.JsonNode.Parse(context.ResultJson);
+                var primitives = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                    { "array", "map", "int", "int32", "int64", "string", "bool", "float", "double", "long", "decimal" };
+                var typeNames = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var entity in (data?["creationContract"]?["entities"] as System.Text.Json.Nodes.JsonArray ?? []))
+                    foreach (var field in (entity?["fields"] as System.Text.Json.Nodes.JsonArray ?? []))
+                        foreach (string token in (field?["rawType"]?.GetValue<string>() ?? "").Split('#')[0].Split(','))
+                            if (!primitives.Contains(token.Trim()) && token.Trim().Length > 0)
+                                typeNames.Add(token.Trim());
+                foreach (string name in typeNames)
+                {
+                    evidenceCalls.Add(new("get_capability_context", new System.Text.Json.Nodes.JsonObject { ["enum"] = name, ["enumValueLimit"] = 20 }));
+                }
+                foreach (var entry in (data?["actionDirectory"] as System.Text.Json.Nodes.JsonArray ?? []))
+                {
+                    string? key = entry?["key"]?.GetValue<string>();
+                    string label = entry?["label"]?.GetValue<string>() ?? "";
+                    if (key is not null && (message.Contains(key, StringComparison.OrdinalIgnoreCase)
+                        || (label.Length >= 2 && message.Contains(label[^2..], StringComparison.Ordinal))))
+                        evidenceCalls.Add(new("get_capability_context", new System.Text.Json.Nodes.JsonObject { ["actionKey"] = key, ["enumValueLimit"] = 20 }));
+                }
+            }
+            var creationEvidence = new List<AgentToolExecution>();
+            foreach (AgentToolCall[] batch in evidenceCalls.Take(24).Chunk(3))
+                creationEvidence.AddRange(await tools.ExecuteAsync(batch, cancellationToken));
+            executions.AddRange(creationEvidence);
+            currentMessage += Environment.NewLine + AgentToolProtocol.FormatToolResults(creationContext)
+                + Environment.NewLine + AgentToolProtocol.FormatToolResults(creationEvidence)
+                + Environment.NewLine + "创建契约和动作目录已经提供。请从目录选择动作 key，再用 actionKey 查询完整参数，用 enum 查询所需枚举。Plan 数值必须是用户语义值，包括嵌套对象中的数值；仅编译器负责按 scale 编码，模型不得预乘 scale。不要查询尚未分配的新资产 ID。";
+        }
+
         for (int round = 0; round < MaxRounds; round++)
         {
             string instructions = AgentToolProtocol.BuildIdentityInstructions(
@@ -238,7 +278,7 @@ public sealed class AgentToolLoop(
                     continuedAnswerParts.Add(result.Text);
                     if (!userRecorded)
                     {
-                        baseHistory.Add(new LlmChatMessage("user", message));
+                        baseHistory.Add(new LlmChatMessage("user", currentMessage));
                         userRecorded = true;
                     }
                     baseHistory.Add(
@@ -275,12 +315,13 @@ public sealed class AgentToolLoop(
 
             IReadOnlyList<AgentToolExecution> roundExecutions =
                 await tools.ExecuteAsync(calls, cancellationToken);
+            foreach (AgentToolExecution execution in roundExecutions)
+                logger.LogDebug("Agent tool {Name} arguments={Arguments} resultChars={Length}", execution.Name, execution.ArgumentsJson, execution.ResultJson.Length);
             executions.AddRange(roundExecutions);
-            if (!userRecorded)
-            {
-                baseHistory.Add(new LlmChatMessage("user", message));
-                userRecorded = true;
-            }
+            // Preserve every tool-result turn. Dropping earlier user/tool messages
+            // made the model lose contracts after querying a different asset.
+            baseHistory.Add(new LlmChatMessage("user", currentMessage));
+            userRecorded = true;
             baseHistory.Add(
                 new LlmChatMessage("assistant", result.Text)
             );
@@ -453,6 +494,63 @@ public sealed class AgentToolLoop(
             validationErrors.AddRange(validation.Errors);
         }
 
+        if (route.ExpectsPlan && validation?.IsValid == true && validation.Status == "Ready" && patches is not null)
+        {
+            WorkbookPatchCompileResponse compiled = await patches.CompileAsync(extraction.PlanJson!, cancellationToken);
+            validationErrors.AddRange(compiled.Errors.Select(error => error.Code + ": " + error.Message));
+        }
+        if (route.ExpectsPlan && validation?.IsValid == true && validation.Status == "Ready" && validationErrors.Count == 0)
+            validationErrors.AddRange(await ReviewSemanticsAsync(extraction.PlanJson!));
+        // Repair invalid model syntax against the actual versioned schema. Never
+        // accept a repaired proposal without running the same validator again.
+        for (int attempt = 0; route.ExpectsPlan
+            && (validationErrors.Count > 0 || string.IsNullOrWhiteSpace(extraction.PlanJson)) && attempt < 2; attempt++)
+        {
+            string schema = await planValidator.ReadSchemaAsync(cancellationToken,
+                route.Kind == AgentIntentKind.Create ? "CreateSkillChainOperation" : null);
+            if (route.Kind == AgentIntentKind.Create) schema = BindCreationRepairSchema(schema, executions);
+            LlmCompletionResult repair = await provider.CompleteAsync(new LlmCompletionRequest(
+                "修正下面的 SkillConfigPlan，使其严格满足 JSON Schema；保留用户意图和值，不添加未经证实的字段或假设。只输出完整 JSON，不要 Markdown。省略 summary、assumptions、evidence、reason 等非必需项，保持输出简短。数值必须是用户语义值，不得提前乘 scale；例如秒值使用 unit=s。root 是 localKey 字符串，fields/parameters 是键值对象。\n"
+                + "创建契约已允许新建实体，不需要先存在 Skill、Search 或效果组。先从提供的工具契约与用户请求解决枚举、单位和参数问题；只有用户未说明且没有默认契约的意图才需要澄清。已有明确语义数值时直接保留，不需要运行时战斗结果。所有所需信息齐全时输出 Ready。\n"
+                + "用户请求：" + message + "\n校验错误：" + string.Join("\n", validationErrors)
+                + "\n语义审查错误必须逐项解决，不能删除原需求或缩窄目标。缺少用户参数或契约证据时输出NeedsClarification，不强行Ready。保留载体、发射方式、命中事件、时序、生命周期和表现要求。\n"
+                + "\n待修正计划：\n" + (extraction.PlanJson ?? finalResult.Text)
+                + "\n只读契约证据：\n" + AgentToolProtocol.FormatToolResults(RepairEvidence(executions))
+                + "\nJSON Schema：\n" + schema,
+                "你是受 JSON Schema 约束的配置计划修复器。仅输出合法 JSON，禁止解释。只能使用提供的契约字段和动作参数。\n" + bootstrapContext,
+                model, [], reasoningEffort, provider.Descriptor.SupportsJsonSchema ? schema : null), cancellationToken);
+            latencyMs += repair.LatencyMs;
+            extraction = SkillConfigPlanParser.Extract(repair.Text);
+            validationErrors = new(extraction.Errors);
+            if (!string.IsNullOrWhiteSpace(extraction.PlanJson))
+            {
+                try
+                {
+                    WorkbookPatchWorkspaceSnapshot snapshot = await workspace.GetPatchWorkspaceSnapshotAsync(cancellationToken);
+                    extraction = new(planNormalizer.Normalize(extraction.PlanJson, message, snapshot), []);
+                }
+                catch (Exception exception) when (exception is InvalidOperationException or FileNotFoundException)
+                {
+                    logger.LogWarning(exception, "Failed to normalize repaired SkillConfigPlan.");
+                }
+                validation = await planValidator.ValidateAsync(extraction.PlanJson!, cancellationToken);
+                validationErrors.AddRange(validation.Errors);
+                if (validation.IsValid && validation.Status == "Ready" && patches is not null)
+                {
+                    WorkbookPatchCompileResponse compiled = await patches.CompileAsync(extraction.PlanJson!, cancellationToken);
+                    validationErrors.AddRange(compiled.Errors.Select(error => error.Code + ": " + error.Message));
+                }
+                if (validation.IsValid && validation.Status == "Ready" && validationErrors.Count == 0)
+                    validationErrors.AddRange(await ReviewSemanticsAsync(extraction.PlanJson!));
+            }
+            finalResult = repair;
+            displayText = SkillConfigPlanParser.RemovePlanBlock(repair.Text);
+        }
+
+        if (validationErrors.Any(error => error.StartsWith("semantic_review.", StringComparison.Ordinal)))
+            displayText += "\n\n需求语义审查未通过，本计划不可写入：\n"
+                + string.Join("\n", validationErrors.Where(error => error.StartsWith("semantic_review.", StringComparison.Ordinal)).Select(error => "- " + error));
+
         string? planJson = route.ExpectsPlan
             ? extraction.PlanJson
             : null;
@@ -550,6 +648,7 @@ public sealed class AgentToolLoop(
                 && !hasParameterContractEvidence => "NeedsClarification",
             _ when !route.ExpectsPlan => "Ready",
             _ when clarifications.Count > 0 => "NeedsClarification",
+            _ when validationErrors.Count > 0 => "NeedsClarification",
             _ => validation?.Status ?? "Ready"
         };
         return new AgentTurnOutcome(
@@ -569,6 +668,77 @@ public sealed class AgentToolLoop(
             selectedAsset,
             mentionedAssets
         );
+
+        async Task<IReadOnlyList<string>> ReviewSemanticsAsync(string candidate)
+        {
+            string schema = await planValidator.ReadSemanticReviewSchemaAsync(cancellationToken);
+            var evidence = new System.Text.Json.Nodes.JsonArray
+            {
+                new System.Text.Json.Nodes.JsonObject
+                {
+                    ["userRequest"] = message,
+                    ["workspaceContext"] = bootstrapContext,
+                    ["selectedAsset"] = System.Text.Json.JsonSerializer.SerializeToNode(selectedAsset)
+                }
+            };
+            foreach (AgentToolExecution execution in executions.Where(item => !item.IsError && item.Name != "review_plan_semantics"))
+                evidence.Add(new System.Text.Json.Nodes.JsonObject
+                {
+                    ["tool"] = execution.Name,
+                    ["arguments"] = System.Text.Json.Nodes.JsonNode.Parse(execution.ArgumentsJson),
+                    ["result"] = System.Text.Json.Nodes.JsonNode.Parse(execution.ResultJson)
+                });
+            string evidenceJson = evidence.ToJsonString();
+            try
+            {
+                string? previousReport = null;
+                IReadOnlyList<string> reportErrors = [];
+                for (int reviewAttempt = 0; reviewAttempt < 2; reviewAttempt++)
+                {
+                    LlmCompletionResult review = await provider.CompleteAsync(new LlmCompletionRequest(
+                        System.Text.Json.JsonSerializer.Serialize(new
+                        {
+                            originalRequest = message,
+                            conversation = history,
+                            candidatePlan = System.Text.Json.Nodes.JsonNode.Parse(candidate),
+                            evidence,
+                            previousInvalidReport = previousReport,
+                            reportValidationErrors = reportErrors
+                        }),
+                        SkillPlanSemanticReview.Instructions + "\nJSON Schema:\n" + schema,
+                        model, [], reasoningEffort, provider.Descriptor.SupportsJsonSchema ? schema : null), cancellationToken);
+                    latencyMs += review.LatencyMs;
+                    string report = review.Text.Trim();
+                    if (report.StartsWith("```", StringComparison.Ordinal))
+                        report = Regex.Replace(report, @"^```(?:json)?\s*|\s*```$", "");
+                    var userMessages = history.Where(item => item.Role == "user").Select(item => item.Content).Append(message).ToArray();
+                    SkillPlanSemanticReviewResult checkedReview = await SkillPlanSemanticReview.ValidateAsync(
+                        report, schema, candidate, evidenceJson, userMessages);
+                    executions.Add(new AgentToolExecution("review_plan_semantics",
+                        System.Text.Json.JsonSerializer.Serialize(new { planHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(candidate))) }),
+                        System.Text.Json.JsonSerializer.Serialize(new { report, errors = checkedReview.Errors }),
+                        checkedReview.Errors.Count > 0));
+                    bool invalidReport = checkedReview.Errors.Any(error =>
+                        error.StartsWith("semantic_review.invalid_", StringComparison.Ordinal)
+                        || error.StartsWith("semantic_review.duplicate_", StringComparison.Ordinal)
+                        || error.StartsWith("semantic_review.missing_binding", StringComparison.Ordinal));
+                    if (invalidReport && reviewAttempt == 0)
+                    {
+                        previousReport = report;
+                        reportErrors = checkedReview.Errors;
+                        continue;
+                    }
+                    return checkedReview.Errors;
+                }
+                return ["semantic_review.invalid_report: 审查报告未通过校验。"];
+            }
+            catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException
+                || (exception is TaskCanceledException && !cancellationToken.IsCancellationRequested))
+            {
+                logger.LogWarning(exception, "Semantic review unavailable; candidate blocked.");
+                return ["semantic_review.unavailable: 需求语义审查未完成，禁止将该计划视为Ready。"];
+            }
+        }
     }
 
     private static bool IsLengthTruncated(LlmCompletionResult result)
@@ -582,6 +752,108 @@ public sealed class AgentToolLoop(
             _ => false
         };
     }
+
+    public static string BindCreationRepairSchema(string schema, IReadOnlyList<AgentToolExecution> executions)
+    {
+        var contexts = executions.Where(item => !item.IsError)
+            .Select(item => System.Text.Json.Nodes.JsonNode.Parse(item.ResultJson)).ToArray();
+        var entities = contexts.SelectMany(data => (data?["creationContract"]?["entities"] as System.Text.Json.Nodes.JsonArray ?? [])
+            .OfType<System.Text.Json.Nodes.JsonObject>()).GroupBy(entity => entity["namespace"]!.GetValue<string>()).Select(group => group.First()).ToArray();
+        if (entities.Length == 0) return schema;
+        var root = System.Text.Json.Nodes.JsonNode.Parse(schema)!;
+        var operation = root["$defs"]!["CreateSkillChainOperation"]!["properties"]!;
+        var nodeTemplate = operation["nodes"]!["items"]!;
+        var alternatives = new System.Text.Json.Nodes.JsonArray();
+        var valueSchemas = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var entity in entities)
+        {
+            var node = nodeTemplate.DeepClone();
+            var properties = node["properties"]!.AsObject();
+            properties["namespace"] = new System.Text.Json.Nodes.JsonObject { ["enum"] = new System.Text.Json.Nodes.JsonArray(entity["namespace"]!.DeepClone()) };
+            var fields = new System.Text.Json.Nodes.JsonObject();
+            var reserved = new[] { "identityField", "actionField", "parameterField", "groupField" }
+                .Select(key => entity[key]?.GetValue<string>()).Where(key => key is not null).ToHashSet();
+            foreach (var field in entity["fields"]!.AsArray().OfType<System.Text.Json.Nodes.JsonObject>())
+                if (!reserved.Contains(field["key"]!.GetValue<string>()))
+                    fields[field["semanticName"]!.GetValue<string>()] = ValueSchema(field["referenceTarget"] is not null,
+                        (field["rawType"]?.GetValue<string>() ?? "").StartsWith("array", StringComparison.Ordinal), field["rawType"]?.GetValue<string>());
+            properties["fields"] = new System.Text.Json.Nodes.JsonObject { ["type"] = "object", ["additionalProperties"] = false, ["properties"] = fields };
+            string? category = entity["actionCategory"]?.GetValue<string>();
+            if (category is null)
+            {
+                foreach (string key in new[] { "actionKey", "parameters", "group" }) properties.Remove(key);
+            }
+            else
+            {
+                node["required"]!.AsArray().Add("actionKey");
+                node["required"]!.AsArray().Add("group");
+                var actions = contexts.SelectMany(data => (data?[category == "effect" ? "effects" : "conditions"] as System.Text.Json.Nodes.JsonArray ?? [])
+                    .OfType<System.Text.Json.Nodes.JsonObject>()).GroupBy(action => action["key"]!.GetValue<string>()).Select(group => group.First()).ToArray();
+                if (actions.Length > 0)
+                {
+                    properties["actionKey"] = new System.Text.Json.Nodes.JsonObject { ["enum"] = new System.Text.Json.Nodes.JsonArray(actions.Select(action => action["key"]!.DeepClone()).ToArray()) };
+                    var parameters = new System.Text.Json.Nodes.JsonObject();
+                    foreach (var parameter in actions.SelectMany(action => action["parameters"]!.AsArray().OfType<System.Text.Json.Nodes.JsonObject>()))
+                        parameters[parameter["key"]!.GetValue<string>()] = ValueSchema(parameter["referenceTarget"] is not null, parameter["repeating"]?.GetValue<bool>() == true || parameter["allowsMultipleEnumValues"]?.GetValue<bool>() == true);
+                    properties["parameters"] = new System.Text.Json.Nodes.JsonObject
+                        { ["type"] = "object", ["additionalProperties"] = false, ["properties"] = parameters };
+                }
+            }
+            alternatives.Add(node);
+        }
+        operation["nodes"]!["items"] = new System.Text.Json.Nodes.JsonObject { ["oneOf"] = alternatives };
+        operation["groups"]!["items"]!["properties"]!["namespace"] = new System.Text.Json.Nodes.JsonObject
+        {
+            ["enum"] = new System.Text.Json.Nodes.JsonArray(entities.Select(entity => entity["groupNamespace"]?.GetValue<string>())
+                .Where(value => value is not null).Distinct().Select(value => (System.Text.Json.Nodes.JsonNode?)System.Text.Json.Nodes.JsonValue.Create(value)).ToArray())
+        };
+        return root.ToJsonString();
+        System.Text.Json.Nodes.JsonNode ValueSchema(bool reference, bool list, string? rawType = null)
+        {
+            var nested = contexts.SelectMany(data => (data?["creationContract"]?["nestedTypes"] as System.Text.Json.Nodes.JsonArray ?? [])
+                .OfType<System.Text.Json.Nodes.JsonObject>()).FirstOrDefault(type => rawType?.Split(',').Select(token => token.Trim()).Contains(type["key"]!.GetValue<string>()) == true);
+            bool map = rawType?.StartsWith("map,", StringComparison.Ordinal) == true;
+            string signature = reference + ":" + list + ":" + nested?["key"]?.GetValue<string>() + ":" + map;
+            if (valueSchemas.TryGetValue(signature, out string? existing))
+                return new System.Text.Json.Nodes.JsonObject { ["$ref"] = "#/$defs/" + existing };
+            var value = root["$defs"]!["Value"]!.DeepClone();
+            value["properties"]!.AsObject().Remove("evidence");
+            System.Text.Json.Nodes.JsonNode item = reference
+                ? new System.Text.Json.Nodes.JsonObject { ["$ref"] = "#/$defs/ChainRef" }
+                : new System.Text.Json.Nodes.JsonObject { ["type"] = new System.Text.Json.Nodes.JsonArray("string", "number", "boolean") };
+            if (nested is not null)
+            {
+                var properties = new System.Text.Json.Nodes.JsonObject();
+                foreach (var field in nested["fields"]!.AsArray())
+                    properties[field!["key"]!.GetValue<string>()] = new System.Text.Json.Nodes.JsonObject
+                        { ["type"] = new System.Text.Json.Nodes.JsonArray("string", "number") };
+                item = new System.Text.Json.Nodes.JsonObject { ["type"] = "object", ["additionalProperties"] = false, ["properties"] = properties,
+                    ["required"] = new System.Text.Json.Nodes.JsonArray(properties.Select(pair => (System.Text.Json.Nodes.JsonNode?)System.Text.Json.Nodes.JsonValue.Create(pair.Key)).ToArray()) };
+            }
+            if (map) item = new System.Text.Json.Nodes.JsonObject { ["type"] = "object", ["additionalProperties"] = new System.Text.Json.Nodes.JsonObject { ["type"] = new System.Text.Json.Nodes.JsonArray("number", "string") } };
+            value["properties"]!["value"] = list
+                ? new System.Text.Json.Nodes.JsonObject { ["type"] = "array", ["items"] = item, ["maxItems"] = 128 }
+                : item;
+            string name = "CreationValue" + valueSchemas.Count;
+            valueSchemas[signature] = name;
+            root["$defs"]![name] = value;
+            return new System.Text.Json.Nodes.JsonObject { ["$ref"] = "#/$defs/" + name };
+        }
+    }
+
+    private static IReadOnlyList<AgentToolExecution> RepairEvidence(IReadOnlyList<AgentToolExecution> executions) =>
+        executions.Select(execution =>
+        {
+            var data = System.Text.Json.Nodes.JsonNode.Parse(execution.ResultJson);
+            if (data is System.Text.Json.Nodes.JsonObject obj)
+            {
+                obj.Remove("actionDirectory");
+                obj.Remove("tableFields");
+                if (obj["creationContract"]?["entities"] is System.Text.Json.Nodes.JsonArray entities)
+                    foreach (var entity in entities.OfType<System.Text.Json.Nodes.JsonObject>()) entity.Remove("fields");
+            }
+            return execution with { ResultJson = data?.ToJsonString() ?? execution.ResultJson };
+        }).ToArray();
 
     private static string BuildMissingParameterContractText(
         StudioAssetRef? selectedAsset,

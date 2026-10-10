@@ -269,7 +269,10 @@
     "DeleteConditionIntent",
     "LinkExisting",
     "RemoveLink",
-    "ReorderMembers"
+    "ReorderMembers",
+    "CreateSkillChain",
+    "DeleteAsset",
+    "ExtendAssetChain"
   ],
   "readOnlyTools": [
     "get_capability_context",
@@ -937,6 +940,21 @@
     {
       "path": "DamagePipeline.PipelineStage_param",
       "enumName": "DamageStageType"
+    },
+    {
+      "path": "Skill.search_target",
+      "semanticName": "search_target",
+      "kind": "Reference",
+      "rawType": "int#ref=search",
+      "required": false,
+      "referenceTarget": "TbSearch",
+      "referenceRemoval": "Zero",
+      "aliases": [
+        "searchTarget",
+        "目标搜索",
+        "搜索配置"
+      ],
+      "description": "技能的目标搜索链接。Plan 用 Existing namespace + id 指向 TbSearch 中的既有资产；编译器写回引用目标的主 ID，RemoveLink 按 referenceRemoval 写回无链接编码。"
     }
   ],
   "intents": [

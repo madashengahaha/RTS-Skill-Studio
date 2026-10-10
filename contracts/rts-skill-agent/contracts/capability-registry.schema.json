@@ -213,7 +213,12 @@
         },
         "referenceTarget": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Namespace an existing scalar reference field must point at. The compiler refuses to link or unlink a reference field that does not declare it."
+        },
+        "referenceRemoval": {
+          "enum": ["Null", "Empty", "Zero"],
+          "description": "Workbook encoding used when an existing link is removed. Null writes the literal text null, Empty writes a blank cell, Zero writes 0. Declared per field because the target table decides how absence is spelled; the compiler never guesses."
         },
         "scale": {
           "type": "integer",

@@ -15,8 +15,12 @@
       "message": "Only a Ready Plan can be compiled into a WorkbookPatch."
     },
     {
-      "code": "compiler.multiple_operations",
-      "message": "Phase B accepts exactly one ModifySkill operation."
+      "code": "compiler.duplicate_operation_id",
+      "message": "Every operation in a transaction must have a unique operationId."
+    },
+    {
+      "code": "compiler.conflicting_field_write",
+      "message": "Multiple operations cannot write the same logical field in one transaction."
     },
     {
       "code": "compiler.missing_target",
@@ -35,6 +39,10 @@
       "message": "The semantic field is not a scalar field supported by the Phase B compiler."
     },
     {
+      "code": "compiler.unsupported_repeating_field",
+      "message": "The semantic field is a repeating parameter that the current compiler cannot partially modify."
+    },
+    {
       "code": "compiler.invalid_value_type",
       "message": "The Plan value cannot be converted to the declared field type."
     },
@@ -47,8 +55,68 @@
       "message": "The target field requires a scale that is not declared."
     },
     {
+      "code": "compiler.reference_target_undeclared",
+      "message": "A link change targets a reference field the capability registry does not declare as a reference."
+    },
+    {
+      "code": "compiler.reference_contract_mismatch",
+      "message": "The registry reference target disagrees with the workbook type annotation."
+    },
+    {
+      "code": "compiler.invalid_reference_value",
+      "message": "The Plan reference value is not an Existing namespace plus integer id."
+    },
+    {
+      "code": "compiler.reference_namespace_mismatch",
+      "message": "The Plan reference namespace is not the namespace the field declares."
+    },
+    {
+      "code": "compiler.reference_target_missing",
+      "message": "The referenced asset does not exist in the current workspace revision."
+    },
+    {
+      "code": "compiler.reference_removal_undeclared",
+      "message": "The reference field does not declare how a removed link is encoded in the workbook."
+    },
+    {
+      "code": "compiler.remove_link_not_reference",
+      "message": "RemoveLink targets a field that is not a scalar reference."
+    },
+    {
+      "code": "compiler.remove_link_target_mismatch",
+      "message": "RemoveLink names a target that the field's current link does not point at."
+    },
+    {
+      "code": "compiler.unsupported_list_reference",
+      "message": "RemoveLink does not support list-valued reference fields."
+    },
+    {
+      "code": "compiler.unsupported_action_parameter_link",
+      "message": "RemoveLink does not support action-parameter links."
+    },
+    {
       "code": "compiler.no_change",
       "message": "The request produces no workbook field changes."
+    },
+    {
+      "code": "compiler.invalid_creation",
+      "message": "The skill-chain creation violates the versioned creation contract, workspace schema, references, allocation, or connectivity rules."
+    },
+    {
+      "code": "compiler.invalid_collection",
+      "message": "Collection or repeated parameter input violates the versioned encoding or reference contract."
+    },
+    {
+      "code": "compiler.rebase_conflict",
+      "message": "A reviewed baseline is missing, incompatible, or concurrently changed; preserve the proposal and request fresh review."
+    },
+    {
+      "code": "compiler.invalid_structure",
+      "message": "Structure edit violates membership, reference, shared ownership or ordering contracts."
+    },
+    {
+      "code": "compiler.shared_asset",
+      "message": "The asset or owning group is shared. Require explicit acknowledgement of all affected references."
     }
   ],
   "validation": [

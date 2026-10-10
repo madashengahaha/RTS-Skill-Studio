@@ -29,7 +29,8 @@ public sealed record LlmCompletionRequest(
     string? Instructions = null,
     string? Model = null,
     IReadOnlyList<LlmChatMessage>? History = null,
-    string? ReasoningEffort = null
+    string? ReasoningEffort = null,
+    string? ResponseSchema = null
 );
 
 public sealed record LlmCompletionResult(
@@ -46,7 +47,14 @@ public sealed record LlmProviderDescriptor(
     string BaseUrl,
     string Model,
     bool ApiKeyConfigured,
-    bool IsDefault
+    bool IsDefault,
+    bool SupportsJsonSchema = false,
+    string? DisplayName = null,
+    string ReasoningEffort = "",
+    IReadOnlyList<string>? ReasoningEfforts = null,
+    bool RequiresApiKey = false,
+    string ApiKeySource = "None",
+    int ApiKeyLength = 0
 );
 
 public sealed record LlmModelDescriptor(

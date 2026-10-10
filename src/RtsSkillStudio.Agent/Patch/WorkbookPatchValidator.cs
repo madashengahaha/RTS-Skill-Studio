@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using NJsonSchema;
 using NJsonSchema.Validation;
 using TianshuDM.Domain.GameData;
@@ -178,6 +179,28 @@ public sealed class WorkbookPatchValidator
             )
         );
 
+        if (patch.Commands.Any(command => command.Kind == "CreateNode" || command.Arguments.ContainsKey("sourcePlan")))
+        {
+            JsonObject? sourcePlan = patch.Commands.FirstOrDefault()?.Arguments["sourcePlan"] as JsonObject;
+            WorkbookPatchCompileResult? replay = sourcePlan is null ? null
+                : new WorkbookPatchCompiler(_registry).Compile(sourcePlan.ToJsonString(), workspace);
+            bool matches = replay?.Patch is not null
+                && WorkbookPatchJsonUtilities.ComputePatchId(replay.Patch) == WorkbookPatchJsonUtilities.ComputePatchId(patch);
+            string[] errors = replay?.Errors.Select(error => error.Code + ": " + error.Message).ToArray()
+                ?? ["创建 Patch 缺少可校验的语义源计划。"];
+            foreach (string code in new[] { "validation.operation", "validation.asset_type", "validation.asset_not_found",
+                "validation.field_unknown", "validation.field_type", "validation.enum", "validation.value_range",
+                "validation.reference", "validation.scale_unit" })
+                checks.Add(Check(code, matches ? "Passed" : "Failed",
+                    matches ? "创建 Patch 与当前工作区及版本化契约确定性重编译结果一致。" : "创建 Patch 与确定性重编译结果不一致。",
+                    "sourcePlan", errors));
+            checks.Add(Check("validation.ownership", !workspace.OwnershipPolicyPublished || workspace.OwnershipAllowed ? "Passed" : "Failed",
+                "创建新资产；既有引用仅复用，不修改共享分组。", "workspace.ownership"));
+            checks.Add(Check("validation.edit_lock", !workspace.EditLockPublished || !workspace.IsEditLocked ? "Passed" : "Failed",
+                "校验当前工作区编辑锁。", "workspace.editLock"));
+            return CreateReport(reportPatchId, checks);
+        }
+
         IReadOnlyList<string> operationErrors = ValidateOperations(patch);
         checks.Add(
             Check(
@@ -290,14 +313,28 @@ public sealed class WorkbookPatchValidator
                 }
             }
 
+            string? referenceNamespace =
+                WorkbookPatchReference.ResolvedNamespace(field);
+            bool isDeclaredRemoval =
+                field.Kind == GameDataFieldKind.Reference
+                && WorkbookPatchReference.TryResolveRemoval(
+                    field,
+                    out WorkbookPatchReferenceRemoval? declaredRemoval
+                )
+                && string.Equals(
+                    declaredRemoval!.RawValue,
+                    after,
+                    StringComparison.Ordinal
+                );
             if (
-                !string.IsNullOrWhiteSpace(field.ReferenceNamespace)
+                !isDeclaredRemoval
+                && !string.IsNullOrWhiteSpace(referenceNamespace)
                 && after.Length > 0
             )
             {
                 WorkbookPatchTable? referenceTable = FindTable(
                     workspace,
-                    field.ReferenceNamespace
+                    referenceNamespace
                 );
                 if (
                     referenceTable is null
@@ -313,7 +350,7 @@ public sealed class WorkbookPatchValidator
                 )
                 {
                     referenceErrors.Add(
-                        $"{field.Path}={after} 未解析到 {field.ReferenceNamespace}。"
+                        $"{field.Path}={after} 未解析到 {referenceNamespace}。"
                     );
                 }
             }
@@ -603,6 +640,12 @@ public sealed class WorkbookPatchValidator
         HashSet<string> operationIds = patch.Commands
             .Select(item => item.OperationId)
             .ToHashSet(StringComparer.Ordinal);
+        if (operationIds.Count != patch.Commands.Count)
+            errors.Add("Patch command operationId 必须唯一。");
+        if (!patch.Commands.Select(command => command.Sequence).SequenceEqual(Enumerable.Range(0, patch.Commands.Count)))
+            errors.Add("Patch command sequence 必须从零开始连续排列。");
+        if (patch.FieldChanges.Select(change => change.LogicalAddress).Distinct().Count() != patch.FieldChanges.Count)
+            errors.Add("Patch 不能重复写入同一逻辑字段。");
         foreach (WorkbookPatchCommand command in patch.Commands)
         {
             if (!string.Equals(command.Kind, "UpdateNode", StringComparison.Ordinal))
@@ -788,6 +831,24 @@ public sealed class WorkbookPatchValidator
     )
     {
         error = "";
+        if (
+            field.Kind == GameDataFieldKind.Reference
+            && WorkbookPatchReference.TryResolveRemoval(
+                field,
+                out WorkbookPatchReferenceRemoval? removal
+            )
+            && string.Equals(
+                removal!.RawValue,
+                WorkbookFieldChangeJson.RawText(change.After),
+                StringComparison.Ordinal
+            )
+        )
+        {
+            // The declared removal encoding is contract-defined, so it does not
+            // need to survive the numeric semantic conversion.
+            return true;
+        }
+
         if (change.SemanticValue is null)
         {
             error = $"{field.Path} 缺少 semanticValue。";

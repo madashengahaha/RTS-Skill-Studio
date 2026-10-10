@@ -26,6 +26,41 @@ public sealed record SkillConfigPlanValidationResult(
 
 public sealed class SkillConfigPlanValidator
 {
+    public Task<string> ReadSemanticReviewSchemaAsync(CancellationToken cancellationToken) =>
+        File.ReadAllTextAsync(Path.Combine(Path.GetDirectoryName(_schemaPath)!,
+            "skill-plan-semantic-review.schema.json"), cancellationToken);
+
+    public async Task<string> ReadSchemaAsync(CancellationToken cancellationToken, string? operationDefinition = null)
+    {
+        string schema = await File.ReadAllTextAsync(_schemaPath, cancellationToken);
+        if (operationDefinition is null) return schema.Replace("\"value\": true", "\"value\": {}", StringComparison.Ordinal);
+        var root = System.Text.Json.Nodes.JsonNode.Parse(schema)!.AsObject();
+        root["properties"]!.AsObject().Remove("assumptions");
+        root["properties"]!.AsObject().Remove("summary");
+        root["$defs"]!["Operation"] = new System.Text.Json.Nodes.JsonObject
+            { ["$ref"] = "#/$defs/" + operationDefinition };
+        var definitions = root["$defs"]!.AsObject();
+        var required = new HashSet<string>(StringComparer.Ordinal);
+        Collect(root["properties"]);
+        Collect(root["allOf"]);
+        foreach (string key in definitions.Select(pair => pair.Key).ToArray())
+            if (!required.Contains(key)) definitions.Remove(key);
+        return root.ToJsonString().Replace("\"value\":true", "\"value\":{}", StringComparison.Ordinal);
+        void Collect(System.Text.Json.Nodes.JsonNode? node)
+        {
+            if (node is System.Text.Json.Nodes.JsonObject obj)
+            {
+                if (obj["$ref"]?.GetValue<string>() is string reference && reference.StartsWith("#/$defs/", StringComparison.Ordinal))
+                {
+                    string key = reference[8..];
+                    if (required.Add(key)) Collect(definitions[key]);
+                }
+                foreach (var pair in obj) Collect(pair.Value);
+            }
+            else if (node is System.Text.Json.Nodes.JsonArray array)
+                foreach (var child in array) Collect(child);
+        }
+    }
     private readonly string _schemaPath;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private JsonSchema? _schema;

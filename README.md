@@ -75,10 +75,8 @@ SkillConfigPlan
   -> Studio-controlled atomic apply
 ```
 
-The compiler does not confirm a plan; the user does. The current phase adds a
-temporary limit because Plan compilation, validation, diff, confirmation, and
-controlled apply are not implemented yet. Direct writes are permanently forbidden;
-controlled writes are temporarily unavailable.
+The compiler does not confirm a plan; the user does. Supported modifications use
+the compilation, validation, diff, confirmation, and controlled apply pipeline.
 
 ## Current Status
 
@@ -102,9 +100,9 @@ The next executable phase is defined in
   - OpenAI Responses API.
   - OpenAI-compatible Chat Completions.
   - Local Ollama provider.
-  - Optional local CC Switch development route.
+  - Cloud provider settings managed directly by Studio.
 - Local deployment verified with `qwen3.5:4b` on Ollama.
-- Cloud model routing verified through CC Switch's active Codex provider.
+- Cloud model access uses Studio-owned provider profiles and encrypted local keys.
 - Backend-owned Agent policy shared by every provider, including the final product
   goal, current phase, domain terms, evidence rules, and permanent write boundary.
 - Intent routing for query, configuration, creation, clarification, and unsupported
@@ -118,7 +116,7 @@ The next executable phase is defined in
   EffectGroup, and ConditionGroup behavior roots.
 - Persistent SQLite conversation sessions with create, list, switch, selected-skill
   binding, and multi-turn history.
-- Model enumeration and selection for Ollama and CC Switch, plus configurable
+- Model enumeration and selection for configured providers, plus configurable
   reasoning effort.
 - Structured `SkillConfigPlan` extraction for configuration requests, deterministic
   structural validation, and a real Plan inspector tab.
@@ -132,8 +130,8 @@ The next executable phase is defined in
   - Desktop and mobile layouts.
 - Provider routing verified end to end:
   - Ollama local route returns `200`.
-  - CC Switch forwards to its active Codex upstream and honors the requested model.
-  - CC Switch exposes its model catalog through `/v1/models`.
+  - Each Studio profile supplies its own protocol, endpoint, model, and credential.
+  - Studio queries the cloud upstream's `/models` catalog.
 - Real Excel workspace reading:
   - Shared-file snapshot loading while Excel has workbooks open.
   - Current workspace: 29 tables, 1,958 graph nodes, 1,749 graph edges,
@@ -154,26 +152,63 @@ The next executable phase is defined in
     re-reads the result.
   - Verified `cooldown = 8s -> cd_time = 8000` against the real workspace with
     the source-root hash unchanged.
+- Phase B2 generic action-parameter slice:
+  - `ModifyAsset` for non-repeating Effect and Condition `action_param`.
+  - Registry action-parameter keys bind deterministically to `action_param[index]`.
+  - Enum, reference, scaled integer, integer, boolean, and text parameters.
+- Phase B3 first slice — retargeting an existing scalar reference:
+  - Registry `entityFields` declare the reference kind and target namespace
+    (`Skill.search_target` -> `TbSearch`).
+  - `ModifySkill` and `ModifyAsset` accept an Existing `namespace` + `id` value
+    for a reference field.
+  - The compiler requires the declared target namespace, checks it against the
+    workbook `#ref=` annotation, and rejects a target that does not exist.
+  - A reference field whose registry entry does not declare `referenceTarget`
+    is rejected, even when the workbook `#ref=` annotation names one.
+- Phase B3 second slice — `RemoveLink` for an existing scalar reference:
+  - The Plan uses the schema `RemoveLink` operation with `parent`, semantic
+    `field`, and the `target` link it expects to remove.
+  - The compiler only unlinks when the field's current cell value is exactly
+    that target, so a stale or mismatched plan fails closed.
+  - The workbook encoding of "no link" comes from the versioned
+    `entityFields.referenceRemoval` metadata (`Null`, `Empty`, or `Zero`);
+    a reference field without that declaration cannot be unlinked.
+  - List-valued and `action_param` links fail closed with their own codes.
+  - Reuses the B2 patch, validation, diff, temporary apply, working-copy apply,
+    and undo path unchanged.
 
 ### In Progress
 
-- Prepare the next phase: controlled source working-copy confirmation, atomic
-  apply, backup, rollback, and undo.
+Complete-chain creation now uses the metadata-driven `CreateSkillChain` operation:
+local asset/group references, deterministic allocation, semantic parameter encoding,
+reachability/cycle checks, append-only Excel rows, and the existing apply/undo flow.
+See [creation scope and verification](docs/skill-chain-creation.md).
+
+Multi-operation modify Plans are implemented: supported operations compile against
+one base revision into one Patch and use one apply/undo transaction. Invalid
+operations reject the whole Plan; duplicate operation IDs and overlapping changed
+fields are rejected. Automated tests verify multiple-record apply and undo.
+
+- Extending Phase B3: list-valued reference fields and action-parameter links.
 
 ### Next
 
-Extend modification support beyond the scalar-field vertical slice, then add
-Plan recompilation and controlled source working-copy apply.
+Effect and Condition member add, delete, and reorder, shared-asset ownership and
+edit-lock policy, then Plan recompilation.
 
 ### Current Limits
 
 - Conversation rename and delete are not implemented.
-- Phase B supports one `ModifySkill` operation and scalar fields; Effect,
-  Condition, Buff, Bullet, and Search restructuring are not implemented.
-- Source workbook writes, source confirmation, backup, rollback, and undo are
-  not implemented yet.
+- Phase B supports multiple modify operations per plan against one base revision,
+  with unique operation IDs and no overlapping changed-field writes. An invalid
+  operation rejects the batch; apply and undo cover the whole transaction.
+  Supported fields remain scalar. List-valued
+  references (`condition_id_array`), `action_param` references, Effect/Condition
+  member add or delete, and reordering are not implemented.
+- Reference retargeting and removal do not yet consult shared-asset ownership or
+  edit locks.
 - Direct OpenAI access is configured but has not been live-tested because no
-  API key/model was provided. CC Switch cloud routing has been tested.
+  API key/model was provided. Direct cloud routing has been tested.
 
 ## Layout
 
@@ -198,22 +233,20 @@ cd contract-factory; npm run validate; npm test; npm run eval:modify
 
 ## Local LLM
 
-Ollama is configured as the default provider at
-`http://127.0.0.1:11434/v1` with model `qwen3.5:4b`.
+Studio manages model settings independently. Open Settings → Model, choose DeepSeek,
+OpenAI, Ollama, or a custom compatible endpoint, then configure the model ID,
+reasoning effort, endpoint, API key, and API protocol. Save applies immediately;
+the connection button saves and checks the model-list endpoint (it does not generate a completion).
+Model IDs can also be entered manually when model enumeration is unavailable.
 
-The cloud provider uses the OpenAI Responses API. Set `OPENAI_API_KEY` and fill
-in the `openai` model in `src/RtsSkillStudio.Api/appsettings.json`, or override
-configuration with environment variables.
-
-CC Switch can be used as an optional development provider while its local proxy
-is running on `127.0.0.1:15721`. The `ccswitch` provider routes through the
-currently selected Codex provider and is not a product dependency. Its `/v1/models`
-endpoint exposes the models supported by that Codex route, and the Studio UI loads
-that catalog into its model selector.
-
-The provider configuration still supplies the default model. The UI can override it
-per request through the enumerated model list, and reasoning effort can be selected
-independently.
+DeepSeek is the default preset. No CC Switch files or settings are read.
+Each provider retains its own settings. Keys are never returned to the browser;
+a blank key preserves the saved key, while Clear explicitly removes it (including
+environment-key fallback for that provider). Configuration is encrypted in
+`%LOCALAPPDATA%/RtsSkillStudio/model-settings/settings.protected`; Windows protects
+the encryption keys with the current user's DPAPI credentials.
+`ModelSettings:Directory` can isolate settings for tests.
+Environment API keys such as `DEEPSEEK_API_KEY` remain supported.
 
 ```powershell
 $env:OPENAI_API_KEY = "<key>"

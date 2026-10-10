@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 0,
+  "planId": "create-instant-damage-chain",
+  "base": {
+    "workspaceId": "studio-workspace",
+    "revision": "runtime",
+    "sourceHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "capabilityRegistryVersion": "0.1.0",
+    "defaultValueContractVersion": "0.2.0",
+    "defaultMechanismContractVersion": "0.1.0"
+  },
+  "request": {
+    "text": "创建冷却8秒、半径3、对敌方英雄造成50点固定伤害的自动技能，使用现有伤害管线1001。"
+  },
+  "status": "Ready",
+  "operations": [
+    {
+      "operationId": "create-chain",
+      "kind": "CreateSkillChain",
+      "root": "skill",
+      "groups": [
+        {
+          "namespace": "EffectGroup",
+          "localKey": "main"
+        }
+      ],
+      "nodes": [
+        {
+          "namespace": "TbSkill",
+          "localKey": "skill",
+          "fields": {
+            "cooldown": {
+              "value": 8,
+              "source": "UserEdited",
+              "unit": "s"
+            },
+            "effect_group_id": {
+              "value": {
+                "binding": "Local",
+                "namespace": "EffectGroup",
+                "localKey": "main"
+              },
+              "source": "UserEdited"
+            },
+            "search_target": {
+              "value": {
+                "binding": "Local",
+                "namespace": "TbSearch",
+                "localKey": "search"
+              },
+              "source": "UserEdited"
+            }
+          }
+        },
+        {
+          "namespace": "TbSearch",
+          "localKey": "search",
+          "fields": {
+            "shape": {
+              "value": "Circle",
+              "source": "UserEdited"
+            },
+            "shape_param": {
+              "value": [
+                {
+                  "PropId": "None",
+                  "Scale": 0,
+                  "Fix": 3
+                }
+              ],
+              "source": "UserEdited"
+            },
+            "team": {
+              "value": "Enemy",
+              "source": "UserEdited"
+            },
+            "type": {
+              "value": "Hero",
+              "source": "UserEdited"
+            },
+            "count": {
+              "value": 1,
+              "source": "UserEdited"
+            }
+          }
+        },
+        {
+          "namespace": "TbEffect",
+          "localKey": "damage",
+          "actionKey": "Damage",
+          "group": {
+            "binding": "Local",
+            "namespace": "EffectGroup",
+            "localKey": "main"
+          },
+          "fields": {
+            "name": {
+              "value": "完整链路创建验证：50点固定伤害",
+              "source": "UserEdited"
+            }
+          },
+          "parameters": {
+            "pipeline": {
+              "value": {
+                "binding": "Existing",
+                "namespace": "TbDamagePipeline",
+                "id": 1001
+              },
+              "source": "UserEdited"
+            },
+            "attackType": {
+              "value": "None",
+              "source": "UserEdited"
+            },
+            "fixedDamage": {
+              "value": 50,
+              "source": "UserEdited"
+            },
+            "attackScale": {
+              "value": 0,
+              "source": "UserEdited"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

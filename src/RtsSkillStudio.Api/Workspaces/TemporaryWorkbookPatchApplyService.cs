@@ -81,12 +81,7 @@ public sealed class TemporaryWorkbookPatchApplyService(
                 () =>
                 {
                     Directory.CreateDirectory(outputDataRoot);
-                    IReadOnlyCollection<string> tableKeys = patch
-                        .FieldChanges.Select(
-                            change => change.LogicalAddress.TableKey
-                        )
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToArray();
+                    IReadOnlyCollection<string> tableKeys = WorkbookPatchImpact.TableKeys(patch).ToArray();
                     GameDataCatalog sourceCatalog =
                         catalogReader.Read(sourceDataRoot, tableKeys);
                     string copiedHash =
@@ -114,7 +109,7 @@ public sealed class TemporaryWorkbookPatchApplyService(
                     bool verified =
                         sourceUnchanged
                         && mismatches.Count == 0
-                        && verifiedFieldCount == patch.FieldChanges.Count;
+                        && verifiedFieldCount == WorkbookPatchImpact.ChangeCount(patch);
                     return new TemporaryWorkbookPatchApplyResult(
                         verified ? "Verified" : "Failed",
                         patch.PatchId,
@@ -160,25 +155,19 @@ public sealed class TemporaryWorkbookPatchApplyService(
         GameDataCatalog catalog = sourceCatalog;
         var mismatchesList = new List<string>();
         var stagedTables = new List<(string RelativePath, GameDataTable Table)>();
-        foreach (
-            IGrouping<string, WorkbookFieldChange> tableChanges in patch
-                .FieldChanges.GroupBy(
-                    item => item.LogicalAddress.TableKey,
-                    StringComparer.OrdinalIgnoreCase
-                )
-                .OrderBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
-        )
+        foreach (string tableKey in WorkbookPatchImpact.TableKeys(patch).OrderBy(key => key, StringComparer.Ordinal))
         {
+            WorkbookFieldChange[] tableChanges = patch.FieldChanges.Where(change => change.LogicalAddress.TableKey == tableKey).ToArray();
             GameDataTable? table = catalog.Tables.FirstOrDefault(
                 item => string.Equals(
                     item.Key,
-                    tableChanges.Key,
+                    tableKey,
                     StringComparison.OrdinalIgnoreCase
                 )
             );
             if (table is null)
             {
-                mismatchesList.Add($"缺少表 {tableChanges.Key}。");
+                mismatchesList.Add($"缺少表 {tableKey}。");
                 continue;
             }
 
@@ -204,6 +193,16 @@ public sealed class TemporaryWorkbookPatchApplyService(
             );
 
             var records = table.Records.ToDictionary(item => item.Id);
+            int[] createdIds = patch.Commands.Where(command => command.Kind == "CreateNode"
+                && patch.FieldChanges.Any(change => change.LogicalAddress.TableKey == tableKey && change.Namespace == command.Target.Namespace && change.Id == command.Target.Id))
+                .Select(command => command.Target.Id ?? throw new InvalidDataException("创建命令缺少 ID。"))
+                .ToArray();
+            foreach (int id in createdIds)
+            {
+                if (records.ContainsKey(id)) throw new InvalidDataException($"新增 ID {table.Key}:{id} 已存在。");
+                records.Add(id, new GameDataRecord(id, new Dictionary<string, IReadOnlyList<string>>(),
+                    records.Values.Select(record => record.SourceOrder).DefaultIfEmpty(0).Max() + 1));
+            }
             foreach (
                 IGrouping<int, WorkbookFieldChange> recordChanges in tableChanges
                     .GroupBy(item => item.Id)
@@ -248,7 +247,7 @@ public sealed class TemporaryWorkbookPatchApplyService(
             catalog = catalog.ReplaceTable(updated);
             GameDataWorkbookCellUpdater.Apply(
                 stagedWorkbookPath,
-                table,
+                updated,
                 tableChanges
                     .Select(
                         change =>
@@ -264,7 +263,9 @@ public sealed class TemporaryWorkbookPatchApplyService(
                                 )
                             );
                         }
-                    )
+                    ),
+                createdIds,
+                WorkbookPatchImpact.RowCommands(patch).Where(command => command.Arguments["tableKey"]!.GetValue<string>() == tableKey).ToArray()
             );
             IReadOnlyList<string> packageErrors =
                 WorkbookPackageIntegrityValidator.FindNewErrors(
@@ -329,6 +330,17 @@ public sealed class TemporaryWorkbookPatchApplyService(
                     $"{change.LogicalAddress.TableKey}.{change.Id}.{change.Field} expected={expected} actual={actual}"
                 );
             }
+        }
+
+        foreach (string tableKey in WorkbookPatchImpact.TableKeys(patch))
+        {
+            var staged = stagedTables.Single(item => item.Table.Key == tableKey);
+            GameDataTable reread = workbookReader.Read(new GameDataTableSource(staged.Table.Key, staged.Table.DisplayName,
+                staged.Table.Category, staged.RelativePath, Path.Combine(outputDataRoot, staged.RelativePath)));
+            IReadOnlyList<string> errors = WorkbookPatchImpact.VerifyRows(patch, tableKey,
+                reread.Records.Select(record => (record.Id, record.SourceOrder)).ToArray());
+            mismatchesList.AddRange(errors);
+            if (errors.Count == 0) verified += WorkbookPatchImpact.RowCommands(patch).Count(command => command.Arguments["tableKey"]!.GetValue<string>() == tableKey);
         }
 
         writtenHash = SkillWorkspaceService.ComputeSourceTreeHash(
@@ -396,22 +408,9 @@ public sealed class TemporaryWorkbookPatchApplyService(
         string field
     )
     {
-        const string prefix = "action_param[";
-        if (
-            field.StartsWith(
-                prefix,
-                StringComparison.OrdinalIgnoreCase
-            )
-            && field.EndsWith(']')
-            && int.TryParse(
-                field[prefix.Length..^1],
-                System.Globalization.NumberStyles.Integer,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out int index
-            )
-        )
+        if (WorkbookPatchFieldAccessor.TryGetIndex(field, out string baseField, out int index))
         {
-            return ("action_param", index);
+            return (baseField, index);
         }
 
         return (field, 0);

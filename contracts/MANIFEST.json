@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "config/capability-registry.v0.json",
-      "sha256": "9deafeec0b67da21b78f5c0dba1a802dbd929623f8389acdab518f84f426d938"
+      "sha256": "ad0dce87e98fc542f33e70a037735b3cac52490de274554f456bd54d72c4cc1b"
     },
     {
       "path": "config/default-mechanism-contract.v0.json",
@@ -11,7 +11,7 @@
     },
     {
       "path": "config/default-value-contract.v0.json",
-      "sha256": "5c232d0a6fc8a765c94c402b7459cd393c4d96d90fd4630f0624257eff09be0b"
+      "sha256": "765d03000ab9b4e4a9432603f25637c79ad6729ea29a4165570fcfe3e6f327cc"
     },
     {
       "path": "config/enum-overlays.v0.json",
@@ -27,7 +27,7 @@
     },
     {
       "path": "config/registry-foundation.v0.json",
-      "sha256": "1b8c494dcac418381aff8889a8dc915562009063a5595430ad49da631bc725fb"
+      "sha256": "3210c529ce680f93cc572c524f11e8ba6f24c7e137e5bc5cf19f64da0a6cc253"
     },
     {
       "path": "config/semantic-overlay.v0.json",
@@ -39,11 +39,11 @@
     },
     {
       "path": "config/workbook-patch-errors.v0.json",
-      "sha256": "57131ec25ac9a85f8fad162171f35dae0cb8a7622ea7ae3ec7ea38c4f66ced98"
+      "sha256": "31e510edfecd0e7776a71410d1b505b998ec30d12749e9189ddc0e332b53c2be"
     },
     {
       "path": "contracts/capability-registry.schema.json",
-      "sha256": "ef3936c4d50054c2cee212d534b36725bb82dca2eb615425cad1d0004df4b9ae"
+      "sha256": "886b97b29acd18817c6b8ed5a793c516b170afe68b07684fa863ea0026b521da"
     },
     {
       "path": "contracts/read-only-results.schema.json",
@@ -51,11 +51,15 @@
     },
     {
       "path": "contracts/skill-config-plan.schema.json",
-      "sha256": "1c45de38faa1e598cb08c5699db876fa200805227997b987f595ac7c06f1c396"
+      "sha256": "3d0248efb7831bf70799c198f92c6cdd863da2828f021b40f8d0908cbc48922a"
     },
     {
       "path": "contracts/skill-graph.schema.json",
       "sha256": "f4b371b41c7d59a76a27e6d518e553c933d6de13ae0433b68ee344a7d1cc3f7a"
+    },
+    {
+      "path": "contracts/skill-plan-semantic-review.schema.json",
+      "sha256": "f05241f60076b784d22548aa0d3ae75f017b70da3fe3f06a18619bc5d3318012"
     },
     {
       "path": "contracts/workbook-patch-validation.schema.json",
@@ -90,5 +94,5 @@
       "sha256": "404d3989cf8344c6178599c28d62c991ac7229c9df5470f47e3101c702cd3f6a"
     }
   ],
-  "combinedSha256": "7e0726111134e2baf1b6122ee087343ba8e206a96b81bc161773cf8fd84646d7"
+  "combinedSha256": "726deeae18ef6582a5d51e7cc5c63b604ec883a851f72280ea8911fc73a614af"
 }

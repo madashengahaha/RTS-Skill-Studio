@@ -6,6 +6,18 @@ namespace RtsSkillStudio.Tests;
 
 public sealed class AgentStageATests
 {
+    [Theory]
+    [InlineData("分析技能血源诅咒的配置可行性，仅分析不创建Plan")]
+    [InlineData("评估某项需求的机制支持情况")]
+    public void CapabilityAssessmentQueriesContractsWithoutAnExistingAsset(string message)
+    {
+        Assert.True(AgentIntentRouter.IsCapabilityAssessment(message));
+        Assert.Equal(AgentIntentKind.Query, AgentIntentRouter.Route(message).Kind);
+        Assert.False(AgentIntentRouter.Route(message).ExpectsPlan);
+        Assert.False(AgentIntentRouter.IsCapabilityAssessment("TbSkill:100101 配置可行性分析"));
+        Assert.False(AgentIntentRouter.IsCapabilityAssessment("从零创建技能并检查配置可行性"));
+    }
+
     [Fact]
     public void IntentRouterSeparatesQueryConfigurationCreateAndUnsupported()
     {

@@ -31,6 +31,7 @@ const files = [
   "contracts/capability-registry.schema.json",
   "contracts/read-only-results.schema.json",
   "contracts/skill-config-plan.schema.json",
+  "contracts/skill-plan-semantic-review.schema.json",
   "contracts/skill-graph.schema.json",
   "config/capability-registry.v0.json",
   "config/default-mechanism-contract.v0.json",

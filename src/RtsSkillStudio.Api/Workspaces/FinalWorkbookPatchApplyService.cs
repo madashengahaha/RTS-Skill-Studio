@@ -76,10 +76,7 @@ public sealed class FinalWorkbookPatchApplyService(
             transactionStore.TransactionRoot(),
             transactionId
         );
-        IReadOnlyCollection<string> tableKeys = patch.FieldChanges
-            .Select(change => change.LogicalAddress.TableKey)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        IReadOnlyCollection<string> tableKeys = WorkbookPatchImpact.TableKeys(patch).ToArray();
         GameDataCatalog catalog;
         IReadOnlyList<FileReplacement> replacements;
         try
@@ -273,6 +270,7 @@ public sealed class FinalWorkbookPatchApplyService(
                     change =>
                         $"{change.LogicalAddress.TableKey}.{change.Id}.{change.Field}"
                 )
+                .Concat(WorkbookPatchImpact.RowCommands(patch).Select(command => command.Arguments["tableKey"]!.GetValue<string>() + "." + (command.Target.Id ?? command.Target.GroupKey) + ".$row"))
                 .ToArray(),
             now,
             now,
@@ -318,7 +316,7 @@ public sealed class FinalWorkbookPatchApplyService(
                 SkillWorkspaceService.ComputeSourceTreeHash(sourceRoot);
             if (
                 verification.Mismatches.Count > 0
-                || verification.VerifiedFieldCount != patch.FieldChanges.Count
+                || verification.VerifiedFieldCount != WorkbookPatchImpact.ChangeCount(patch)
             )
             {
                 Rollback(completed);
@@ -583,9 +581,7 @@ public sealed class FinalWorkbookPatchApplyService(
     {
         var replacements = new List<FileReplacement>();
         foreach (
-            string tableKey in patch.FieldChanges
-                .Select(change => change.LogicalAddress.TableKey)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
+            string tableKey in WorkbookPatchImpact.TableKeys(patch)
         )
         {
             GameDataTable? table = catalog.Tables.FirstOrDefault(
@@ -660,6 +656,15 @@ public sealed class FinalWorkbookPatchApplyService(
             }
         }
 
+        foreach (string tableKey in WorkbookPatchImpact.TableKeys(patch))
+        {
+            GameDataTable? table = catalog.Tables.FirstOrDefault(table => table.Key == tableKey);
+            if (table is null) { mismatches.Add($"缺少表 {tableKey}。"); continue; }
+            IReadOnlyList<string> errors = WorkbookPatchImpact.VerifyRows(patch, tableKey,
+                table.Records.Select(record => (record.Id, record.SourceOrder)).ToArray());
+            mismatches.AddRange(errors);
+            if (errors.Count == 0) verified += WorkbookPatchImpact.RowCommands(patch).Count(command => command.Arguments["tableKey"]!.GetValue<string>() == tableKey);
+        }
         return new VerificationResult(verified, mismatches);
     }
 

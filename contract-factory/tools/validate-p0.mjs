@@ -10,6 +10,7 @@ import {
 
 const requiredFiles = [
   "contracts/skill-config-plan.schema.json",
+  "contracts/skill-plan-semantic-review.schema.json",
   "contracts/workbook-patch.schema.json",
   "contracts/workbook-patch-validation.schema.json",
   "contracts/capability-registry.schema.json",
@@ -293,9 +294,19 @@ assert(
 );
 
 assert(
-  defaults.contractVersion === "0.1.0",
-  "Default value contract version must be 0.1.0."
+  defaults.contractVersion === "0.2.0",
+  "Default value contract version must be 0.2.0 (creation policy)."
 );
+assert(defaults.creation?.allocationPolicy === "MaxPlusOne", "Creation must declare deterministic allocation.");
+assert(defaults.creation?.cyclePolicy === "Reject", "Creation must declare cycle handling.");
+assert(defaults.creation.entities.filter((entity) => entity.root).length === 1, "Creation needs exactly one root entity contract.");
+for (const entity of defaults.creation.entities) {
+  assert(registry.entities.some((item) => item.namespace === entity.namespace), `Unknown creation namespace ${entity.namespace}.`);
+  assert(duplicateValues(entity.fields.map((field) => field.semanticName)).length === 0, `Duplicate semantic fields in ${entity.namespace}.`);
+  assert(entity.fields.some((field) => field.key === entity.identityField), `Missing identity field in ${entity.namespace}.`);
+  for (const key of Object.keys(entity.initialFields))
+    assert(entity.fields.some((field) => field.key === key), `Unknown creation default ${entity.namespace}.${key}.`);
+}
 assert(
   defaults.fields.some((field) => field.path === "Skill.skill_type"),
   "Default value contract must define Skill.skill_type."

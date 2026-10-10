@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.DataProtection;
+using RtsSkillStudio.Api;
 using Microsoft.Extensions.Configuration;
 using RtsSkillStudio.Agent;
 using RtsSkillStudio.Agent.Llm;
@@ -12,6 +14,13 @@ using TianshuDM.Infrastructure.Excel;
 var builder = WebApplication.CreateBuilder(args);
 var llmOptions = builder.Configuration.GetSection("Llm").Get<LlmOptions>()
     ?? new LlmOptions();
+string modelSettingsRoot = builder.Configuration["ModelSettings:Directory"]
+    ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RtsSkillStudio", "model-settings");
+var protection = builder.Services.AddDataProtection().SetApplicationName("RtsSkillStudio")
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(modelSettingsRoot, "keys")));
+if (OperatingSystem.IsWindows()) protection.ProtectKeysWithDpapi();
+builder.Services.AddSingleton(services => new ModelSettingsStore(llmOptions,
+    services.GetRequiredService<IDataProtectionProvider>(), Path.Combine(modelSettingsRoot, "settings.protected")));
 var workspaceOptions = builder.Configuration.GetSection("Workspace").Get<SkillWorkspaceOptions>()
     ?? new SkillWorkspaceOptions();
 string contractRoot = Path.GetFullPath(
@@ -66,6 +75,7 @@ builder.Services.AddSingleton<IAgentReadOnlyToolService>(
 builder.Services.AddSingleton<AgentToolLoop>();
 
 var app = builder.Build();
+app.Services.GetRequiredService<ModelSettingsStore>();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
@@ -113,6 +123,13 @@ app.MapGet(
     (LlmProviderFactory providerFactory) =>
         Results.Ok(providerFactory.ListProviders())
 );
+
+app.MapPut("/api/v1/llm/providers/{providerName}/settings",
+    (string providerName, ModelSettingsRequest request, ModelSettingsStore settings, LlmProviderFactory factory) =>
+    {
+        try { settings.Save(providerName, request); return Results.Ok(factory.ListProviders()); }
+        catch (ArgumentException exception) { return Results.BadRequest(new { error = exception.Message }); }
+    });
 
 app.MapPost(
     "/api/v1/llm/chat",
@@ -295,6 +312,22 @@ app.MapGet(
                     cancellationToken
                 )
             );
+    }
+);
+
+app.MapPut(
+    "/api/v1/conversations/{conversationId}/plan",
+    async (string conversationId, WorkbookPatchCompileRequest request, StudioConversationStore conversations,
+        WorkbookPatchWorkspaceService patches, CancellationToken cancellationToken) =>
+    {
+        if (await conversations.GetAsync(conversationId, cancellationToken) is null)
+            return Results.NotFound(new { error = "Conversation not found." });
+        if (string.IsNullOrWhiteSpace(request.PlanJson)) return Results.BadRequest(new { error = "PlanJson is required." });
+        WorkbookPatchCompileResponse result = await patches.CompileAsync(request.PlanJson, cancellationToken,
+            request.ReviewedPatchJson, request.Rebase);
+        await conversations.SavePlanAsync(conversationId, result.PlanJson ?? request.PlanJson,
+            result.Errors.Select(error => error.Code + ": " + error.Message).ToArray(), true, "UserEdited", cancellationToken);
+        return Results.Ok(result);
     }
 );
 
@@ -1020,7 +1053,9 @@ app.MapPost(
             return Results.Ok(
                 await patches.CompileAsync(
                     request.PlanJson,
-                    cancellationToken
+                    cancellationToken,
+                    request.ReviewedPatchJson,
+                    request.Rebase
                 )
             );
         }

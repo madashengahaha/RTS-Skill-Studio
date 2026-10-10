@@ -1,4 +1,5 @@
 using System.Globalization;
+using RtsSkillStudio.Agent.Patch;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
@@ -12,7 +13,9 @@ public static class GameDataWorkbookCellUpdater
     public static void Apply(
         string workbookPath,
         GameDataTable table,
-        IEnumerable<WorkbookPatchChange> changes
+        IEnumerable<WorkbookPatchChange> changes,
+        IReadOnlyCollection<int>? createdRecordIds = null,
+        IReadOnlyList<WorkbookPatchCommand>? rowCommands = null
     )
     {
         using SpreadsheetDocument document =
@@ -98,6 +101,20 @@ public static class GameDataWorkbookCellUpdater
                 item => item.RecordId,
                 item => item.row
             );
+        uint nextRow = worksheetRows.Select(item => item.RowNumber).DefaultIfEmpty(0u).Max();
+        Row? templateRow = rows.Values.OrderBy(entry => entry.RowNumber).LastOrDefault().Row;
+        foreach (int id in createdRecordIds ?? [])
+        {
+            if (rows.ContainsKey(id)) throw new InvalidDataException($"新增行 {id} 已存在。");
+            uint rowNumber = checked(++nextRow);
+            var row = templateRow is null ? new Row() : (Row)templateRow.CloneNode(false);
+            row.RowIndex = rowNumber;
+            foreach (Cell templateCell in templateRow?.Elements<Cell>() ?? [])
+                if (templateCell.StyleIndex is not null)
+                    row.Append(new Cell { CellReference = CellReference(ColumnIndex(templateCell.CellReference?.Value ?? "A1"), rowNumber), StyleIndex = (UInt32Value)templateCell.StyleIndex.Clone() });
+            sheetData.Append(row);
+            rows.Add(id, (row, rowNumber));
+        }
         var modifiedRows = new HashSet<Row>();
 
         foreach (WorkbookPatchChange change in changes)
@@ -213,6 +230,54 @@ public static class GameDataWorkbookCellUpdater
             foreach (Cell cell in cells)
             {
                 row.Append(cell);
+            }
+        }
+
+        foreach (WorkbookPatchCommand command in rowCommands ?? [])
+        {
+            if (worksheetPart.TableDefinitionParts.Any())
+                throw new InvalidDataException("结构化 Excel Table 的行结构修改尚未发布编码契约。");
+            if (command.Kind == "DeleteOwnedMember")
+            {
+                if (!rows.TryGetValue(command.Target.Id!.Value, out var deleted)) throw new InvalidDataException("待删除记录不存在。");
+                if (deleted.Row.Descendants<CellFormula>().Any()) throw new InvalidDataException("带公式的成员行不能自动删除。");
+                deleted.Row.Remove();
+                rows.Remove(command.Target.Id.Value);
+            }
+            else
+            {
+                int[] ids = command.Arguments["orderedIds"]!.AsArray().Select(value => value!.GetValue<int>()).ToArray();
+                uint[] slots = ids.Select(id => rows[id].RowNumber).Order().ToArray();
+                if (ids.Any(id => rows[id].Row.Descendants<CellFormula>().Any()))
+                    throw new InvalidDataException("带公式的成员行不能自动重排。");
+                Row[] moved = ids.Select(id => (Row)rows[id].Row.CloneNode(true)).ToArray();
+                foreach (int id in ids) rows[id].Row.Remove();
+                for (int index = 0; index < ids.Length; index++)
+                {
+                    Row row = moved[index];
+                    row.RowIndex = slots[index];
+                    foreach (Cell cell in row.Elements<Cell>())
+                        cell.CellReference = CellReference(ColumnIndex(cell.CellReference?.Value ?? "A1"), slots[index]);
+                    sheetData.Append(row);
+                    rows[ids[index]] = (row, slots[index]);
+                }
+            }
+        }
+        if (rowCommands is { Count: > 0 })
+        {
+            Row[] ordered = sheetData.Elements<Row>().OrderBy(row => row.RowIndex?.Value ?? 0).ToArray();
+            sheetData.RemoveAllChildren<Row>();
+            foreach (Row row in ordered) sheetData.Append(row);
+        }
+
+        if (createdRecordIds is { Count: > 0 })
+        {
+            SheetDimension? dimension = worksheetPart.Worksheet.GetFirstChild<SheetDimension>();
+            if (dimension?.Reference?.Value is { } range)
+            {
+                string[] endpoints = range.Split(':');
+                int lastColumn = Math.Max(ColumnIndex(endpoints[^1]), table.Fields.Max(field => field.StartColumn + field.ColumnCount - 1));
+                dimension.Reference = endpoints[0] + ":" + CellReference(lastColumn, nextRow);
             }
         }
 

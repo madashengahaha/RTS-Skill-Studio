@@ -11,7 +11,8 @@ public sealed record WorkbookPatchCompileResponse(
     string? PatchJson,
     IReadOnlyList<WorkbookPatchCompileError> Errors,
     WorkbookPatchValidationReport? Validation,
-    IReadOnlyList<WorkbookPatchDiffRow> Diff
+    IReadOnlyList<WorkbookPatchDiffRow> Diff,
+    string? PlanJson = null
 );
 
 public sealed record WorkbookPatchApplyResponse(
@@ -39,7 +40,9 @@ public sealed class WorkbookPatchWorkspaceService(
 {
     public async Task<WorkbookPatchCompileResponse> CompileAsync(
         string planJson,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        string? reviewedPatchJson = null,
+        bool rebase = false
     )
     {
         SkillConfigPlanValidationResult planValidation =
@@ -72,21 +75,14 @@ public sealed class WorkbookPatchWorkspaceService(
             planJson,
             context
         );
-        if (
-            compile.Errors.Any(
-                error => error.Code == "compiler.stale_base"
-            )
-        )
+        if (rebase)
         {
-            string rebasedPlan = RebasePlanBase(
-                planJson,
-                context,
-                registry
-            );
-            compile = compiler.Compile(rebasedPlan, context);
-            logger.LogInformation(
-                "Rebased stale SkillConfigPlan base for patch compilation."
-            );
+            if (string.IsNullOrWhiteSpace(reviewedPatchJson))
+                return new("Invalid", null, [new("compiler.rebase_conflict", "重基需要上次已编译的 Patch 作为原值依据。")], null, []);
+            WorkbookPlanRebaseResult rebased = WorkbookPlanRebaser.Rebase(planJson, reviewedPatchJson, context, registry);
+            if (rebased.PlanJson is null) return new("Invalid", null, rebased.Errors, null, []);
+            planJson = rebased.PlanJson;
+            compile = compiler.Compile(planJson, context);
         }
         if (compile.Patch is null || string.IsNullOrWhiteSpace(compile.PatchJson))
         {
@@ -117,7 +113,8 @@ public sealed class WorkbookPatchWorkspaceService(
             compile.PatchJson,
             compile.Errors,
             validation,
-            diff
+            diff,
+            planJson
         );
     }
 
@@ -273,7 +270,8 @@ public sealed class WorkbookPatchWorkspaceService(
                 .Select(
                     record => new WorkbookPatchRecord(
                         record.Id,
-                        record.Fields
+                        record.Fields,
+                        record.SourceOrder
                     )
                 )
                 .ToArray();
@@ -305,31 +303,6 @@ public sealed class WorkbookPatchWorkspaceService(
         );
     }
 
-    private static string RebasePlanBase(
-        string planJson,
-        WorkbookPatchWorkspace workspace,
-        WorkbookPatchRegistry registry
-    )
-    {
-        JsonObject plan = JsonNode.Parse(planJson)?.AsObject()
-            ?? throw new InvalidDataException(
-                "SkillConfigPlan JSON 无法解析。"
-            );
-        plan["base"] = new JsonObject
-        {
-            ["workspaceId"] = workspace.WorkspaceId,
-            ["revision"] = workspace.Revision,
-            ["sourceHash"] = workspace.SourceHash,
-            ["capabilityRegistryVersion"] =
-                registry.CapabilityRegistryVersion,
-            ["defaultValueContractVersion"] =
-                registry.DefaultValueContractVersion,
-            ["defaultMechanismContractVersion"] =
-                registry.DefaultMechanismContractVersion
-        };
-        return plan.ToJsonString();
-    }
-
     private WorkbookPatchField BuildField(
         WorkbookPatchRegistryEntity entity,
         GameDataFieldDefinition field
@@ -344,6 +317,10 @@ public sealed class WorkbookPatchWorkspaceService(
                     StringComparison.OrdinalIgnoreCase
                 )
             );
+        JsonObject? creationField = (registry.Creation?["entities"] as JsonArray ?? []).OfType<JsonObject>()
+            .Where(item => item["namespace"]?.GetValue<string>() == entity.Namespace)
+            .SelectMany(item => item["fields"]!.AsArray().OfType<JsonObject>())
+            .FirstOrDefault(item => item["key"]?.GetValue<string>() == field.Key);
         string? referenceNamespace = null;
         if (!string.IsNullOrWhiteSpace(field.ReferenceTable))
         {
@@ -356,10 +333,16 @@ public sealed class WorkbookPatchWorkspaceService(
                     : field.ReferenceTable;
         }
 
+        // The workbook type annotation is the executable binding; the registry
+        // contract declares the expected reference kind and target. Both are
+        // kept so the compiler can reject a contract that drifted from the data.
+        string? referenceTarget = ResolveReferenceNamespace(
+            registryField?.ReferenceTarget ?? creationField?["referenceTarget"]?.GetValue<string>()
+        );
         return new WorkbookPatchField(
             field.Key,
             path,
-            registryField?.SemanticName,
+            registryField?.SemanticName ?? creationField?["semanticName"]?.GetValue<string>(),
             field.Kind,
             field.RawType,
             field.Required,
@@ -368,7 +351,11 @@ public sealed class WorkbookPatchWorkspaceService(
             registryField?.Minimum,
             registryField?.Maximum,
             field.Options,
-            referenceNamespace
+            referenceNamespace ?? referenceTarget,
+            ReferenceTarget: referenceTarget,
+            ReferenceRemoval: registryField?.ReferenceRemoval,
+            ColumnCount: field.ColumnCount,
+            PackingSeparator: field.PackingSeparator
         );
     }
 
@@ -378,12 +365,15 @@ public sealed class WorkbookPatchWorkspaceService(
         GameDataRecord record
     )
     {
-        string? actionKey = ResolveActionKey(table, record);
+        string? category = (registry.Creation?["entities"] as JsonArray ?? []).OfType<JsonObject>()
+            .FirstOrDefault(item => item["namespace"]?.GetValue<string>() == entity.Namespace)?["actionCategory"]?.GetValue<string>();
+        if (category is null) return [];
+        string? actionKey = ResolveActionKey(table, record, category);
         WorkbookPatchAction? action = registry.Actions.FirstOrDefault(
             candidate =>
                 string.Equals(
                     candidate.Category,
-                    table.Key is "effect" ? "effect" : "condition",
+                    category,
                     StringComparison.OrdinalIgnoreCase
                 )
                 && string.Equals(
@@ -416,7 +406,11 @@ public sealed class WorkbookPatchWorkspaceService(
                     record.Id,
                     action.Key,
                     parameter.Index,
-                    parameter.Repeating
+                    parameter.Repeating,
+                    ColumnCount: table.Fields.First(item => item.Key == "action_param").ColumnCount,
+                    RepeatStep: parameter.RepeatStep,
+                    ReferenceTarget: ResolveReferenceNamespace(parameter.ReferenceTarget),
+                    AllowsMultipleEnumValues: parameter.AllowsMultipleEnumValues
                 )
             )
             .ToArray();
@@ -424,7 +418,8 @@ public sealed class WorkbookPatchWorkspaceService(
 
     private string? ResolveActionKey(
         GameDataTable table,
-        GameDataRecord record
+        GameDataRecord record,
+        string category
     )
     {
         GameDataFieldDefinition? actionTypeField = table.Fields.FirstOrDefault(
@@ -502,7 +497,7 @@ public sealed class WorkbookPatchWorkspaceService(
             .Where(
                 candidate =>
                     candidate.Category
-                    == (table.Key is "effect" ? "effect" : "condition")
+                    == category
             )
             .FirstOrDefault(
                 candidate => candidate.LegacyValue == legacyValue
